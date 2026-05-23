@@ -1,421 +1,751 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Workout" />
-  <meta name="theme-color" content="#080808" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Workout">
+  <meta name="theme-color" content="#080808">
   <title>Workout</title>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; background: #080808; color: #fff; }
-    body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; font-family: -apple-system,"SF Pro Display",BlinkMacSystemFont,sans-serif; }
-    input, button { font-family: inherit; border: none; }
-    ::-webkit-scrollbar { display: none; }
-    * { scrollbar-width: none; }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;background:#080808;color:#fff}
+    body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain;font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,sans-serif}
+    input,button{font-family:inherit;border:none}
+    ::-webkit-scrollbar{display:none}
+    *{scrollbar-width:none}
   </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef } = React;
+const {useState,useEffect,useRef} = React;
 
-const FB = [
-  { section: "HERO", exercises: [
-    { name: "Overhead Triceps Extension", equip: "Cable", sets: 2, reps: "8-12", defaultWeight: "", rest: "2 min", hero: true,
-      cue: "Do this first, completely fresh. Both hands on rope, elbows above head. Lower behind head until long head is fully stretched. Press to full lockout. Both sets at max effort." },
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const parseRestSec = rest => {
+  if(!rest) return 90;
+  const m = rest.match(/(\d+(?:\.\d+)?)\s*(?:[-]\d+)?\s*min/);
+  if(m) return Math.round(parseFloat(m[1])*60);
+  const s = rest.match(/(\d+)\s*s/);
+  if(s) return parseInt(s[1]);
+  return 90;
+};
+const fmt = s => {if(s<=0)return"0:00";return`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;};
+
+// ── FULL BODY DATA ─────────────────────────────────────────────────────────────
+const FB_SECTIONS = [
+  {section:"HERO",exercises:[
+    {name:"Overhead Triceps Extension",equip:"Cable",sets:2,reps:"8-12",defaultWeight:"",rest:"2 min",hero:true,
+     cue:"Do this first, completely fresh. Both hands on rope, elbows above head. Lower behind head until long head is fully stretched. Press to full lockout. Both sets at max effort."},
   ]},
-  { section: "ARMS", exercises: [
-    { name: "Tricep Pushdown", equip: "Cable Single", sets: 1, reps: "10-12", defaultWeight: "", rest: "90s", cue: "Elbows pinned to sides throughout. Full extension at bottom. Controlled return." },
-    { name: "Bicep Curl", equip: "Cable Single", sets: 1, reps: "10-12", defaultWeight: "", rest: "90s", cue: "Full extension at the bottom - cable holds tension unlike dumbbell. Curl to peak, slow negative." },
-    { name: "Reverse Preacher Curl", equip: "EZ Bar", sets: 1, reps: "10-12", defaultWeight: "", rest: "75s", cue: "Full extension at bottom - don't cheat this. Overhand grip. Hits brachialis and brachioradialis. Slow." },
+  {section:"ARMS",exercises:[
+    {name:"Tricep Pushdown",equip:"Cable Single",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Elbows pinned to sides. Full extension at bottom. Controlled return."},
+    {name:"Bicep Curl",equip:"Cable Single",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Full extension at the bottom - cable holds tension here. Curl to peak, slow negative."},
+    {name:"Reverse Preacher Curl",equip:"EZ Bar",sets:1,reps:"10-12",defaultWeight:"",rest:"75s",cue:"Full extension at bottom. Overhand grip. Hits brachialis and brachioradialis. Slow."},
   ]},
-  { section: "PUSH", exercises: [
-    { name: "Chest Press", equip: "Machine", sets: 1, reps: "8-12", defaultWeight: "", rest: "2 min", cue: "1-second pause at full stretch at the bottom. Drive to lockout. Don't bounce." },
-    { name: "Shoulder Press", equip: "Machine", sets: 1, reps: "8-12", defaultWeight: "", rest: "90s", cue: "Full overhead lockout every rep. Don't cut the range at the top." },
-    { name: "One Arm Lateral Raise", equip: "Cable Single", sets: 1, reps: "12-15", defaultWeight: "", rest: "75s", cue: "Cable from low position. Arm starts across body - bottom is max stretch. Raise to shoulder height. No swinging." },
-    { name: "Front Raise", equip: "Dumbbell (Double)", sets: 1, reps: "10-15", defaultWeight: "", rest: "60s", cue: "Control the eccentric. Raise to eye level. No momentum." },
+  {section:"PUSH",exercises:[
+    {name:"Chest Press",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"2 min",cue:"1-second pause at full stretch at the bottom. Drive to lockout. Don't bounce."},
+    {name:"Shoulder Press",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"90s",cue:"Full overhead lockout every rep. Don't cut the range at the top."},
+    {name:"One Arm Lateral Raise",equip:"Cable Single",sets:1,reps:"12-15",defaultWeight:"",rest:"75s",cue:"Cable from low position. Arm starts across body - bottom is max stretch. Raise to shoulder height. No swinging."},
+    {name:"Front Raise",equip:"Dumbbell",sets:1,reps:"10-15",defaultWeight:"",rest:"60s",cue:"Control the eccentric. Raise to eye level. No momentum."},
   ]},
-  { section: "PULL", exercises: [
-    { name: "Lat Pulldown", equip: "Machine", sets: 1, reps: "8-12", defaultWeight: "", rest: "2 min", cue: "Arms fully extended at top before every pull. Pull to upper chest, elbows drive down and back." },
-    { name: "Back Row", equip: "Machine", sets: 1, reps: "8-12", defaultWeight: "", rest: "2 min", cue: "Full arm extension before every rep. Drive elbows past your torso. Squeeze at peak." },
-    { name: "Low Row", equip: "Cable Single", sets: 1, reps: "10-12", defaultWeight: "", rest: "90s", cue: "Full stretch at start. Single arm, drive elbow back past hip." },
-    { name: "Reverse Fly", equip: "Machine", sets: 1, reps: "12-15", defaultWeight: "", rest: "75s", cue: "Full stretch at start. Keep shoulders down. Squeeze at peak." },
-    { name: "Shoulder Shrug", equip: "Dumbbell (Double)", sets: 1, reps: "10-15", defaultWeight: "", rest: "60s", cue: "Full depression before every rep. Straight up - no rolling." },
+  {section:"PULL",exercises:[
+    {name:"Lat Pulldown",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"2 min",cue:"Arms fully extended at top before every pull. Pull to upper chest, elbows drive down and back."},
+    {name:"Back Row",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"2 min",cue:"Full arm extension before every rep. Drive elbows past your torso. Squeeze at peak."},
+    {name:"Low Row",equip:"Cable Single",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Full stretch at start. Single arm, drive elbow back past hip."},
+    {name:"Reverse Fly",equip:"Machine",sets:1,reps:"12-15",defaultWeight:"",rest:"75s",cue:"Full stretch at start. Keep shoulders down. Squeeze at peak."},
+    {name:"Shoulder Shrug",equip:"Dumbbell",sets:1,reps:"10-15",defaultWeight:"",rest:"60s",cue:"Full depression before every rep. Straight up - no rolling."},
   ]},
-  { section: "LEGS", exercises: [
-    { name: "Hip Thrust", equip: "Barbell", sets: 1, reps: "6", defaultWeight: "120kg", rest: "2 min", cue: "Upper back on bench. 1-second pause at full bottom stretch. Drive to full hip extension at top - hard glute squeeze. Chin tucked." },
-    { name: "Pendulum Squat", equip: "Machine", sets: 1, reps: "5", defaultWeight: "25kg", rest: "2 min", cue: "Control descent to full depth. Drive through heels to lockout. Don't rush the eccentric." },
-    { name: "Leg Extensions", equip: "Machine", sets: 1, reps: "10-12", defaultWeight: "", rest: "90s", cue: "3-second eccentric on the way down. Full extension at top." },
-    { name: "Seated Leg Curl", equip: "Machine", sets: 1, reps: "10-12", defaultWeight: "", rest: "90s", cue: "Full extension before every rep - the stretched position is the stimulus. Curl fully, control the negative." },
-    { name: "Calf Raises", equip: "Machine", sets: 1, reps: "7", defaultWeight: "140kg", rest: "75s", cue: "Deep stretch at the bottom of every rep - non-negotiable. Full plantarflexion at top." },
-    { name: "Inner Thigh Machine", equip: "Machine", sets: 1, reps: "10-12", defaultWeight: "", rest: "60s", cue: "Full abduction before squeezing in. Don't let the pads bounce." },
-    { name: "Outer Thigh Machine", equip: "Machine", sets: 1, reps: "6", defaultWeight: "79kg", rest: "60s", cue: "Start legs together. Full ROM outward. Control the return." },
+  {section:"LEGS",exercises:[
+    {name:"Hip Thrust",equip:"Barbell",sets:1,reps:"6",defaultWeight:"120kg",rest:"2 min",cue:"Upper back on bench. 1-second pause at full bottom stretch. Drive to full hip extension - hard glute squeeze. Chin tucked."},
+    {name:"Pendulum Squat",equip:"Machine",sets:1,reps:"5",defaultWeight:"25kg",rest:"2 min",cue:"Control descent to full depth. Drive through heels to lockout."},
+    {name:"Leg Extensions",equip:"Machine",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"3-second eccentric on the way down. Full extension at top."},
+    {name:"Seated Leg Curl",equip:"Machine",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Full extension before every rep - the stretched position is the stimulus. Curl fully, control the negative."},
+    {name:"Calf Raises",equip:"Machine",sets:1,reps:"7",defaultWeight:"140kg",rest:"75s",cue:"Deep stretch at the bottom of every rep. Non-negotiable. Full plantarflexion at top."},
+    {name:"Inner Thigh Machine",equip:"Machine",sets:1,reps:"10-12",defaultWeight:"",rest:"60s",cue:"Full abduction before squeezing in. Don't let the pads bounce."},
+    {name:"Outer Thigh Machine",equip:"Machine",sets:1,reps:"6",defaultWeight:"79kg",rest:"60s",cue:"Start legs together. Full ROM outward. Control the return."},
   ]},
-  { section: "CORE + PREHAB", exercises: [
-    { name: "Core Twist", equip: "Band", sets: 1, reps: "12 each", defaultWeight: "", rest: "60s", cue: "Controlled rotation only. Resist the momentum on the return." },
-    { name: "Ab Crunch Machine", equip: "Machine", sets: 1, reps: "12-15", defaultWeight: "", rest: "60s", cue: "Ribs to hips - not neck. Slow return." },
-    { name: "Back Extension", equip: "Bodyweight", sets: 1, reps: "12-15", defaultWeight: "", rest: "60s", cue: "Hinge at hip to deep hamstring stretch. Drive to parallel - don't hyperextend at top." },
-    { name: "Internal Shoulder Rotation", equip: "Cable Single", sets: 1, reps: "12-15", defaultWeight: "", rest: "45s", cue: "Elbow at 90 degrees at side. Rotate inward across body. Light weight, full range." },
-    { name: "External Shoulder Rotation", equip: "Cable Single", sets: 1, reps: "12-15", defaultWeight: "", rest: "45s", cue: "Elbow at 90 degrees at side. Rotate outward. Keep upper arm still." },
-    { name: "Wrist Curl", equip: "Band", sets: 1, reps: "15-20", defaultWeight: "", rest: "45s", cue: "Forearm fully supported. Wrist only moves. Slow and full range." },
-    { name: "Reverse Wrist Curl", equip: "Band", sets: 1, reps: "15-20", defaultWeight: "", rest: "45s", cue: "Overhand grip. Wrist only. Full range. Slow eccentric." },
+  {section:"CORE + PREHAB",exercises:[
+    {name:"Core Twist",equip:"Band",sets:1,reps:"12 each",defaultWeight:"",rest:"60s",cue:"Controlled rotation only. Resist the momentum on the return."},
+    {name:"Ab Crunch Machine",equip:"Machine",sets:1,reps:"12-15",defaultWeight:"",rest:"60s",cue:"Ribs to hips - not neck. Slow return."},
+    {name:"Back Extension",equip:"Bodyweight",sets:1,reps:"12-15",defaultWeight:"",rest:"60s",cue:"Hinge at hip to deep hamstring stretch. Drive to parallel - don't hyperextend at top."},
+    {name:"Internal Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",defaultWeight:"",rest:"45s",cue:"Elbow at 90 degrees at side. Rotate inward across body. Light weight, full range."},
+    {name:"External Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",defaultWeight:"",rest:"45s",cue:"Elbow at 90 degrees at side. Rotate outward. Keep upper arm still."},
+    {name:"Wrist Curl",equip:"Band",sets:1,reps:"15-20",defaultWeight:"",rest:"45s",cue:"Forearm fully supported. Wrist only moves. Slow and full range."},
+    {name:"Reverse Wrist Curl",equip:"Band",sets:1,reps:"15-20",defaultWeight:"",rest:"45s",cue:"Overhand grip. Wrist only. Full range. Slow eccentric."},
   ]},
 ];
+const FB_FLAT = FB_SECTIONS.flatMap(s=>s.exercises.map(e=>({...e,section:s.section})));
 
-const T1 = {
-  meta: "2/10 effort - sustained tension, not maximal force. 15g collagen + vit C, 30-60 min before. No caffeine with it.",
-  sessions: [
-    { label: "SESSION A", day: "Wed - Achilles + Patellar", exercises: [
-      { name: "Calf Raise Iso Mid Range", equip: "Single leg + DB", sets: 3, reps: "6", hold: "30s", defaultWeight: "+20-25kg DB", rest: "90s", cue: "Stand on one leg, raise to mid-calf position. Hold completely still. Sustained tension - no bouncing." },
-      { name: "Wall Sit", equip: "Bodyweight", sets: 3, reps: "6", hold: "30s", defaultWeight: "Bodyweight", rest: "90s", cue: "Back flat against wall, thighs parallel, knees at 90 degrees. Hold. Patellar tendon stimulus." },
-      { name: "Calf Hold Bottom Stretch", equip: "Single leg + DB", sets: 2, reps: "6", hold: "20s", defaultWeight: "+15kg DB", rest: "60s", cue: "Heel dropped off a step as low as possible. Hold at deepest Achilles stretch. This position drives tendon adaptation." },
-      { name: "Hip Flexor Lunge Hold", equip: "Bodyweight", sets: 2, reps: "6", hold: "20s", defaultWeight: "Bodyweight", rest: "60s", cue: "Back knee on floor, front foot forward, torso upright. Feel the stretch through front of rear hip. Hold still." },
-      { name: "Wrist Iso Hold", equip: "Light band", sets: 2, reps: "6", hold: "15s", defaultWeight: "Light band", rest: "45s", cue: "Press wrist into band resistance and hold without moving. All three positions separately: neutral, flexion, extension." },
+// ── TENDON DATA ────────────────────────────────────────────────────────────────
+const TENDON = {
+  p1:{label:"Phase 1",weeks:"Wks 1-4",name:"Isometric",color:"#ef4444",
+    meta:"2/10 effort - sustained tension, not force. 15g collagen + vit C 30-60 min before. No caffeine.",
+    sessions:[
+      {label:"SESSION A",day:"Achilles + Patellar",exercises:[
+        {name:"Calf Raise Iso Mid Range",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",defaultWeight:"+20-25kg DB",rest:"90s",
+         cue:"Stand on one leg at mid-calf position. Hold completely still. Sustained tension - no bouncing."},
+        {name:"Wall Sit",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",defaultWeight:"Bodyweight",rest:"90s",
+         cue:"Back flat against wall, thighs parallel, knees at 90 degrees. Hold. Patellar tendon stimulus."},
+        {name:"Calf Hold Bottom Stretch",equip:"Single leg + DB",sets:2,reps:"6",hold:"20s",defaultWeight:"+15kg DB",rest:"60s",
+         cue:"Heel dropped off a step as low as possible. Hold at deepest Achilles stretch. This position drives the adaptation."},
+        {name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",defaultWeight:"Bodyweight",rest:"60s",
+         cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through front of rear hip. Hold still."},
+        {name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",defaultWeight:"Light band",rest:"45s",
+         cue:"Press wrist into band resistance and hold without moving. Three positions: neutral, flexion, extension."},
+      ]},
+      {label:"SESSION B",day:"Combat + Glute/Ham",exercises:[
+        {name:"Wall Sit Progress",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",defaultWeight:"Bodyweight",rest:"90s",
+         cue:"Same as Session A. Progress: add a slight heel raise at the bottom to load calves simultaneously."},
+        {name:"Calf Raise Iso Peak",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",defaultWeight:"+20kg DB",rest:"90s",
+         cue:"Rise onto toes and hold at very top of contraction. Different loading zone from Session A mid-range."},
+        {name:"Wrist Iso Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",defaultWeight:"Light band",rest:"45s",
+         cue:"Forearm on a surface. Resist band pulling wrist into extension. Hold wrist still."},
+        {name:"Wrist Iso Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",defaultWeight:"Light band",rest:"45s",
+         cue:"Same position. Resist band pulling wrist into flexion. Separate set from extension."},
+        {name:"Glute Bridge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"30s",defaultWeight:"Bodyweight",rest:"60s",
+         cue:"Hips fully extended, shoulders on floor. Hold at top. Hamstring and glute tendon stimulus."},
+      ]},
     ]},
-    { label: "SESSION B", day: "Fri - Combat + Glute/Ham", exercises: [
-      { name: "Wall Sit Progress", equip: "Bodyweight", sets: 3, reps: "6", hold: "30s", defaultWeight: "Bodyweight", rest: "90s", cue: "Same as Session A. Progress: try adding a slight heel raise at the bottom to load calves simultaneously." },
-      { name: "Calf Raise Iso Peak", equip: "Single leg + DB", sets: 3, reps: "6", hold: "30s", defaultWeight: "+20kg DB", rest: "90s", cue: "Rise onto toes and hold at very top of contraction. Different loading zone from Session A's mid-range." },
-      { name: "Wrist Iso Extension", equip: "Light band", sets: 2, reps: "6", hold: "15s", defaultWeight: "Light band", rest: "45s", cue: "Forearm resting on a surface. Resist band pulling wrist into extension. Hold wrist still." },
-      { name: "Wrist Iso Flexion", equip: "Light band", sets: 2, reps: "6", hold: "15s", defaultWeight: "Light band", rest: "45s", cue: "Same position. Resist band pulling wrist into flexion. Separate set from extension." },
-      { name: "Glute Bridge Hold", equip: "Bodyweight", sets: 2, reps: "6", hold: "30s", defaultWeight: "Bodyweight", rest: "60s", cue: "Hips fully extended, shoulders on floor. Hold at top. Hamstring and glute tendon stimulus." },
+  p2:{label:"Phase 2",weeks:"Wks 5-8",name:"Heavy Slow",color:"#f97316",
+    meta:"Tempo: 4s down / 1s pause / 3s up. The tempo IS the stimulus - rushing defeats the purpose.",
+    sessions:[
+      {label:"SESSION A",day:"Calf, Quad, Ham",exercises:[
+        {name:"Single Leg Calf Raise",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",defaultWeight:"+30-35kg DB",rest:"2 min",
+         cue:"One leg only. 4 seconds up, 1 second hold at top, 3 seconds down to full stretch. Full range. Use a rack for balance."},
+        {name:"Slow Sissy Squat",equip:"Light added weight",sets:3,reps:"8",tempo:"4-1-3",defaultWeight:"BW +5kg",rest:"2 min",
+         cue:"Hold something for balance. Lean back - knees travel far forward. 4 seconds to max stretch, 1 pause, 3 up. True sissy pattern - not pendulum."},
+        {name:"Nordic Curl",equip:"Bodyweight",sets:3,reps:"6",tempo:"5s down",defaultWeight:"Bodyweight",rest:"2 min",
+         cue:"Knees on padded surface, feet anchored. Lower as slowly as possible - aim 5+ seconds. Catch with hands at bottom."},
+        {name:"Single Leg RDL",equip:"Dumbbell",sets:2,reps:"10",tempo:"3-1-3",defaultWeight:"50-55kg",rest:"90s",
+         cue:"Balance on one leg, hinge at hip, weight in opposite hand. 3 seconds down to deep hamstring stretch."},
+      ]},
+      {label:"SESSION B",day:"Calf + Wrist",exercises:[
+        {name:"Single Leg Calf Raise B",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",defaultWeight:"+30-35kg DB",rest:"2 min",
+         cue:"Same as Session A. This session: emphasise extra time at the bottom stretch - pause a beat there before driving up."},
+        {name:"Weighted Wall Sit",equip:"Weight plate",sets:3,reps:"6",hold:"30s",defaultWeight:"+10kg plate",rest:"2 min",
+         cue:"Phase 1 wall sit with a plate resting across your thighs. Hold 90 degree position."},
+        {name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",defaultWeight:"7.5kg",rest:"60s",
+         cue:"Forearm fully supported, palm up. Wrist only. 3 seconds down, 1 second pause at stretch, 3 seconds up."},
+        {name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",defaultWeight:"5kg",rest:"60s",
+         cue:"Overhand grip. Same tempo. Wrist extensor tendon - critical for combat wrist stability."},
+      ]},
     ]},
-  ],
+  p3:{label:"Phase 3",weeks:"Wks 9-12",name:"Plyometric",color:"#a78bfa",
+    meta:"Ground contact time matters more than height. Target under 150ms contact. All bodyweight. Quick, quiet landings.",
+    sessions:[
+      {label:"SESSION A",day:"Vertical + Reactive",exercises:[
+        {name:"Ankle Hops",equip:"Bodyweight",sets:4,reps:"25",defaultWeight:"Bodyweight",rest:"90s",
+         cue:"Minimal knee bend. Stiff ankles. Think the floor is hot - quick, quiet contacts. Balls of feet throughout."},
+        {name:"Pogo Jumps",equip:"Bodyweight",sets:4,reps:"20",defaultWeight:"Bodyweight",rest:"90s",
+         cue:"Slightly higher than ankle hops. Stiff through ankle and knee. Spring-like - no collapse on landing."},
+        {name:"Depth Drop to Freeze",equip:"Box 30-40cm",sets:3,reps:"6",defaultWeight:"Bodyweight",rest:"2 min",
+         cue:"Step off the box - don't jump. Land on both feet and hold for 2 seconds. Perfect landing mechanics."},
+        {name:"Depth Drop to Jump",equip:"Box 30-40cm",sets:3,reps:"6",defaultWeight:"Bodyweight",rest:"2 min",
+         cue:"Step off box, land, and immediately explode up. Minimal ground contact. Stay stiff - don't sink."},
+        {name:"Broad Jump",equip:"Bodyweight",sets:4,reps:"6",defaultWeight:"Bodyweight",rest:"2 min",
+         cue:"Maximal horizontal jump. Drive arms aggressively. Land softly. Walk back between reps."},
+      ]},
+      {label:"SESSION B",day:"Horizontal + Combat",exercises:[
+        {name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",defaultWeight:"Bodyweight",rest:"90s",
+         cue:"Progress from double-leg. If unstable, go back to double first. Stiff ankle, quick contacts."},
+        {name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",defaultWeight:"Bodyweight",rest:"90s",
+         cue:"Push laterally off one leg, land on the other, immediately bound back. Explosive push-off, reactive landing."},
+        {name:"Continuous Broad Jump",equip:"Bodyweight",sets:3,reps:"5 in a row",defaultWeight:"Bodyweight",rest:"2 min",
+         cue:"Land and immediately jump again - 5 consecutive jumps. Reactive horizontal power."},
+        {name:"Rotational Med Ball Slam",equip:"Med ball",sets:3,reps:"8",defaultWeight:"5-8kg ball",rest:"90s",
+         cue:"Full hip rotation - drive from hips, not arms. Wrist snap at release. Combat rotational power."},
+      ]},
+    ]},
 };
 
-const T2 = {
-  meta: "Tempo: 4s down / 1s pause / 3s up. The tempo IS the stimulus - rushing defeats the purpose.",
-  sessions: [
-    { label: "SESSION A", day: "Wed - Calf, Quad, Hamstring", exercises: [
-      { name: "Single Leg Calf Raise A", equip: "Dumbbell", sets: 4, reps: "8", tempo: "4-1-3", defaultWeight: "+30-35kg DB", rest: "2 min", cue: "One leg only. 4 seconds up, 1 second hold at top, 3 seconds down to full stretch. Full range every rep. Use a rack for balance." },
-      { name: "Slow Sissy Squat", equip: "Light added weight", sets: 3, reps: "8", tempo: "4-1-3", defaultWeight: "BW +5kg", rest: "2 min", cue: "Hold something for balance. Lean back as you lower - knees travel far forward. 4 seconds to max stretch, 1 pause, 3 up. Not pendulum squat - true sissy pattern." },
-      { name: "Nordic Curl", equip: "Bodyweight", sets: 3, reps: "6", tempo: "5s down", defaultWeight: "Bodyweight", rest: "2 min", cue: "Knees on padded surface, feet anchored. Lower as slowly as possible - aim 5+ seconds. Catch with hands at bottom, push back up." },
-      { name: "Single Leg RDL", equip: "Dumbbell", sets: 2, reps: "10", tempo: "3-1-3", defaultWeight: "50-55kg total", rest: "90s", cue: "Balance on one leg, hinge at hip, weight in opposite hand. 3 seconds down to deep hamstring stretch. Drive through standing heel to return." },
-    ]},
-    { label: "SESSION B", day: "Fri - Calf + Wrist Tendons", exercises: [
-      { name: "Single Leg Calf Raise B", equip: "Dumbbell", sets: 4, reps: "8", tempo: "4-1-3", defaultWeight: "+30-35kg DB", rest: "2 min", cue: "Same as Session A. Emphasise extra time at the bottom stretch - pause a beat there before driving up." },
-      { name: "Weighted Wall Sit", equip: "Weight plate", sets: 3, reps: "6", hold: "30s", defaultWeight: "+10kg plate", rest: "2 min", cue: "Phase 1 wall sit with a plate resting across your thighs. Hold 90 degree position." },
-      { name: "Slow Wrist Curl", equip: "Dumbbell", sets: 3, reps: "10", tempo: "3-1-3", defaultWeight: "7.5kg", rest: "60s", cue: "Forearm fully supported, palm up. Wrist only moves. 3 seconds down, 1 second pause at stretch, 3 seconds up. Full range." },
-      { name: "Slow Reverse Wrist Curl", equip: "Dumbbell", sets: 3, reps: "10", tempo: "3-1-3", defaultWeight: "5kg", rest: "60s", cue: "Overhand grip. Same tempo. Wrist extensor tendon - critical for combat wrist stability." },
-    ]},
-  ],
-};
-
-const T3 = {
-  meta: "Ground contact time matters more than height. Target under 150ms contact. All bodyweight. Quick, quiet landings.",
-  sessions: [
-    { label: "SESSION A", day: "Wed - Vertical + Reactive", exercises: [
-      { name: "Ankle Hops", equip: "Bodyweight", sets: 4, reps: "25", defaultWeight: "Bodyweight", rest: "90s", cue: "Minimal knee bend. Stiff ankles. Think the floor is hot - quick, quiet contacts. Balls of feet throughout." },
-      { name: "Pogo Jumps", equip: "Bodyweight", sets: 4, reps: "20", defaultWeight: "Bodyweight", rest: "90s", cue: "Slightly higher than ankle hops. Stiff through ankle and knee. Spring-like - no collapse on landing." },
-      { name: "Depth Drop to Freeze", equip: "Box 30-40cm", sets: 3, reps: "6", defaultWeight: "Bodyweight", rest: "2 min", cue: "Step off the box - don't jump. Land on both feet and hold for 2 seconds. Perfect landing mechanics." },
-      { name: "Depth Drop to Jump", equip: "Box 30-40cm", sets: 3, reps: "6", defaultWeight: "Bodyweight", rest: "2 min", cue: "Step off box, land, and immediately explode up. Minimal ground contact. Stay stiff - don't sink." },
-      { name: "Broad Jump", equip: "Bodyweight", sets: 4, reps: "6", defaultWeight: "Bodyweight", rest: "2 min", cue: "Maximal horizontal jump. Drive arms aggressively. Land softly. Walk back between reps - quality not fatigue." },
-    ]},
-    { label: "SESSION B", day: "Fri - Horizontal + Combat", exercises: [
-      { name: "Single Leg Ankle Hop", equip: "Bodyweight", sets: 3, reps: "15 each", defaultWeight: "Bodyweight", rest: "90s", cue: "Progress from double-leg work. If unstable, go back to double first. Stiff ankle, quick contacts." },
-      { name: "Lateral Bound", equip: "Bodyweight", sets: 3, reps: "8 each", defaultWeight: "Bodyweight", rest: "90s", cue: "Push laterally off one leg, land on the other, immediately bound back. Explosive push-off, reactive landing." },
-      { name: "Continuous Broad Jump", equip: "Bodyweight", sets: 3, reps: "5 in a row", defaultWeight: "Bodyweight", rest: "2 min", cue: "Land and immediately jump again - 5 consecutive jumps. Reactive horizontal power." },
-      { name: "Rotational Med Ball Slam", equip: "Med ball", sets: 3, reps: "8", defaultWeight: "5-8kg ball", rest: "90s", cue: "Full hip rotation - drive from hips, not arms. Wrist snap at release. Combat rotational power." },
-    ]},
-  ],
-};
-
-const STRETCH_PHASES = {
-  1: { label: "Phase 1 - Months 1-3", name: "Foundation", color: "#06b6d4",
-    meta: "Static holds only. 3x per week minimum. Learn your body cues. Hip flexors are your priority area - spend extra time on the low lunge." },
-  2: { label: "Phase 2 - Months 4-6", name: "PNF Introduction", color: "#8b5cf6",
-    meta: "Add contract-relax PNF to key stretches. Contract the muscle for 5s, exhale and relax deeper. 3 cycles per stretch. Daily if possible." },
-  3: { label: "Phase 3 - Months 7-9", name: "Active Flexibility", color: "#f59e0b",
-    meta: "Hold stretch positions without passive support. Build strength at end-range - critical for gymnastics, handstands, and overhead work." },
-  4: { label: "Phase 4 - Months 10-12", name: "Integration", color: "#ec4899",
-    meta: "Flow between positions. Combine techniques. Explore advanced variations. Express the mobility you have built." },
-  5: { label: "Phase 5 - Ongoing", name: "Mastery + Maintenance", color: "#22c55e",
-    meta: "3-4x per week maintenance. Focus on weakest areas. The goal now is to use the range - in handstands, overhead pressing, combat movement." },
-};
-
+// ── STRETCH DATA (from v4 widget + phase cues) ─────────────────────────────────
 const STRETCHES = [
-  { name: "Cat-Cow", target: "Spine / Lumbar", type: "Dynamic",
-    phases: {
-      1: { duration: "60s / 10 cycles", cue: "On hands and knees. Inhale - arch back, lift head and tailbone (cow). Exhale - round spine, tuck chin and pelvis (cat). 10 slow cycles." },
-      2: { duration: "90s / 10 cycles", cue: "Same movement. Add a 3-second hold at each end range - feel full spinal extension and flexion before transitioning." },
-      3: { duration: "60s active", cue: "Try to move one vertebra at a time through the spine. Active spinal segmentation - feel each segment articulate." },
-      4: { duration: "90s flow", cue: "Add lateral flexion and gentle rotation. Explore the full 3D movement of the spine freely." },
-      5: { duration: "60s", cue: "Daily warm-up spine flow. Move however feels right. This is maintenance and body-check." },
-    }},
-  { name: "World's Greatest Stretch", target: "Hip Flexors / Thoracic Rotation / Hamstrings / Ankle", type: "Dynamic",
-    phases: {
-      1: { duration: "30s each side / 3 reps", cue: "Step forward into a deep lunge. Plant same-side hand. Rotate opposite arm to ceiling, eyes follow. Hold briefly. Back leg straight. Alternate sides." },
-      2: { duration: "45s each side", cue: "Same movement. Add a deliberate 3-second hold at the top of each rotation. Feel the thoracic spine actively opening." },
-      3: { duration: "45s each side", cue: "At the top of rotation, remove the hand from the floor and hold the balance. Active thoracic control without support." },
-      4: { duration: "60s flow", cue: "Flow continuously through the full sequence - lunge, rotate, reach, fold, ankle mobilise - without stopping. One continuous movement." },
-      5: { duration: "30s each side", cue: "Use as a movement prep before any session. Explore the full range freely." },
-    }},
-  { name: "Low Lunge Quad Stretch", target: "Hip Flexors / Psoas / Quads", type: "Static", priority: true,
-    phases: {
-      1: { duration: "45s each side - PRIORITY", cue: "Back knee on floor, front foot forward. Drive hips forward and down. Torso upright. Feel the deep hip flexor stretch - this is your focus area. Optional: grab back foot for quad." },
-      2: { duration: "60s each side + PNF", cue: "At end range, press your back knee into the floor for 5 seconds (isometric hip flexor contraction). Exhale, relax, and sink deeper. 3 cycles per side." },
-      3: { duration: "45s each side active", cue: "In the lunge, lift the back foot toward your glute and hold actively - no hands. Quad and hip flexor strength in the shortened position." },
-      4: { duration: "60s flow", cue: "Add a thoracic rotation: in the lunge, rotate toward the front leg and open the arm to ceiling. Hip flexor plus thoracic chain combined." },
-      5: { duration: "45s each side", cue: "Maintenance. Hip flexors are your historically tight area - never skip this one." },
-    }},
-  { name: "Butterfly", target: "Adductors / Groin / Inner Thigh", type: "Static",
-    phases: {
-      1: { duration: "45s", cue: "Sit, soles of feet together, knees wide. Gently press knees toward floor with elbows. Sit tall - don't round the back. Hold." },
-      2: { duration: "60s + PNF", cue: "Press knees up against your hands for 5 seconds. Exhale, let knees drop further. 3 cycles. You will feel a clear increase in range after each cycle." },
-      3: { duration: "45s active", cue: "Without using your hands, try to lower your knees using active hip external rotation. Hold the lowest position you can achieve actively." },
-      4: { duration: "60s", cue: "Bring feet progressively closer to groin. Explore the full range - from feet closer (deeper) to further away (different angle)." },
-      5: { duration: "45s", cue: "Maintenance. Good for adductor health given your hip thrust and inner thigh training volume." },
-    }},
-  { name: "Figure-4 / 90-90", target: "Piriformis / Glutes / External Hip Rotation", type: "Static",
-    phases: {
-      1: { duration: "45s each side", cue: "Lie on back, one ankle over the opposite knee. Either hold here or pull both legs toward chest. Feel the glute and piriformis stretch. Relax the hip." },
-      2: { duration: "60s each side + PNF", cue: "Press the ankle into the knee (isometric external rotation) for 5 seconds. Exhale, pull legs closer. 3 cycles per side." },
-      3: { duration: "45s each side", cue: "Progress to 90-90 seated position: both knees at 90 degrees, one in front and one to the side. Rotate torso forward over the front shin." },
-      4: { duration: "60s", cue: "Flow from lying figure-4 to seated 90-90 to lean forward over front leg. One continuous exploration of hip rotation chain." },
-      5: { duration: "45s each side", cue: "Maintenance. Glute and piriformis health important given your hip thrust volume." },
-    }},
-  { name: "Forward Fold", target: "Hamstrings / Lower Back", type: "Static",
-    phases: {
-      1: { duration: "45s", cue: "Standing, feet hip-width. Hinge at hips, let torso hang. Grab opposite elbows. Slight knee bend is fine. Focus on the hip hinge - not just rounding the spine." },
-      2: { duration: "60s + PNF", cue: "Contract hamstrings by digging heels into the floor (isometric) for 5 seconds. Exhale, fold deeper. 3 cycles. You will get noticeably further each time." },
-      3: { duration: "45s active", cue: "Straighten legs progressively. At end range, actively try to bring chest closer to legs using hip flexors - not just gravity." },
-      4: { duration: "60s", cue: "Explore variations: narrow stance, wide stance, single leg forward fold. Find the tightest angle and spend time there." },
-      5: { duration: "45s", cue: "Maintenance. Strong baseline here - just maintain." },
-    }},
-  { name: "Cobra Waves", target: "Spine Extension / Hip Flexors / Abs", type: "Dynamic",
-    phases: {
-      1: { duration: "45s / 5-7 waves", cue: "Lie prone, hands under shoulders. Inhale and press up to low cobra. Exhale and lower back down. Move fluidly - don't hold. Don't hyperextend lower back." },
-      2: { duration: "60s / 8-10 waves", cue: "Progressively extend the range each wave. By the last few, aim for upward dog if comfortable. Flow smoothly from floor to peak." },
-      3: { duration: "45s active", cue: "Hands hovering just off the floor - use your spinal extensors only to lift into cobra. Active back extension without arm assistance." },
-      4: { duration: "60s flow", cue: "Full upward dog to downward dog flow. Combine the extension and flexion in one wave pattern. Add toe curl variations." },
-      5: { duration: "45s", cue: "Maintenance. Dynamic spine work - keep it flowing, not held." },
-    }},
-  { name: "Thread the Needle", target: "Thoracic Rotation / Posterior Shoulder", type: "Static",
-    phases: {
-      1: { duration: "30s each side", cue: "On hands and knees. Thread one arm under your body. Let that shoulder and ear rest on the floor. Other arm can stay down or extend forward. Feel the thoracic rotation." },
-      2: { duration: "45s each side", cue: "Add a gentle press of the extended arm into the floor at the deepest point to incrementally increase rotation. Hold at end range." },
-      3: { duration: "30s each side active", cue: "Use the threading arm to press into the floor and actively drive the rotation deeper - use the rhomboids and serratus rather than gravity." },
-      4: { duration: "45s", cue: "Add small arm circles from the threaded position. Explore the full range of the posterior shoulder and thoracic spine." },
-      5: { duration: "30s each side", cue: "Maintenance. Important for overhead pressing and gymnastics shoulder health." },
-    }},
-  { name: "Overhead Lat / Triceps Stretch", target: "Lats / Long Head Triceps / Overhead Shoulder Flexion", type: "Static",
-    phases: {
-      1: { duration: "30s each side", cue: "Raise one arm overhead. Bend elbow so hand drops behind head. Use other hand to pull elbow across. Lean slightly away for lat emphasis. Keep ribs down - don't flare them." },
-      2: { duration: "45s each side", cue: "Add a deliberate side bend away from the stretched arm to emphasise the lat. Feel the stretch run from hip to axilla." },
-      3: { duration: "30s each side active", cue: "Press your hand into the palm overhead - create resistance and hold the stretch position actively without passive pull from the other arm." },
-      4: { duration: "45s each side", cue: "Combine with world's greatest stretch - from the lunge, reach the overhead lat stretch on the same side. Full anterior chain in one position." },
-      5: { duration: "30s each side", cue: "Maintenance. Directly supports handstand overhead range and lat flexibility for pulling movements." },
-    }},
-  { name: "Cross-Body Shoulder", target: "Rear Delt / Posterior Capsule", type: "Static",
-    phases: {
-      1: { duration: "30s each side", cue: "Pull one arm across chest with the other arm. Keep shoulder blade stable - don't let it shrug up. Feel the pull in the rear delt and posterior shoulder." },
-      2: { duration: "45s each side", cue: "Explore the pull at different heights - higher hits the posterior capsule, lower hits the rear delt more. Spend more time in the tightest angle." },
-      3: { duration: "30s each side active", cue: "Slightly resist the pull with the stretched arm - create gentle tension without releasing. Eccentric hold in the posterior shoulder." },
-      4: { duration: "45s", cue: "Combine with a thoracic rotation - as you pull the arm across, rotate your head and thorax in the opposite direction." },
-      5: { duration: "30s each side", cue: "Maintenance. Rear delt health important given your lateral raise and reverse fly volume." },
-    }},
-  { name: "Knee-to-Wall Ankle Mobilisation", target: "Ankle Dorsiflexion / Achilles / Tibialis Anterior", type: "Functional",
-    phases: {
-      1: { duration: "10-12 reps each side", cue: "Stand near a wall, foot about 10cm away. Drive the knee forward past the big toe while keeping heel flat on floor. Heel must not lift. More transfer than calf stretch." },
-      2: { duration: "12-15 reps + hold", cue: "Same movement. Add a 2-second hold at end range before returning. Gradually increase foot-to-wall distance as range improves." },
-      3: { duration: "10 reps + 10s hold each", cue: "At end range of each rep, hold for 10 seconds - dorsiflexion strength at end range. Direct transfer to jumping and landing mechanics." },
-      4: { duration: "10 reps each side", cue: "Progress to doing this on a slight step or incline. Increases the challenge. Test from further away from the wall." },
-      5: { duration: "10 reps each side", cue: "Maintenance. Critical alongside your tendon work - keep this throughout Phase 3 plyometrics." },
-    }},
-  { name: "Wrist / Forearm", target: "Wrist Flexors / Extensors / Forearm Tendons", type: "Dynamic",
-    phases: {
-      1: { duration: "60s total", cue: "On hands and knees. Rotate hands to face different directions. Prayer position. Reverse prayer. Rock weight forward and back. Wrist circles each direction. All positions, gentle loading." },
-      2: { duration: "90s total", cue: "Add sustained holds in your most uncomfortable position - usually fingers pointing backwards. 10-second holds in each challenging angle." },
-      3: { duration: "60s + holds", cue: "Progress to wrist push-ups on knuckles. Then on finger pads if comfortable. Gymnastic wrist conditioning progression." },
-      4: { duration: "90s full sequence", cue: "Full gymnastic wrist conditioning: standard, knuckles, fingers, reverse, side-to-side, and active circles under load." },
-      5: { duration: "60s", cue: "Maintenance. Supports handstand loading and long-term wrist health with keyboard use. Never skip." },
-    }},
-  { name: "Neck Release", target: "Cervical Spine / Upper Traps / Scalenes", type: "Static / Gentle",
-    phases: {
-      1: { duration: "20s each direction", cue: "Gently tilt head to one side. Opposite hand rests lightly on head - no cranking. Also chin to chest for upper trap. Keep shoulders completely relaxed. Never force." },
-      2: { duration: "30s each direction", cue: "Add gentle slow circles exploring the full cervical range. Keep it flowing, never jerky. Find the stiffest angles and breathe into them." },
-      3: { duration: "20s each direction active", cue: "No hand assistance. Hold the tilted position using only neck muscles on the opposite side. Active cervical lateral flexion hold." },
-      4: { duration: "30s", cue: "Explore combined movements - tilt and slight rotation simultaneously. Find the angles that feel compressed and breathe through them." },
-      5: { duration: "20s each direction", cue: "Maintenance. CS student priority - desk posture loads upper traps constantly. Never skip this." },
-    }},
+  {name:"Cat-Cow",totalSec:60,sideLabels:[],muscles:["Spine","Core"],isDynamic:true,
+   phases:{
+     1:{dur:"60s",how:"On all-fours. Inhale and arch down (cow), exhale and round up (cat). 8-10 slow rhythmic cycles. Don't hold - keep moving throughout."},
+     2:{dur:"90s",how:"Same movement. Add a 3-second hold at each end range. Feel full spinal extension and flexion before transitioning."},
+     3:{dur:"60s active",how:"Try to move one vertebra at a time through the spine. Active spinal segmentation."},
+     4:{dur:"90s flow",how:"Add lateral flexion and gentle rotation. Explore the full 3D movement of the spine freely."},
+     5:{dur:"60s",how:"Daily warm-up spine flow. Move however feels right. Maintenance and body-check."},
+   }},
+  {name:"World's Greatest Stretch",totalSec:120,sideLabels:["right side","left side"],muscles:["Hip flexors","Hips","Shoulders","Thoracic spine"],priority:true,
+   phases:{
+     1:{dur:"60s / side",how:"Deep lunge, same-side hand inside front foot. Rotate top arm to ceiling, eyes follow. Keep back knee lifted. Every exhale: drive the rear hip crease toward the floor."},
+     2:{dur:"45s / side",how:"Same. Add a deliberate 3-second hold at the top of each rotation. Feel the thoracic spine actively opening."},
+     3:{dur:"45s / side",how:"At the top of rotation, remove the hand from the floor and hold the balance. Active thoracic control without support."},
+     4:{dur:"60s flow",how:"Flow continuously through the full sequence - lunge, rotate, reach, fold - without stopping. One continuous movement."},
+     5:{dur:"30s / side",how:"Use as movement prep before any session. Explore the full range freely."},
+   }},
+  {name:"Low Lunge - Quad Focus",totalSec:120,sideLabels:["right side","left side"],muscles:["Quads","Hip flexors"],priority:true,
+   phases:{
+     1:{dur:"60s / side",how:"Back knee on floor. Reach back and grab your rear ankle, heel toward glute. Use a towel if needed. Keep hips square. Feel it in the front of the rear thigh."},
+     2:{dur:"60s / side",how:"At end range, press your back knee into the floor for 5 seconds (isometric). Exhale, relax, sink deeper. 3 cycles per side."},
+     3:{dur:"45s / side",how:"In the lunge, lift the back foot toward your glute and hold actively - no hands. Quad and hip flexor strength in the shortened position."},
+     4:{dur:"60s flow",how:"Add a thoracic rotation: in the lunge, rotate toward the front leg and open the arm to ceiling."},
+     5:{dur:"45s / side",how:"Maintenance. Hip flexors are your historically tight area - never skip this one."},
+   }},
+  {name:"Butterfly Stretch",totalSec:90,sideLabels:[],muscles:["Adductors","Groin","Inner thighs"],
+   phases:{
+     1:{dur:"90s",how:"Soles of feet together, knees fall wide. Hold feet, sit tall. Gently press knees toward the floor with elbows. Heels closer to groin = deeper stretch."},
+     2:{dur:"60s + PNF",how:"Press knees up against your hands for 5 seconds. Exhale, let knees drop further. 3 cycles."},
+     3:{dur:"45s active",how:"Without using your hands, lower knees using active hip external rotation. Hold the lowest position you can achieve actively."},
+     4:{dur:"60s",how:"Bring feet progressively closer to groin. Explore the full range."},
+     5:{dur:"45s",how:"Maintenance. Good for adductor health given your hip thrust and inner thigh training volume."},
+   }},
+  {name:"Figure-4 / 90-90",totalSec:90,sideLabels:["right hip","left hip"],muscles:["Glutes","Piriformis","Hip rotators"],
+   phases:{
+     1:{dur:"45s / side",how:"Figure-4: lie on back, cross ankle over thigh, draw legs toward chest. OR 90-90: sit with both hips at 90 degrees, lean forward over front shin."},
+     2:{dur:"45s / side",how:"Press the ankle into the knee (isometric external rotation) for 5 seconds. Exhale, pull legs closer. 3 cycles per side."},
+     3:{dur:"45s / side",how:"Progress to 90-90 seated. Rotate torso forward over the front shin actively."},
+     4:{dur:"60s",how:"Flow from lying figure-4 to seated 90-90 to lean forward. One continuous exploration of the hip rotation chain."},
+     5:{dur:"45s / side",how:"Maintenance. Glute and piriformis health important given your hip thrust volume."},
+   }},
+  {name:"Seated Forward Fold",totalSec:90,sideLabels:[],muscles:["Hamstrings","Lower back","Calves"],
+   phases:{
+     1:{dur:"90s",how:"Legs straight, hinge forward from the hips - not the mid-back. Reach toward feet. Focus on a long neutral spine rather than extra depth."},
+     2:{dur:"60s + PNF",how:"Contract hamstrings by digging heels into floor (isometric) for 5 seconds. Exhale, fold deeper. 3 cycles."},
+     3:{dur:"45s active",how:"Straighten legs progressively. At end range, actively bring chest closer to legs using hip flexors - not just gravity."},
+     4:{dur:"60s",how:"Explore: narrow stance, wide stance, single leg forward fold. Find the tightest angle and spend time there."},
+     5:{dur:"45s",how:"Maintenance. Strong baseline here - just maintain."},
+   }},
+  {name:"Cobra Waves",totalSec:60,sideLabels:[],muscles:["Core / abs","Chest","Spine"],isDynamic:true,
+   phases:{
+     1:{dur:"60s / 5-7 waves",how:"Face down, hands under shoulders. Slowly press to cobra, hold 2-3 seconds, lower back, pause, rise again. 3-5 waves. Don't lock out or crank neck. Use back muscles, not just arms."},
+     2:{dur:"60s / 8-10 waves",how:"Progressively extend the range each wave. By the last few, aim for upward dog if comfortable."},
+     3:{dur:"45s active",how:"Hands hovering just off the floor - use your spinal extensors only to lift into cobra. Active back extension without arm assistance."},
+     4:{dur:"60s flow",how:"Full upward dog to downward dog flow. Combine extension and flexion in one wave pattern."},
+     5:{dur:"45s",how:"Maintenance. Dynamic spine work - keep it flowing, not held."},
+   }},
+  {name:"Thread the Needle",totalSec:120,sideLabels:["right arm under","left arm under"],muscles:["Shoulders","Chest","Thoracic spine"],
+   phases:{
+     1:{dur:"60s / side",how:"On all-fours, slide one arm under your body until shoulder and cheek rest on the ground. Press opposite hand into floor for deeper rotation. Keep hips level."},
+     2:{dur:"45s / side",how:"Add a gentle press of the extended arm into the floor at the deepest point to incrementally increase rotation."},
+     3:{dur:"30s / side",how:"Use the threading arm to press into the floor and actively drive the rotation deeper - use rhomboids and serratus rather than gravity."},
+     4:{dur:"45s",how:"Add small arm circles from the threaded position. Explore the full range of the posterior shoulder."},
+     5:{dur:"30s / side",how:"Maintenance. Important for overhead pressing and gymnastics shoulder health."},
+   }},
+  {name:"Overhead Lat / Triceps Stretch",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Lats","Long head triceps","Overhead shoulder"],isNew:true,
+   phases:{
+     1:{dur:"45s / side",how:"Raise one arm overhead, bend elbow so hand drops behind head. Use opposite hand to gently push elbow back and slightly across. Lean torso slightly away for lat bias. Keep ribs down."},
+     2:{dur:"45s / side",how:"Add a deliberate side bend away from the stretched arm to emphasise the lat. Feel the stretch run from hip to armpit."},
+     3:{dur:"30s / side",how:"Press your hand into the palm overhead - create resistance and hold the position actively without passive pull from the other arm."},
+     4:{dur:"45s / side",how:"Combine with world's greatest - from the lunge, reach the overhead lat stretch on the same side. Full anterior chain in one position."},
+     5:{dur:"30s / side",how:"Maintenance. Directly supports handstand overhead range and lat flexibility for pulling movements."},
+   }},
+  {name:"Cross-Body Shoulder",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Rhomboids","Mid-back","Rear deltoid"],
+   phases:{
+     1:{dur:"45s / side",how:"Arm across body at shoulder height. Hook opposite arm underneath and draw toward chest. Keep shoulder actively pressed down - don't let it shrug."},
+     2:{dur:"45s / side",how:"Explore at different heights - higher hits posterior capsule, lower hits rear delt. Spend more time at the tightest angle."},
+     3:{dur:"30s / side",how:"Slightly resist the pull with the stretched arm - create gentle tension without releasing. Eccentric hold in the posterior shoulder."},
+     4:{dur:"45s",how:"Combine with thoracic rotation - as you pull the arm across, rotate head and thorax in the opposite direction."},
+     5:{dur:"30s / side",how:"Maintenance. Rear delt health important given your lateral raise and reverse fly volume."},
+   }},
+  {name:"Knee-to-Wall Ankle",totalSec:90,sideLabels:["right ankle","left ankle"],muscles:["Ankle dorsiflexion","Achilles","Soleus"],isNew:true,isDynamic:true,
+   phases:{
+     1:{dur:"45s / side",how:"Stand facing a wall, foot 3-4 inches away. Drive knee toward the wall over your little toe while keeping heel completely flat. Touch wall, return, repeat slowly."},
+     2:{dur:"45s / side",how:"Same. Add a 2-second hold at end range before returning. Gradually increase foot-to-wall distance as range improves."},
+     3:{dur:"10 reps + 10s hold",how:"At end range of each rep, hold for 10 seconds - dorsiflexion strength at end range. Direct transfer to jumping and landing."},
+     4:{dur:"10 reps / side",how:"Progress to doing this on a slight step or incline. Test from further away from the wall."},
+     5:{dur:"10 reps / side",how:"Maintenance. Critical alongside your tendon work - keep this throughout Phase 3 plyometrics."},
+   }},
+  {name:"Wrist and Forearm",totalSec:90,sideLabels:["right - palm up","right - palm down","left - palm up","left - palm down"],muscles:["Wrist flexors","Wrist extensors","Forearms"],
+   phases:{
+     1:{dur:"90s total",how:"Arm extended at shoulder height. Palm up: pull fingers gently downward. Palm down: press the back of the hand toward you. About 22s per position."},
+     2:{dur:"90s + holds",how:"Add sustained holds in your most uncomfortable position - usually fingers pointing backwards. 10-second holds."},
+     3:{dur:"60s + holds",how:"Progress to wrist push-ups on knuckles. Then on finger pads if comfortable. Gymnastic wrist conditioning progression."},
+     4:{dur:"90s full",how:"Full gymnastic wrist conditioning: standard, knuckles, fingers, reverse, side-to-side, and active circles under load."},
+     5:{dur:"60s",how:"Maintenance. Supports handstand loading and long-term wrist health with keyboard use. Never skip."},
+   }},
+  {name:"Neck Release",totalSec:90,sideLabels:["right side tilt","left side tilt"],muscles:["Neck","Upper traps"],
+   phases:{
+     1:{dur:"45s / side",how:"Sit or stand tall. Gently tilt ear toward shoulder until you feel a pull along the side of the neck. Optional very light hand assist - do not crank. 45s per side."},
+     2:{dur:"30s / side",how:"Add gentle slow circles exploring the full cervical range. Keep it flowing, never jerky. Find the stiffest angles and breathe into them."},
+     3:{dur:"20s / side",how:"No hand assistance. Hold the tilted position using only neck muscles on the opposite side. Active cervical lateral flexion hold."},
+     4:{dur:"30s",how:"Explore combined movements - tilt and slight rotation simultaneously. Find the angles that feel compressed and breathe through them."},
+     5:{dur:"20s / side",how:"Maintenance. CS student priority - desk posture loads upper traps constantly. Never skip this."},
+   }},
 ];
 
-const TABS = [
-  { id: "fb",  label: "Full Body",  color: "#22c55e" },
-  { id: "p1",  label: "Tendon P1", color: "#ef4444" },
-  { id: "p2",  label: "Tendon P2", color: "#f97316" },
-  { id: "p3",  label: "Tendon P3", color: "#a78bfa" },
-  { id: "str", label: "Stretch",   color: "#06b6d4" },
-];
+const SPHASE = {
+  1:{name:"Foundation",color:"#06b6d4",months:"Months 1-3",
+     desc:"Static holds only. 3x per week minimum. Learn your body cues. Hip flexors are your priority area."},
+  2:{name:"PNF Introduction",color:"#8b5cf6",months:"Months 4-6",
+     desc:"Add contract-relax PNF to key stretches. Contract for 5s, exhale and relax deeper. 3 cycles per stretch."},
+  3:{name:"Active Flexibility",color:"#f59e0b",months:"Months 7-9",
+     desc:"Hold stretch positions without passive support. Build strength at end-range - critical for gymnastics and handstands."},
+  4:{name:"Integration",color:"#ec4899",months:"Months 10-12",
+     desc:"Flow between positions. Combine techniques. Explore advanced variations. Express the mobility you have built."},
+  5:{name:"Mastery + Maintenance",color:"#22c55e",months:"Ongoing",
+     desc:"3-4x per week maintenance. The goal now is to use the range in handstands, overhead pressing, and combat movement."},
+};
 
-function WeightChip({ exKey, defaultWeight, color, weights, onSave }) {
-  const [editing, setEditing] = useState(false);
-  const inputRef = useRef(null);
-  const stored = weights[exKey];
-  const current = stored !== undefined ? stored : (defaultWeight || "");
-  const [draft, setDraft] = useState(current);
-  const startEdit = (e) => { e.stopPropagation(); setDraft(current); setEditing(true); setTimeout(() => { if (inputRef.current) { inputRef.current.focus(); inputRef.current.select(); } }, 30); };
-  const commit = () => { onSave(exKey, draft.trim()); setEditing(false); };
-  if (editing) return <input ref={inputRef} value={draft} onChange={e => setDraft(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }} placeholder="e.g. 30kg" style={{ background: "#1e1e1e", border: `1.5px solid ${color}`, borderRadius: "7px", color: "#fff", fontSize: "12px", fontWeight: "600", padding: "4px 9px", outline: "none", width: "120px" }} />;
-  return <div onClick={startEdit} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "600", color: current ? color : "#3a3a3a", background: "#161616", border: `1px solid ${current ? color + "35" : "#222"}`, padding: "4px 9px", borderRadius: "7px", cursor: "pointer", userSelect: "none" }}>{current ? <><span>{current}</span><span style={{ fontSize: "9px", color: "#555" }}>✏</span></> : <span>+ weight</span>}</div>;
+// ── WEIGHT CHIP ────────────────────────────────────────────────────────────────
+function WeightChip({exKey,defaultWeight,color,weights,onSave}) {
+  const [editing,setEditing]=useState(false);
+  const inputRef=useRef(null);
+  const stored=weights[exKey];
+  const current=stored!==undefined?stored:(defaultWeight||"");
+  const [draft,setDraft]=useState(current);
+  const startEdit=e=>{
+    e.stopPropagation();setDraft(current);setEditing(true);
+    setTimeout(()=>{if(inputRef.current){inputRef.current.focus();inputRef.current.select();}},30);
+  };
+  const commit=()=>{onSave(exKey,draft.trim());setEditing(false);};
+  if(editing) return <input ref={inputRef} value={draft} onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} placeholder="e.g. 30kg" style={{background:"#1e1e1e",border:`1.5px solid ${color}`,borderRadius:"7px",color:"#fff",fontSize:"12px",fontWeight:"600",padding:"4px 9px",outline:"none",width:"110px"}}/>;
+  return <div onClick={startEdit} style={{display:"inline-flex",alignItems:"center",gap:"5px",fontSize:"12px",fontWeight:"600",color:current?color:"#3a3a3a",background:"#161616",border:`1px solid ${current?color+"35":"#222"}`,padding:"4px 9px",borderRadius:"7px",cursor:"pointer",userSelect:"none"}}>{current?<><span>{current}</span><span style={{fontSize:"9px",color:"#555"}}>✏</span></>:<span>+ weight</span>}</div>;
 }
 
-function ExerciseCard({ ex, idx, color, weights, onSave }) {
-  const [open, setOpen] = useState(false);
-  const [done, setDone] = useState(false);
-  const repsLine = ex.hold ? `${ex.sets}x${ex.reps} - ${ex.hold}` : `${ex.sets}x${ex.reps}`;
+// ── EXERCISE CARD (list mode) ──────────────────────────────────────────────────
+function ExCard({ex,idx,color,weights,onSave}) {
+  const [open,setOpen]=useState(false);
+  const [done,setDone]=useState(false);
+  const reps=ex.hold?`${ex.sets}x${ex.reps} - ${ex.hold}`:`${ex.sets}x${ex.reps}`;
   return (
-    <div style={{ background: ex.hero ? color + "0f" : "#111", border: `1px solid ${ex.hero ? color + "45" : "#1d1d1d"}`, borderRadius: "13px", marginBottom: "7px", overflow: "hidden", opacity: done ? 0.35 : 1, transition: "opacity 0.18s" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "13px 13px 0" }}>
-        <div onClick={() => setDone(d => !d)} style={{ width: "28px", height: "28px", borderRadius: "50%", flexShrink: 0, border: done ? "none" : `1.5px solid ${color}50`, background: done ? color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: done ? "13px" : "11px", fontWeight: "800", color: done ? "#000" : color }}>{done ? "v" : idx + 1}</div>
-        <div style={{ flex: 1, minWidth: 0 }} onClick={() => setOpen(o => !o)}>
-          <div style={{ fontSize: "14px", fontWeight: "600", color: ex.hero ? color : "#efefef", lineHeight: "1.3", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>{ex.name}{ex.hero && <span style={{ fontSize: "9px", background: color, color: "#000", padding: "2px 6px", borderRadius: "4px", fontWeight: "800" }}>HERO</span>}</div>
-          <div style={{ fontSize: "11px", color: "#404040", marginTop: "2px" }}>{ex.equip}</div>
+    <div style={{background:ex.hero?color+"0f":"#111",border:`1px solid ${ex.hero?color+"45":"#1d1d1d"}`,borderRadius:"13px",marginBottom:"7px",overflow:"hidden",opacity:done?0.35:1,transition:"opacity 0.18s"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"13px 13px 0"}}>
+        <div onClick={()=>setDone(d=>!d)} style={{width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,border:done?"none":`1.5px solid ${color}50`,background:done?color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:done?"13px":"11px",fontWeight:"800",color:done?"#000":color}}>{done?"✓":idx+1}</div>
+        <div style={{flex:1,minWidth:0}} onClick={()=>setOpen(o=>!o)}>
+          <div style={{fontSize:"14px",fontWeight:"600",color:ex.hero?color:"#efefef",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"5px"}}>{ex.name}{ex.hero&&<span style={{fontSize:"9px",background:color,color:"#000",padding:"2px 6px",borderRadius:"4px",fontWeight:"800"}}>HERO</span>}</div>
+          <div style={{fontSize:"11px",color:"#404040",marginTop:"2px"}}>{ex.equip}</div>
         </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }} onClick={() => setOpen(o => !o)}>
-          <div style={{ fontSize: "12px", fontWeight: "700", color: "#ddd" }}>{repsLine}</div>
-          {ex.tempo && <div style={{ fontSize: "10px", color: "#555", marginTop: "2px" }}>{ex.tempo}</div>}
-        </div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 13px 11px", gap: "8px" }}>
-        <WeightChip exKey={ex.name} defaultWeight={ex.defaultWeight} color={color} weights={weights} onSave={onSave} />
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "11px", color: "#555", background: "#1a1a1a", padding: "3px 8px", borderRadius: "6px" }}>rest {ex.rest}</span>
-          <span onClick={() => setOpen(o => !o)} style={{ fontSize: "11px", color: "#333", cursor: "pointer", padding: "4px" }}>{open ? "^ hide" : "v cue"}</span>
+        <div style={{textAlign:"right",flexShrink:0}} onClick={()=>setOpen(o=>!o)}>
+          <div style={{fontSize:"12px",fontWeight:"700",color:"#ddd"}}>{reps}</div>
+          {ex.tempo&&<div style={{fontSize:"10px",color:"#555",marginTop:"2px"}}>{ex.tempo}</div>}
         </div>
       </div>
-      {open && <div style={{ padding: "11px 13px 14px", borderTop: "1px solid #1a1a1a", background: "#0c0c0c", fontSize: "13px", color: "#bbb", lineHeight: "1.65" }}>{ex.cue}</div>}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 13px 11px",gap:"8px"}}>
+        <WeightChip exKey={ex.name} defaultWeight={ex.defaultWeight} color={color} weights={weights} onSave={onSave}/>
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <span style={{fontSize:"11px",color:"#555",background:"#1a1a1a",padding:"3px 8px",borderRadius:"6px"}}>rest {ex.rest}</span>
+          <span onClick={()=>setOpen(o=>!o)} style={{fontSize:"11px",color:"#333",cursor:"pointer",padding:"4px"}}>{open?"^ hide":"v cue"}</span>
+        </div>
+      </div>
+      {open&&<div style={{padding:"11px 13px 14px",borderTop:"1px solid #1a1a1a",background:"#0c0c0c",fontSize:"13px",color:"#bbb",lineHeight:"1.65"}}>{ex.cue}</div>}
     </div>
   );
 }
 
-function StretchCard({ stretch, idx, phase }) {
-  const [open, setOpen] = useState(false);
-  const [done, setDone] = useState(false);
-  const color = STRETCH_PHASES[phase].color;
-  const phaseData = stretch.phases[phase];
-  return (
-    <div style={{ background: "#111", border: `1px solid ${stretch.priority ? color + "40" : "#1d1d1d"}`, borderRadius: "13px", marginBottom: "7px", overflow: "hidden", opacity: done ? 0.35 : 1, transition: "opacity 0.18s" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "13px 13px 8px" }}>
-        <div onClick={() => setDone(d => !d)} style={{ width: "28px", height: "28px", borderRadius: "50%", flexShrink: 0, border: done ? "none" : `1.5px solid ${color}50`, background: done ? color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: done ? "13px" : "11px", fontWeight: "800", color: done ? "#000" : color }}>{done ? "v" : idx + 1}</div>
-        <div style={{ flex: 1, minWidth: 0 }} onClick={() => setOpen(o => !o)}>
-          <div style={{ fontSize: "14px", fontWeight: "600", color: "#efefef", lineHeight: "1.3", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>{stretch.name}{stretch.priority && <span style={{ fontSize: "9px", background: color, color: "#000", padding: "2px 6px", borderRadius: "4px", fontWeight: "800" }}>PRIORITY</span>}</div>
-          <div style={{ fontSize: "11px", color: "#404040", marginTop: "2px" }}>{stretch.target}</div>
-        </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }} onClick={() => setOpen(o => !o)}>
-          <div style={{ fontSize: "11px", fontWeight: "700", color }}>{phaseData.duration}</div>
-          <div style={{ fontSize: "10px", color: "#555", marginTop: "2px" }}>{stretch.type}</div>
-        </div>
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 13px 11px" }}>
-        <span onClick={() => setOpen(o => !o)} style={{ fontSize: "11px", color: "#333", cursor: "pointer", padding: "4px" }}>{open ? "^ hide" : "v cue"}</span>
-      </div>
-      {open && <div style={{ padding: "11px 13px 14px", borderTop: "1px solid #1a1a1a", background: "#0c0c0c", fontSize: "13px", color: "#bbb", lineHeight: "1.65" }}>{phaseData.cue}</div>}
+// ── SESSION MODE ───────────────────────────────────────────────────────────────
+function Session({exercises,color,weights,onSave,onExit}) {
+  const [exIdx,setExIdx]=useState(0);
+  const [setNum,setSetNum]=useState(1);
+  const [state,setState]=useState("working"); // working | resting | done
+  const [restSec,setRestSec]=useState(0);
+  const restTotal=useRef(0);
+  const timer=useRef(null);
+  
+  const ex=exercises[exIdx];
+  const totalSets=ex?ex.sets:1;
+  const doneSets=exercises.slice(0,exIdx).reduce((a,e)=>a+e.sets,0)+setNum-1;
+  const allSets=exercises.reduce((a,e)=>a+e.sets,0);
+  
+  const clear=()=>{if(timer.current){clearInterval(timer.current);timer.current=null;}};
+  
+  const advance=()=>{
+    clear();setRestSec(0);
+    const lastSet=setNum>=totalSets;
+    const lastEx=exIdx>=exercises.length-1;
+    if(lastSet&&lastEx){setState("done");return;}
+    if(lastSet){setExIdx(i=>i+1);setSetNum(1);}
+    else setSetNum(s=>s+1);
+    setState("working");
+  };
+  
+  const doneSet=()=>{
+    clear();
+    const lastSet=setNum>=totalSets;
+    const lastEx=exIdx>=exercises.length-1;
+    if(lastSet&&lastEx){setState("done");return;}
+    const secs=parseRestSec(ex.rest);
+    restTotal.current=secs;setRestSec(secs);setState("resting");
+    timer.current=setInterval(()=>{
+      setRestSec(s=>{
+        if(s<=1){clear();advance();return 0;}
+        return s-1;
+      });
+    },1000);
+  };
+  
+  const goTo=(i)=>{clear();setExIdx(Math.max(0,Math.min(i,exercises.length-1)));setSetNum(1);setState("working");setRestSec(0);};
+  useEffect(()=>()=>clear(),[]);
+  
+  if(state==="done") return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",height:"calc(100vh - 72px)"}}>
+      <div style={{fontSize:"52px",marginBottom:"16px"}}>🎉</div>
+      <div style={{fontSize:"22px",fontWeight:"700",marginBottom:"8px"}}>Session Complete</div>
+      <div style={{fontSize:"14px",color:"#666",marginBottom:"32px"}}>{allSets} sets done</div>
+      <button onClick={onExit} style={{padding:"14px 36px",borderRadius:"14px",background:color,color:"#000",fontSize:"16px",fontWeight:"800",cursor:"pointer",border:"none"}}>Done</button>
     </div>
   );
-}
-
-function FBView({ weights, onSave }) {
-  const color = "#22c55e";
-  let idx = 0;
+  
+  const R=40,C=2*Math.PI*R;
+  const rProg=restTotal.current>0?(restTotal.current-restSec)/restTotal.current:0;
+  
   return (
-    <div>
-      <div style={{ padding: "12px 16px 6px" }}><div style={{ fontSize: "12px", color: "#555" }}>0-2 RIR - 28 sets - approx 75 min - tap weight chip to edit</div></div>
-      <div style={{ padding: "0 12px 80px" }}>
-        {FB.map(sec => (
-          <div key={sec.section}>
-            <div style={{ fontSize: "10px", fontWeight: "800", color: "#3a3a3a", letterSpacing: "0.12em", padding: "10px 2px 6px" }}>{sec.section}</div>
-            {sec.exercises.map(ex => <ExerciseCard key={ex.name} ex={ex} idx={idx++} color={color} weights={weights} onSave={onSave} />)}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TendonView({ data, color, weights, onSave }) {
-  let idx = 0;
-  return (
-    <div>
-      <div style={{ padding: "12px 16px 8px" }}>
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "10px", padding: "10px 12px" }}>
-          <div style={{ fontSize: "12px", color, fontWeight: "700", marginBottom: "3px" }}>Protocol note</div>
-          <div style={{ fontSize: "12px", color: "#888", lineHeight: "1.5" }}>{data.meta}</div>
+    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 72px)"}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:"1px solid #1a1a1a",flexShrink:0}}>
+        <button onClick={onExit} style={{background:"none",color:"#555",fontSize:"13px",fontWeight:"600",cursor:"pointer",padding:"6px 0",border:"none"}}>← List</button>
+        <div style={{fontSize:"12px",color:"#666",textAlign:"center"}}>
+          <div style={{fontWeight:"700"}}>{doneSets}/{allSets} sets</div>
+          <div style={{color:"#444",fontSize:"11px"}}>exercise {exIdx+1}/{exercises.length}</div>
+        </div>
+        <div style={{display:"flex",gap:"6px"}}>
+          <button onClick={()=>goTo(exIdx-1)} disabled={exIdx===0} style={{background:"#1a1a1a",color:exIdx===0?"#2a2a2a":"#777",padding:"6px 12px",borderRadius:"8px",fontSize:"13px",fontWeight:"700",cursor:exIdx===0?"default":"pointer",border:"none"}}>←</button>
+          <button onClick={()=>goTo(exIdx+1)} disabled={exIdx===exercises.length-1} style={{background:"#1a1a1a",color:exIdx===exercises.length-1?"#2a2a2a":"#777",padding:"6px 12px",borderRadius:"8px",fontSize:"13px",fontWeight:"700",cursor:exIdx===exercises.length-1?"default":"pointer",border:"none"}}>→</button>
         </div>
       </div>
-      <div style={{ padding: "0 12px 80px" }}>
-        {data.sessions.map(session => (
-          <div key={session.label}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "12px 2px 6px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "800", color: color + "cc", letterSpacing: "0.1em" }}>{session.label}</div>
-              <div style={{ fontSize: "11px", color: "#444" }}>{session.day}</div>
-            </div>
-            {session.exercises.map(ex => <ExerciseCard key={ex.name + session.label} ex={ex} idx={idx++} color={color} weights={weights} onSave={onSave} />)}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StretchView() {
-  const [phase, setPhase] = useState(1);
-  const phaseInfo = STRETCH_PHASES[phase];
-  const color = phaseInfo.color;
-  return (
-    <div>
-      <div style={{ padding: "12px 12px 8px" }}>
-        <div style={{ display: "flex", gap: "5px", marginBottom: "10px" }}>
-          {[1,2,3,4,5].map(p => (
-            <button key={p} onClick={() => setPhase(p)} style={{ flex: 1, padding: "7px 2px", borderRadius: "9px", border: phase === p ? `1.5px solid ${STRETCH_PHASES[p].color}` : "1.5px solid #1e1e1e", background: phase === p ? STRETCH_PHASES[p].color + "18" : "transparent", color: phase === p ? STRETCH_PHASES[p].color : "#444", fontSize: "11px", fontWeight: "800", cursor: "pointer", transition: "all 0.12s" }}>P{p}</button>
+      
+      <div style={{flex:1,overflowY:"auto",padding:"20px 20px 0"}}>
+        {ex.section&&<div style={{fontSize:"10px",fontWeight:"800",color:"#3a3a3a",letterSpacing:"0.12em",marginBottom:"6px"}}>{ex.section}</div>}
+        <div style={{fontSize:"24px",fontWeight:"700",lineHeight:"1.2",marginBottom:"6px",color:ex.hero?color:"#fff"}}>{ex.name}</div>
+        <div style={{fontSize:"13px",color:"#555",marginBottom:"16px"}}>{ex.equip}</div>
+        
+        {/* Set progress bars */}
+        <div style={{display:"flex",gap:"6px",marginBottom:"16px"}}>
+          {Array.from({length:totalSets},(_,i)=>(
+            <div key={i} style={{flex:1,height:"5px",borderRadius:"3px",transition:"background 0.3s",
+              background:i<setNum-1?color:i===setNum-1?state==="resting"?color+"66":color:"#222"}}/>
           ))}
         </div>
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "10px", padding: "10px 12px", marginBottom: "8px" }}>
-          <div style={{ fontSize: "12px", fontWeight: "700", color, marginBottom: "3px" }}>{phaseInfo.label} - {phaseInfo.name}</div>
-          <div style={{ fontSize: "12px", color: "#888", lineHeight: "1.5" }}>{phaseInfo.meta}</div>
+        
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
+          <div style={{fontSize:"22px",fontWeight:"700",color:color}}>SET {setNum}<span style={{fontSize:"14px",color:"#555"}}> / {totalSets}</span></div>
+          <WeightChip exKey={ex.name} defaultWeight={ex.defaultWeight} color={color} weights={weights} onSave={onSave}/>
         </div>
-        <div style={{ fontSize: "12px", color: "#555", paddingLeft: "2px" }}>13 stretches - 20 min - tap number to check off</div>
+        
+        {ex.reps&&<div style={{display:"inline-flex",alignItems:"center",background:"#1a1a1a",padding:"8px 14px",borderRadius:"10px",fontSize:"14px",color:"#ddd",fontWeight:"600",marginBottom:"14px"}}>{ex.reps}</div>}
+        
+        <div style={{fontSize:"13px",color:"#888",lineHeight:"1.6",marginBottom:"16px"}}>{ex.cue}</div>
       </div>
-      <div style={{ padding: "0 12px 80px" }}>
-        {STRETCHES.map((s, i) => <StretchCard key={s.name} stretch={s} idx={i} phase={phase} />)}
+      
+      {/* Bottom */}
+      <div style={{padding:"14px 20px 30px",borderTop:"1px solid #1a1a1a",flexShrink:0}}>
+        {state==="working"&&(
+          <button onClick={doneSet} style={{width:"100%",padding:"18px",borderRadius:"16px",background:color,color:"#000",fontSize:"18px",fontWeight:"800",cursor:"pointer",border:"none"}}>
+            ✓ Done Set {setNum}
+          </button>
+        )}
+        {state==="resting"&&(
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"12px",color:"#555",marginBottom:"10px",fontWeight:"600",letterSpacing:"0.08em"}}>REST</div>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:"10px"}}>
+              <svg width="96" height="96" viewBox="0 0 96 96">
+                <circle cx="48" cy="48" r={R} fill="none" stroke="#1e1e1e" strokeWidth="7"/>
+                <circle cx="48" cy="48" r={R} fill="none" stroke={color} strokeWidth="7"
+                  strokeDasharray={C} strokeDashoffset={C*(1-rProg)} strokeLinecap="round"
+                  transform="rotate(-90 48 48)" style={{transition:"stroke-dashoffset 0.9s linear"}}/>
+                <text x="48" y="55" textAnchor="middle" style={{fontSize:"20px",fontWeight:"700",fill:"#fff"}}>{fmt(restSec)}</text>
+              </svg>
+            </div>
+            <button onClick={()=>{clear();advance();}} style={{width:"100%",padding:"15px",borderRadius:"14px",background:"#1a1a1a",color:"#777",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"1px solid #2a2a2a"}}>
+              Skip Rest →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function App() {
-  const [tab, setTab] = useState("fb");
-  const [weights, setWeights] = useState({});
-  useEffect(() => { try { const s = localStorage.getItem("workout-weights"); if (s) setWeights(JSON.parse(s)); } catch (_) {} }, []);
-  const handleSave = (exKey, value) => { const updated = { ...weights, [exKey]: value }; setWeights(updated); try { localStorage.setItem("workout-weights", JSON.stringify(updated)); } catch (_) {} };
-  const tendonData  = { p1: T1, p2: T2, p3: T3 };
-  const tendonColor = { p1: "#ef4444", p2: "#f97316", p3: "#a78bfa" };
-  const tabTitle = { fb: "Full Body", p1: "Tendon - Phase 1", p2: "Tendon - Phase 2", p3: "Tendon - Phase 3", str: "Stretching" };
-  const tabSub   = { p1: "Weeks 1-4 - Isometric", p2: "Weeks 5-8 - Heavy Slow", p3: "Weeks 9-12 - Plyometric", str: "13 stretches - 5 phase year plan" };
+// ── STRETCH TIMER ──────────────────────────────────────────────────────────────
+function StretchTimer({phase,onExit}) {
+  const meta=SPHASE[phase];
+  const [idx,setIdx]=useState(0);
+  const [sec,setSec]=useState(0);
+  const [sideIdx,setSideIdx]=useState(0);
+  const [running,setRunning]=useState(false);
+  const [finished,setFinished]=useState(false);
+  const timer=useRef(null);
+  
+  const S=STRETCHES;
+  const ns=s=>s.sideLabels.length||1;
+  const sps=s=>Math.round(s.totalSec/ns(s));
+  const cumStarts=[];let cum=0;S.forEach(s=>{cumStarts.push(cum);cum+=s.totalSec;});
+  const totalSec=cum;
+  
+  const clear=()=>{if(timer.current){clearInterval(timer.current);timer.current=null;}};
+  
+  useEffect(()=>{
+    if(!running)return;
+    timer.current=setInterval(()=>{
+      setSec(prev=>{
+        const s=S[idx];
+        const ns2=prev+1;
+        const sp=sps(s);
+        const newSide=Math.min(Math.floor(ns2/sp),ns(s)-1);
+        if(newSide!==sideIdx)setSideIdx(newSide);
+        if(ns2>=s.totalSec){
+          clear();setRunning(false);
+          if(idx<S.length-1){
+            setTimeout(()=>{setIdx(i=>i+1);setSec(0);setSideIdx(0);setRunning(true);},700);
+          } else {
+            setFinished(true);
+          }
+          return s.totalSec;
+        }
+        return ns2;
+      });
+    },1000);
+    return clear;
+  },[running,idx,sideIdx]);
+  
+  useEffect(()=>()=>clear(),[]);
+  
+  const next=()=>{clear();setRunning(false);if(idx<S.length-1){setIdx(i=>i+1);setSec(0);setSideIdx(0);}};
+  const prev=()=>{clear();setRunning(false);if(idx>0){setIdx(i=>i-1);setSec(0);setSideIdx(0);}};
+  const toggle=()=>{if(running){clear();setRunning(false);}else setRunning(true);};
+  const reset=()=>{clear();setRunning(false);setIdx(0);setSec(0);setSideIdx(0);setFinished(false);};
+  
+  if(finished) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",height:"calc(100vh - 72px)"}}>
+      <div style={{fontSize:"52px",marginBottom:"16px"}}>✨</div>
+      <div style={{fontSize:"22px",fontWeight:"700",marginBottom:"8px"}}>Stretch Complete</div>
+      <div style={{fontSize:"14px",color:"#666",marginBottom:"32px"}}>20 min · 13 stretches done</div>
+      <div style={{display:"flex",gap:"12px"}}>
+        <button onClick={reset} style={{padding:"14px 24px",borderRadius:"14px",background:"#1a1a1a",color:"#888",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>Again</button>
+        <button onClick={onExit} style={{padding:"14px 24px",borderRadius:"14px",background:meta.color,color:"#000",fontSize:"14px",fontWeight:"800",cursor:"pointer",border:"none"}}>Done</button>
+      </div>
+    </div>
+  );
+  
+  const stretch=S[idx];
+  const sp=sps(stretch);
+  const sideElapsed=sec-sideIdx*sp;
+  const frac=Math.min(sideElapsed/sp,1);
+  const R=38,Circ=2*Math.PI*R;
+  const elapsed=cumStarts[idx]+sec;
+  const totalPct=Math.min(Math.round(elapsed/totalSec*100),100);
+  const em=Math.floor(elapsed/60),es=elapsed%60;
+  const how=stretch.phases[phase]?.how||stretch.phases[1].how;
+  const dur=stretch.phases[phase]?.dur||"";
+  
   return (
-    <div style={{ background: "#080808", minHeight: "100vh", color: "#fff", maxWidth: "430px", margin: "0 auto" }}>
-      <div style={{ position: "sticky", top: 0, zIndex: 20, background: "#080808", borderBottom: "1px solid #1a1a1a", padding: "14px 12px 12px" }}>
-        <div style={{ display: "flex", gap: "5px", marginBottom: "12px", overflowX: "auto" }}>
-          {TABS.map(t => { const active = tab === t.id; return <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: "0 0 auto", padding: "7px 10px", borderRadius: "10px", border: active ? `1.5px solid ${t.color}` : "1.5px solid #1e1e1e", background: active ? t.color + "18" : "transparent", color: active ? t.color : "#444", fontSize: "11px", fontWeight: "800", cursor: "pointer", transition: "all 0.12s", whiteSpace: "nowrap" }}>{t.label}</button>; })}
+    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 72px)"}}>
+      {/* Progress dots */}
+      <div style={{padding:"10px 16px 0",display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+        <div style={{display:"flex",gap:"4px",flex:1,flexWrap:"wrap"}}>
+          {S.map((_,i)=>(
+            <div key={i} style={{width:"8px",height:"8px",borderRadius:"50%",background:i<idx?meta.color:i===idx?"#fff":"#222",transition:"background 0.3s"}}/>
+          ))}
         </div>
-        <div style={{ paddingLeft: "2px" }}>
-          <div style={{ fontSize: "19px", fontWeight: "700", lineHeight: "1.2" }}>{tabTitle[tab]}</div>
-          {tabSub[tab] && <div style={{ fontSize: "12px", color: "#555", marginTop: "2px" }}>{tabSub[tab]}</div>}
+        <span style={{fontSize:"11px",color:"#555",whiteSpace:"nowrap",marginLeft:"6px"}}>{idx+1}/13</span>
+        <button onClick={onExit} style={{background:"none",color:"#444",fontSize:"13px",cursor:"pointer",padding:"0 0 0 10px",border:"none",fontWeight:"600"}}>Exit</button>
+      </div>
+      
+      {/* Main card */}
+      <div style={{flex:1,padding:"14px 16px",overflowY:"auto"}}>
+        <div style={{background:"#111",border:"1px solid #1d1d1d",borderRadius:"16px",padding:"16px",marginBottom:"10px"}}>
+          <div style={{display:"flex",gap:"14px"}}>
+            {/* Ring */}
+            <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r={R} fill="none" stroke="#1e1e1e" strokeWidth="6"/>
+                <circle cx="44" cy="44" r={R} fill="none" stroke={meta.color} strokeWidth="6"
+                  strokeDasharray={Circ} strokeDashoffset={frac*Circ} strokeLinecap="round"
+                  transform="rotate(-90 44 44)" style={{transition:"stroke-dashoffset 0.95s linear"}}/>
+                <text x="44" y="51" textAnchor="middle" style={{fontSize:"16px",fontWeight:"700",fill:"#fff"}}>{Math.max(stretch.totalSec-sec,0)}s</text>
+              </svg>
+              <span style={{fontSize:"11px",color:"#555",fontStyle:"italic",textAlign:"center",maxWidth:"88px",minHeight:"14px"}}>
+                {stretch.sideLabels.length>0?stretch.sideLabels[Math.min(sideIdx,stretch.sideLabels.length-1)]:running?"hold":sec>0?"paused":"ready"}
+              </span>
+            </div>
+            {/* Info */}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",gap:"4px",marginBottom:"5px",flexWrap:"wrap"}}>
+                {stretch.priority&&<span style={{fontSize:"10px",fontWeight:"700",background:meta.color+"30",color:meta.color,padding:"2px 7px",borderRadius:"8px"}}>Priority</span>}
+                {stretch.isNew&&<span style={{fontSize:"10px",fontWeight:"700",background:"#22c55e20",color:"#22c55e",padding:"2px 7px",borderRadius:"8px"}}>New</span>}
+                {stretch.isDynamic&&<span style={{fontSize:"10px",fontWeight:"700",background:"#3b82f620",color:"#3b82f6",padding:"2px 7px",borderRadius:"8px"}}>Dynamic</span>}
+              </div>
+              <div style={{fontSize:"17px",fontWeight:"700",marginBottom:"4px",lineHeight:"1.2"}}>{stretch.name}</div>
+              <div style={{fontSize:"11px",color:meta.color,marginBottom:"6px",fontWeight:"600"}}>{dur}</div>
+              <div style={{fontSize:"11px",color:"#404040",marginBottom:"8px"}}>{stretch.muscles.join(" · ")}</div>
+            </div>
+          </div>
+          <div style={{fontSize:"13px",color:"#999",lineHeight:"1.65",marginTop:"10px",paddingTop:"10px",borderTop:"1px solid #1a1a1a"}}>{how}</div>
         </div>
       </div>
-      {tab === "fb"  && <FBView weights={weights} onSave={handleSave} />}
-      {tab === "str" && <StretchView />}
-      {["p1","p2","p3"].includes(tab) && <TendonView data={tendonData[tab]} color={tendonColor[tab]} weights={weights} onSave={handleSave} />}
+      
+      {/* Controls */}
+      <div style={{padding:"10px 16px 26px",borderTop:"1px solid #1a1a1a",flexShrink:0}}>
+        <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
+          <button onClick={prev} style={{padding:"12px 14px",borderRadius:"12px",background:"#1a1a1a",color:"#666",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>← Back</button>
+          <button onClick={toggle} style={{flex:1,padding:"12px",borderRadius:"12px",background:meta.color,color:"#000",fontSize:"15px",fontWeight:"800",cursor:"pointer",border:"none"}}>
+            {running?"Pause":sec===0?"Start Timer":"Resume"}
+          </button>
+          <button onClick={next} style={{padding:"12px 14px",borderRadius:"12px",background:"#1a1a1a",color:"#666",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>Skip →</button>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{flex:1,height:"3px",background:"#1a1a1a",borderRadius:"2px"}}>
+            <div style={{height:"100%",borderRadius:"2px",background:meta.color,width:`${totalPct}%`,transition:"width 0.4s"}}/>
+          </div>
+          <span style={{fontSize:"11px",color:"#444",whiteSpace:"nowrap"}}>{em}:{String(es).padStart(2,"0")} / 20:00</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// ── FULL BODY VIEW ──────────────────────────────────────────────────────────────
+function FBView({weights,onSave}) {
+  const color="#22c55e";
+  const [mode,setMode]=useState("list");
+  let idx=0;
+  if(mode==="session") return <Session exercises={FB_FLAT} color={color} weights={weights} onSave={onSave} onExit={()=>setMode("list")}/>;
+  return (
+    <div>
+      <div style={{padding:"12px 16px 6px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{fontSize:"12px",color:"#555"}}>0-2 RIR · 28 sets · ~75 min · tap weight to edit</div>
+        <button onClick={()=>setMode("session")} style={{padding:"8px 18px",borderRadius:"10px",background:color,color:"#000",fontSize:"13px",fontWeight:"800",cursor:"pointer",border:"none"}}>Start ▶</button>
+      </div>
+      <div style={{padding:"0 12px 80px"}}>
+        {FB_SECTIONS.map(sec=>(
+          <div key={sec.section}>
+            <div style={{fontSize:"10px",fontWeight:"800",color:"#3a3a3a",letterSpacing:"0.12em",padding:"10px 2px 6px"}}>{sec.section}</div>
+            {sec.exercises.map(ex=><ExCard key={ex.name} ex={ex} idx={idx++} color={color} weights={weights} onSave={onSave}/>)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── TENDON VIEW ─────────────────────────────────────────────────────────────────
+function TendonView({weights,onSave}) {
+  const [phase,setPhase]=useState("p1");
+  const [session,setSession]=useState("A");
+  const [mode,setMode]=useState("list");
+  const pd=TENDON[phase];
+  const color=pd.color;
+  const sd=pd.sessions.find(s=>s.label===`SESSION ${session}`);
+  const exercises=sd.exercises;
+  let idx=0;
+  
+  if(mode==="session") return <Session exercises={exercises} color={color} weights={weights} onSave={onSave} onExit={()=>setMode("list")}/>;
+  
+  return (
+    <div>
+      <div style={{padding:"12px 12px 8px"}}>
+        {/* Phase picker */}
+        <div style={{display:"flex",gap:"6px",marginBottom:"8px"}}>
+          {["p1","p2","p3"].map(p=>{
+            const d=TENDON[p],a=phase===p;
+            return <button key={p} onClick={()=>{setPhase(p);setMode("list");}} style={{flex:1,padding:"8px 4px",borderRadius:"10px",border:a?`1.5px solid ${d.color}`:"1.5px solid #1e1e1e",background:a?d.color+"18":"transparent",color:a?d.color:"#444",fontSize:"11px",fontWeight:"800",cursor:"pointer",transition:"all 0.12s"}}>{d.label}<br/><span style={{fontSize:"9px",fontWeight:"600",opacity:0.7}}>{d.name}</span></button>;
+          })}
+        </div>
+        {/* Session picker */}
+        <div style={{display:"flex",gap:"6px",marginBottom:"10px"}}>
+          {["A","B"].map(s=>(
+            <button key={s} onClick={()=>setSession(s)} style={{flex:1,padding:"9px",borderRadius:"10px",border:session===s?`1.5px solid ${color}`:"1.5px solid #1e1e1e",background:session===s?color+"18":"transparent",color:session===s?color:"#444",fontSize:"13px",fontWeight:"700",cursor:"pointer",transition:"all 0.12s"}}>
+              Session {s}<br/><span style={{fontSize:"10px",fontWeight:"500",opacity:0.7}}>{TENDON[phase].sessions.find(x=>x.label===`SESSION ${s}`)?.day}</span>
+            </button>
+          ))}
+        </div>
+        {/* Meta */}
+        <div style={{background:"#111",border:"1px solid #1e1e1e",borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}}>
+          <div style={{fontSize:"12px",fontWeight:"700",color,marginBottom:"3px"}}>{pd.name} · {pd.weeks}</div>
+          <div style={{fontSize:"12px",color:"#888",lineHeight:"1.5"}}>{pd.meta}</div>
+        </div>
+        <div style={{display:"flex",justifyContent:"flex-end"}}>
+          <button onClick={()=>setMode("session")} style={{padding:"9px 20px",borderRadius:"10px",background:color,color:"#000",fontSize:"13px",fontWeight:"800",cursor:"pointer",border:"none"}}>Start ▶</button>
+        </div>
+      </div>
+      <div style={{padding:"0 12px 80px"}}>
+        {exercises.map(ex=><ExCard key={ex.name+phase+session} ex={ex} idx={idx++} color={color} weights={weights} onSave={onSave}/>)}
+      </div>
+    </div>
+  );
+}
+
+// ── STRETCH VIEW ────────────────────────────────────────────────────────────────
+function StretchView() {
+  const [phase,setPhase]=useState(1);
+  const [mode,setMode]=useState("list");
+  const meta=SPHASE[phase];
+  
+  if(mode==="timer") return <StretchTimer phase={phase} onExit={()=>setMode("list")}/>;
+  
+  return (
+    <div>
+      <div style={{padding:"12px 12px 8px"}}>
+        <div style={{display:"flex",gap:"5px",marginBottom:"10px"}}>
+          {[1,2,3,4,5].map(p=>{
+            const pm=SPHASE[p],a=phase===p;
+            return <button key={p} onClick={()=>setPhase(p)} style={{flex:1,padding:"7px 2px",borderRadius:"9px",border:a?`1.5px solid ${pm.color}`:"1.5px solid #1e1e1e",background:a?pm.color+"18":"transparent",color:a?pm.color:"#444",fontSize:"11px",fontWeight:"800",cursor:"pointer",transition:"all 0.12s"}}>P{p}</button>;
+          })}
+        </div>
+        <div style={{background:"#111",border:"1px solid #1e1e1e",borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}}>
+          <div style={{fontSize:"12px",fontWeight:"700",color:meta.color,marginBottom:"3px"}}>{meta.name} · {meta.months}</div>
+          <div style={{fontSize:"12px",color:"#888",lineHeight:"1.5"}}>{meta.desc}</div>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
+          <div style={{fontSize:"12px",color:"#555"}}>13 stretches · 20 min · tap card for cue</div>
+          <button onClick={()=>setMode("timer")} style={{padding:"9px 18px",borderRadius:"10px",background:meta.color,color:"#000",fontSize:"13px",fontWeight:"800",cursor:"pointer",border:"none"}}>Start Timer ▶</button>
+        </div>
+      </div>
+      <div style={{padding:"0 12px 80px"}}>
+        {STRETCHES.map((stretch,i)=>{
+          const [open,setOpen]=useState(false);
+          const pd=stretch.phases[phase];
+          return (
+            <div key={stretch.name} style={{background:"#111",border:`1px solid ${stretch.priority?meta.color+"40":"#1d1d1d"}`,borderRadius:"13px",marginBottom:"7px",overflow:"hidden"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"13px 13px 11px",cursor:"pointer"}} onClick={()=>setOpen(o=>!o)}>
+                <div style={{width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,border:`1.5px solid ${meta.color}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:"800",color:meta.color}}>{i+1}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:"14px",fontWeight:"600",color:"#efefef",display:"flex",alignItems:"center",gap:"5px",flexWrap:"wrap"}}>
+                    {stretch.name}
+                    {stretch.priority&&<span style={{fontSize:"9px",background:meta.color,color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>PRIORITY</span>}
+                    {stretch.isNew&&<span style={{fontSize:"9px",background:"#22c55e",color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>NEW</span>}
+                  </div>
+                  <div style={{fontSize:"11px",color:"#404040",marginTop:"2px"}}>{stretch.muscles.join(" · ")}</div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <div style={{fontSize:"11px",fontWeight:"700",color:meta.color}}>{pd?.dur}</div>
+                  <div style={{fontSize:"10px",color:"#444",marginTop:"2px"}}>{stretch.isDynamic?"Dynamic":"Static"}</div>
+                </div>
+              </div>
+              {open&&<div style={{padding:"0 13px 13px",fontSize:"13px",color:"#bbb",lineHeight:"1.65",borderTop:"1px solid #1a1a1a",paddingTop:"11px"}}>{pd?.how}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── APP ────────────────────────────────────────────────────────────────────────
+function App() {
+  const [tab,setTab]=useState("fb");
+  const [weights,setWeights]=useState({});
+  useEffect(()=>{try{const s=localStorage.getItem("workout-weights");if(s)setWeights(JSON.parse(s));}catch(_){};},[]);
+  const save=(key,val)=>{const u={...weights,[key]:val};setWeights(u);try{localStorage.setItem("workout-weights",JSON.stringify(u));}catch(_){}};
+  const TABS=[{id:"fb",label:"Full Body",color:"#22c55e"},{id:"ten",label:"Tendon",color:"#ef4444"},{id:"str",label:"Stretch",color:"#06b6d4"}];
+  const TT={fb:"Full Body",ten:"Tendon Strengthening",str:"Stretching"};
+  const TS={fb:"0-2 RIR · 28 sets · ~75 min",ten:"12-week program · Phases 1-3",str:"13 stretches · 20 min · 5-phase plan"};
+  return (
+    <div style={{background:"#080808",minHeight:"100vh",color:"#fff",maxWidth:"430px",margin:"0 auto"}}>
+      <div style={{position:"sticky",top:0,zIndex:20,background:"#080808",borderBottom:"1px solid #1a1a1a",padding:"14px 12px 12px"}}>
+        <div style={{display:"flex",gap:"8px",marginBottom:"12px"}}>
+          {TABS.map(t=>{const a=tab===t.id;return <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"10px",borderRadius:"12px",border:a?`1.5px solid ${t.color}`:"1.5px solid #1e1e1e",background:a?t.color+"18":"transparent",color:a?t.color:"#444",fontSize:"13px",fontWeight:"800",cursor:"pointer",transition:"all 0.12s"}}>{t.label}</button>;})}
+        </div>
+        <div style={{paddingLeft:"2px"}}>
+          <div style={{fontSize:"19px",fontWeight:"700",lineHeight:"1.2"}}>{TT[tab]}</div>
+          <div style={{fontSize:"12px",color:"#555",marginTop:"2px"}}>{TS[tab]}</div>
+        </div>
+      </div>
+      {tab==="fb"&&<FBView weights={weights} onSave={save}/>}
+      {tab==="ten"&&<TendonView weights={weights} onSave={save}/>}
+      {tab==="str"&&<StretchView/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
