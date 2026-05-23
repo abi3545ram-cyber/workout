@@ -662,6 +662,32 @@ function TendonView({weights,onSave}) {
   );
 }
 
+// ── STRETCH LIST CARD (needs own component so useState is legal) ────────────────
+function StretchListCard({stretch,idx,phase,meta}) {
+  const [open,setOpen]=useState(false);
+  const pd=stretch.phases[phase];
+  return (
+    <div style={{background:"#111",border:`1px solid ${stretch.priority?meta.color+"40":"#1d1d1d"}`,borderRadius:"13px",marginBottom:"7px",overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"13px 13px 11px",cursor:"pointer"}} onClick={()=>setOpen(o=>!o)}>
+        <div style={{width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,border:`1.5px solid ${meta.color}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:"800",color:meta.color}}>{idx+1}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:"14px",fontWeight:"600",color:"#efefef",display:"flex",alignItems:"center",gap:"5px",flexWrap:"wrap"}}>
+            {stretch.name}
+            {stretch.priority&&<span style={{fontSize:"9px",background:meta.color,color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>PRIORITY</span>}
+            {stretch.isNew&&<span style={{fontSize:"9px",background:"#22c55e",color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>NEW</span>}
+          </div>
+          <div style={{fontSize:"11px",color:"#404040",marginTop:"2px"}}>{stretch.muscles.join(" · ")}</div>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{fontSize:"11px",fontWeight:"700",color:meta.color}}>{pd?.dur}</div>
+          <div style={{fontSize:"10px",color:"#444",marginTop:"2px"}}>{stretch.isDynamic?"Dynamic":"Static"}</div>
+        </div>
+      </div>
+      {open&&<div style={{padding:"11px 13px 13px",fontSize:"13px",color:"#bbb",lineHeight:"1.65",borderTop:"1px solid #1a1a1a"}}>{pd?.how}</div>}
+    </div>
+  );
+}
+
 // ── STRETCH VIEW ────────────────────────────────────────────────────────────────
 function StretchView() {
   const [phase,setPhase]=useState(1);
@@ -689,30 +715,9 @@ function StretchView() {
         </div>
       </div>
       <div style={{padding:"0 12px 80px"}}>
-        {STRETCHES.map((stretch,i)=>{
-          const [open,setOpen]=useState(false);
-          const pd=stretch.phases[phase];
-          return (
-            <div key={stretch.name} style={{background:"#111",border:`1px solid ${stretch.priority?meta.color+"40":"#1d1d1d"}`,borderRadius:"13px",marginBottom:"7px",overflow:"hidden"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"13px 13px 11px",cursor:"pointer"}} onClick={()=>setOpen(o=>!o)}>
-                <div style={{width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,border:`1.5px solid ${meta.color}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:"800",color:meta.color}}>{i+1}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:"14px",fontWeight:"600",color:"#efefef",display:"flex",alignItems:"center",gap:"5px",flexWrap:"wrap"}}>
-                    {stretch.name}
-                    {stretch.priority&&<span style={{fontSize:"9px",background:meta.color,color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>PRIORITY</span>}
-                    {stretch.isNew&&<span style={{fontSize:"9px",background:"#22c55e",color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>NEW</span>}
-                  </div>
-                  <div style={{fontSize:"11px",color:"#404040",marginTop:"2px"}}>{stretch.muscles.join(" · ")}</div>
-                </div>
-                <div style={{textAlign:"right",flexShrink:0}}>
-                  <div style={{fontSize:"11px",fontWeight:"700",color:meta.color}}>{pd?.dur}</div>
-                  <div style={{fontSize:"10px",color:"#444",marginTop:"2px"}}>{stretch.isDynamic?"Dynamic":"Static"}</div>
-                </div>
-              </div>
-              {open&&<div style={{padding:"0 13px 13px",fontSize:"13px",color:"#bbb",lineHeight:"1.65",borderTop:"1px solid #1a1a1a",paddingTop:"11px"}}>{pd?.how}</div>}
-            </div>
-          );
-        })}
+        {STRETCHES.map((stretch,i)=>(
+          <StretchListCard key={stretch.name} stretch={stretch} idx={i} phase={phase} meta={meta}/>
+        ))}
       </div>
     </div>
   );
