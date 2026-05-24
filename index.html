@@ -4,447 +4,736 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Workout">
-  <meta name="theme-color" content="#080808">
+  <meta name="theme-color" content="#111111">
   <title>Workout</title>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    html,body{height:100%;background:#080808;color:#fff}
-    body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain;font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,sans-serif}
-    input,button{font-family:inherit;border:none}
-    ::-webkit-scrollbar{display:none}
-    *{scrollbar-width:none}
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: #111; color: #fff; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    input, button, textarea { font-family: inherit; border: none; outline: none; }
+    textarea { resize: none; }
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
+    button:active { opacity: 0.7; }
+
+    .modal-bg {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.65);
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .modal-body {
+      background: #1c1c1e; border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 430px;
+      max-height: 90vh; overflow-y: auto;
+      padding: 0 20px calc(40px + env(safe-area-inset-bottom));
+    }
+    .drag-bar {
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 2px; margin: 12px auto 20px;
+    }
+    .field {
+      display: block; width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 0.5px solid rgba(255,255,255,0.14);
+      border-radius: 10px; color: #fff;
+      font-size: 16px; padding: 12px 14px;
+      transition: border-color 0.15s;
+    }
+    .field:focus { border-color: rgba(255,255,255,0.4); }
+    .field-label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: #636366; text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 6px;
+    }
+    .row { margin-bottom: 18px; }
   </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const {useState,useEffect,useRef} = React;
+const { useState, useEffect, useRef } = React;
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
-const parseRestSec = rest => {
-  if(!rest) return 90;
-  const m = rest.match(/(\d+(?:\.\d+)?)\s*(?:[-]\d+)?\s*min/);
-  if(m) return Math.round(parseFloat(m[1])*60);
-  const s = rest.match(/(\d+)\s*s/);
-  if(s) return parseInt(s[1]);
+const parseRestSec = r => {
+  if (!r) return 90;
+  const m = r.match(/(\d+(?:\.\d+)?)\s*min/);
+  if (m) return Math.round(parseFloat(m[1]) * 60);
+  const s = r.match(/(\d+)s/);
+  if (s) return parseInt(s[1]);
   return 90;
 };
-const fmt = s => {if(s<=0)return"0:00";return`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;};
+const fmtTime = s => s <= 0 ? "0:00" : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+const uid = () => Math.random().toString(36).slice(2,9);
+const store = {
+  get: (k, d = {}) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
 
-// ── FULL BODY DATA ─────────────────────────────────────────────────────────────
 const FB_SECTIONS = [
-  {section:"HERO",exercises:[
-    {name:"Overhead Triceps Extension",equip:"Cable",sets:2,reps:"8-12",defaultWeight:"",rest:"2 min",hero:true,
-     cue:"Do this first, completely fresh. Both hands on rope, elbows above head. Lower behind head until long head is fully stretched. Press to full lockout. Both sets at max effort."},
+  {section:"Hero",exercises:[
+    {name:"Overhead Triceps Extension",equip:"Cable",sets:2,reps:"8-12",weight:"",rest:"2 min",hero:true,
+     cue:"Do this completely fresh. Both hands on rope, elbows above head. Lower behind head to full long-head stretch. Press to lockout. Both sets at max effort."},
   ]},
-  {section:"ARMS",exercises:[
-    {name:"Tricep Pushdown",equip:"Cable Single",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Elbows pinned to sides. Full extension at bottom. Controlled return."},
-    {name:"Bicep Curl",equip:"Cable Single",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Full extension at the bottom - cable holds tension here. Curl to peak, slow negative."},
-    {name:"Reverse Preacher Curl",equip:"EZ Bar",sets:1,reps:"10-12",defaultWeight:"",rest:"75s",cue:"Full extension at bottom. Overhand grip. Hits brachialis and brachioradialis. Slow."},
+  {section:"Arms",exercises:[
+    {name:"Tricep Pushdown",equip:"Cable Single",sets:1,reps:"10-12",weight:"",rest:"90s",
+     cue:"Elbows pinned to sides throughout. Full extension at bottom. Controlled return."},
+    {name:"Bicep Curl",equip:"Cable Single",sets:1,reps:"10-12",weight:"",rest:"90s",
+     cue:"Full extension at bottom — cable keeps tension here unlike a dumbbell. Curl to peak, slow negative."},
+    {name:"Reverse Preacher Curl",equip:"EZ Bar",sets:1,reps:"10-12",weight:"",rest:"75s",
+     cue:"Full extension at bottom — don't cheat this. Overhand grip. Hits brachialis and brachioradialis. Slow controlled reps."},
   ]},
-  {section:"PUSH",exercises:[
-    {name:"Chest Press",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"2 min",cue:"1-second pause at full stretch at the bottom. Drive to lockout. Don't bounce."},
-    {name:"Shoulder Press",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"90s",cue:"Full overhead lockout every rep. Don't cut the range at the top."},
-    {name:"One Arm Lateral Raise",equip:"Cable Single",sets:1,reps:"12-15",defaultWeight:"",rest:"75s",cue:"Cable from low position. Arm starts across body - bottom is max stretch. Raise to shoulder height. No swinging."},
-    {name:"Front Raise",equip:"Dumbbell",sets:1,reps:"10-15",defaultWeight:"",rest:"60s",cue:"Control the eccentric. Raise to eye level. No momentum."},
+  {section:"Push",exercises:[
+    {name:"Chest Press",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"2 min",
+     cue:"One second pause at full stretch at the bottom. Drive to lockout. Don't bounce off the stretch."},
+    {name:"Shoulder Press",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"90s",
+     cue:"Full overhead lockout every rep. Don't cut the range at the top."},
+    {name:"One Arm Lateral Raise",equip:"Cable Single",sets:1,reps:"12-15",weight:"",rest:"75s",
+     cue:"Cable from low position. Arm starts across body — bottom position is max stretch. Raise to shoulder height. No swinging."},
+    {name:"Front Raise",equip:"Dumbbell",sets:1,reps:"10-15",weight:"",rest:"60s",
+     cue:"Control the eccentric on the way down. Raise to eye level. No momentum."},
   ]},
-  {section:"PULL",exercises:[
-    {name:"Lat Pulldown",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"2 min",cue:"Arms fully extended at top before every pull. Pull to upper chest, elbows drive down and back."},
-    {name:"Back Row",equip:"Machine",sets:1,reps:"8-12",defaultWeight:"",rest:"2 min",cue:"Full arm extension before every rep. Drive elbows past your torso. Squeeze at peak."},
-    {name:"Low Row",equip:"Cable Single",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Full stretch at start. Single arm, drive elbow back past hip."},
-    {name:"Reverse Fly",equip:"Machine",sets:1,reps:"12-15",defaultWeight:"",rest:"75s",cue:"Full stretch at start. Keep shoulders down. Squeeze at peak."},
-    {name:"Shoulder Shrug",equip:"Dumbbell",sets:1,reps:"10-15",defaultWeight:"",rest:"60s",cue:"Full depression before every rep. Straight up - no rolling."},
+  {section:"Pull",exercises:[
+    {name:"Lat Pulldown",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"2 min",
+     cue:"Arms fully extended at top before every pull. Pull to upper chest, elbows drive down and back."},
+    {name:"Back Row",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"2 min",
+     cue:"Full arm extension before every rep. Drive elbows past your torso. Squeeze at peak."},
+    {name:"Low Row",equip:"Cable Single",sets:1,reps:"10-12",weight:"",rest:"90s",
+     cue:"Full stretch at start. Single arm — drive elbow back past hip."},
+    {name:"Reverse Fly",equip:"Machine",sets:1,reps:"12-15",weight:"",rest:"75s",
+     cue:"Full stretch at start. Keep shoulders down. Squeeze at peak."},
+    {name:"Shoulder Shrug",equip:"Dumbbell",sets:1,reps:"10-15",weight:"",rest:"60s",
+     cue:"Full shoulder depression before every rep. Straight up — no rolling."},
   ]},
-  {section:"LEGS",exercises:[
-    {name:"Hip Thrust",equip:"Barbell",sets:1,reps:"6",defaultWeight:"120kg",rest:"2 min",cue:"Upper back on bench. 1-second pause at full bottom stretch. Drive to full hip extension - hard glute squeeze. Chin tucked."},
-    {name:"Pendulum Squat",equip:"Machine",sets:1,reps:"5",defaultWeight:"25kg",rest:"2 min",cue:"Control descent to full depth. Drive through heels to lockout."},
-    {name:"Leg Extensions",equip:"Machine",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"3-second eccentric on the way down. Full extension at top."},
-    {name:"Seated Leg Curl",equip:"Machine",sets:1,reps:"10-12",defaultWeight:"",rest:"90s",cue:"Full extension before every rep - the stretched position is the stimulus. Curl fully, control the negative."},
-    {name:"Calf Raises",equip:"Machine",sets:1,reps:"7",defaultWeight:"140kg",rest:"75s",cue:"Deep stretch at the bottom of every rep. Non-negotiable. Full plantarflexion at top."},
-    {name:"Inner Thigh Machine",equip:"Machine",sets:1,reps:"10-12",defaultWeight:"",rest:"60s",cue:"Full abduction before squeezing in. Don't let the pads bounce."},
-    {name:"Outer Thigh Machine",equip:"Machine",sets:1,reps:"6",defaultWeight:"79kg",rest:"60s",cue:"Start legs together. Full ROM outward. Control the return."},
+  {section:"Legs",exercises:[
+    {name:"Hip Thrust",equip:"Barbell",sets:1,reps:"6",weight:"120kg",rest:"2 min",
+     cue:"Upper back on bench. One second pause at full bottom stretch. Drive to full hip extension — hard glute squeeze at top. Chin tucked."},
+    {name:"Pendulum Squat",equip:"Machine",sets:1,reps:"5",weight:"25kg",rest:"2 min",
+     cue:"Control descent to full depth. Drive through heels to lockout. Don't rush the eccentric."},
+    {name:"Leg Extensions",equip:"Machine",sets:1,reps:"10-12",weight:"",rest:"90s",
+     cue:"Three second eccentric on the way down. Full extension at top."},
+    {name:"Seated Leg Curl",equip:"Machine",sets:1,reps:"10-12",weight:"",rest:"90s",
+     cue:"Full extension before every rep — the stretched position is where the signal is. Curl fully, control the negative."},
+    {name:"Calf Raises",equip:"Machine",sets:1,reps:"7",weight:"140kg",rest:"75s",
+     cue:"Deep stretch at the bottom of every rep. Non-negotiable. Full plantarflexion at top."},
+    {name:"Inner Thigh Machine",equip:"Machine",sets:1,reps:"10-12",weight:"",rest:"60s",
+     cue:"Full abduction before squeezing in. Don't let the pads bounce."},
+    {name:"Outer Thigh Machine",equip:"Machine",sets:1,reps:"6",weight:"79kg",rest:"60s",
+     cue:"Start legs together. Full ROM outward. Control the return."},
   ]},
-  {section:"CORE + PREHAB",exercises:[
-    {name:"Core Twist",equip:"Band",sets:1,reps:"12 each",defaultWeight:"",rest:"60s",cue:"Controlled rotation only. Resist the momentum on the return."},
-    {name:"Ab Crunch Machine",equip:"Machine",sets:1,reps:"12-15",defaultWeight:"",rest:"60s",cue:"Ribs to hips - not neck. Slow return."},
-    {name:"Back Extension",equip:"Bodyweight",sets:1,reps:"12-15",defaultWeight:"",rest:"60s",cue:"Hinge at hip to deep hamstring stretch. Drive to parallel - don't hyperextend at top."},
-    {name:"Internal Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",defaultWeight:"",rest:"45s",cue:"Elbow at 90 degrees at side. Rotate inward across body. Light weight, full range."},
-    {name:"External Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",defaultWeight:"",rest:"45s",cue:"Elbow at 90 degrees at side. Rotate outward. Keep upper arm still."},
-    {name:"Wrist Curl",equip:"Band",sets:1,reps:"15-20",defaultWeight:"",rest:"45s",cue:"Forearm fully supported. Wrist only moves. Slow and full range."},
-    {name:"Reverse Wrist Curl",equip:"Band",sets:1,reps:"15-20",defaultWeight:"",rest:"45s",cue:"Overhand grip. Wrist only. Full range. Slow eccentric."},
+  {section:"Core + Prehab",exercises:[
+    {name:"Core Twist",equip:"Band",sets:1,reps:"12 each",weight:"",rest:"60s",
+     cue:"Controlled rotation only. Resist the momentum on the return — that's where the work is."},
+    {name:"Ab Crunch Machine",equip:"Machine",sets:1,reps:"12-15",weight:"",rest:"60s",
+     cue:"Ribs to hips — not neck. Slow return."},
+    {name:"Back Extension",equip:"Bodyweight",sets:1,reps:"12-15",weight:"",rest:"60s",
+     cue:"Hinge at hip to deep hamstring stretch. Drive to parallel — don't hyperextend at top."},
+    {name:"Internal Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",weight:"",rest:"45s",
+     cue:"Elbow at 90 degrees at side. Rotate inward across body. Light weight, full range."},
+    {name:"External Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",weight:"",rest:"45s",
+     cue:"Elbow at 90 degrees at side. Rotate outward. Keep upper arm completely still."},
+    {name:"Wrist Curl",equip:"Band",sets:1,reps:"15-20",weight:"",rest:"45s",
+     cue:"Forearm fully supported on a surface. Wrist only moves. Slow and full range."},
+    {name:"Reverse Wrist Curl",equip:"Band",sets:1,reps:"15-20",weight:"",rest:"45s",
+     cue:"Overhand grip. Wrist only. Full range. Slow eccentric."},
   ]},
 ];
-const FB_FLAT = FB_SECTIONS.flatMap(s=>s.exercises.map(e=>({...e,section:s.section})));
 
-// ── TENDON DATA ────────────────────────────────────────────────────────────────
 const TENDON = {
-  p1:{label:"Phase 1",weeks:"Wks 1-4",name:"Isometric",color:"#ef4444",
-    meta:"2/10 effort - sustained tension, not force. 15g collagen + vit C 30-60 min before. No caffeine.",
+  p1:{label:"Phase 1",weeks:"Weeks 1-4",name:"Isometric",color:"#ff453a",
+    meta:"Hold positions at about 2/10 effort — sustained tension, not maximal force. Take 15g collagen with vitamin C 30-60 min before. No caffeine with it.",
     sessions:[
-      {label:"SESSION A",day:"Achilles + Patellar",exercises:[
-        {name:"Calf Raise Iso Mid Range",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",defaultWeight:"+20-25kg DB",rest:"90s",
-         cue:"Stand on one leg at mid-calf position. Hold completely still. Sustained tension - no bouncing."},
-        {name:"Wall Sit",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",defaultWeight:"Bodyweight",rest:"90s",
+      {label:"Session A",day:"Achilles + Patellar",exercises:[
+        {name:"Calf Raise Iso — Mid Range",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20-25kg DB",rest:"90s",
+         cue:"Stand on one leg at mid-calf position. Hold completely still. The stimulus is the sustained tension — no movement."},
+        {name:"Wall Sit",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",
          cue:"Back flat against wall, thighs parallel, knees at 90 degrees. Hold. Patellar tendon stimulus."},
-        {name:"Calf Hold Bottom Stretch",equip:"Single leg + DB",sets:2,reps:"6",hold:"20s",defaultWeight:"+15kg DB",rest:"60s",
-         cue:"Heel dropped off a step as low as possible. Hold at deepest Achilles stretch. This position drives the adaptation."},
-        {name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",defaultWeight:"Bodyweight",rest:"60s",
-         cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through front of rear hip. Hold still."},
-        {name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",defaultWeight:"Light band",rest:"45s",
-         cue:"Press wrist into band resistance and hold without moving. Three positions: neutral, flexion, extension."},
+        {name:"Calf Hold — Bottom Stretch",equip:"Single leg + DB",sets:2,reps:"6",hold:"20s",weight:"+15kg DB",rest:"60s",
+         cue:"Heel dropped off a step as low as possible. Hold at the deepest Achilles stretch. This position is where the tendon adaptation happens."},
+        {name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",weight:"Bodyweight",rest:"60s",
+         cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through the front of the rear hip. Hold still."},
+        {name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",
+         cue:"Press wrist into band resistance and hold without moving. Three positions separately — neutral, flexion, extension."},
       ]},
-      {label:"SESSION B",day:"Combat + Glute/Ham",exercises:[
-        {name:"Wall Sit Progress",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",defaultWeight:"Bodyweight",rest:"90s",
-         cue:"Same as Session A. Progress: add a slight heel raise at the bottom to load calves simultaneously."},
-        {name:"Calf Raise Iso Peak",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",defaultWeight:"+20kg DB",rest:"90s",
-         cue:"Rise onto toes and hold at very top of contraction. Different loading zone from Session A mid-range."},
-        {name:"Wrist Iso Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",defaultWeight:"Light band",rest:"45s",
-         cue:"Forearm on a surface. Resist band pulling wrist into extension. Hold wrist still."},
-        {name:"Wrist Iso Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",defaultWeight:"Light band",rest:"45s",
+      {label:"Session B",day:"Combat + Glute/Ham",exercises:[
+        {name:"Wall Sit — Progressed",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",
+         cue:"Same as Session A. Add a slight heel raise at the bottom to load calves simultaneously."},
+        {name:"Calf Raise Iso — Peak",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20kg DB",rest:"90s",
+         cue:"Rise onto toes and hold at the very top of contraction. Different loading zone from Session A's mid-range."},
+        {name:"Wrist Iso — Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",
+         cue:"Forearm resting on a surface. Resist band pulling wrist into extension. Hold completely still."},
+        {name:"Wrist Iso — Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",
          cue:"Same position. Resist band pulling wrist into flexion. Separate set from extension."},
-        {name:"Glute Bridge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"30s",defaultWeight:"Bodyweight",rest:"60s",
+        {name:"Glute Bridge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"30s",weight:"Bodyweight",rest:"60s",
          cue:"Hips fully extended, shoulders on floor. Hold at top. Hamstring and glute tendon stimulus."},
       ]},
     ]},
-  p2:{label:"Phase 2",weeks:"Wks 5-8",name:"Heavy Slow",color:"#f97316",
-    meta:"Tempo: 4s down / 1s pause / 3s up. The tempo IS the stimulus - rushing defeats the purpose.",
+  p2:{label:"Phase 2",weeks:"Weeks 5-8",name:"Heavy Slow",color:"#ff9f0a",
+    meta:"Every rep: 4 seconds down, 1 second pause, 3 seconds up. The tempo is the stimulus — rushing defeats the entire purpose.",
     sessions:[
-      {label:"SESSION A",day:"Calf, Quad, Ham",exercises:[
-        {name:"Single Leg Calf Raise",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",defaultWeight:"+30-35kg DB",rest:"2 min",
-         cue:"One leg only. 4 seconds up, 1 second hold at top, 3 seconds down to full stretch. Full range. Use a rack for balance."},
-        {name:"Slow Sissy Squat",equip:"Light added weight",sets:3,reps:"8",tempo:"4-1-3",defaultWeight:"BW +5kg",rest:"2 min",
-         cue:"Hold something for balance. Lean back - knees travel far forward. 4 seconds to max stretch, 1 pause, 3 up. True sissy pattern - not pendulum."},
-        {name:"Nordic Curl",equip:"Bodyweight",sets:3,reps:"6",tempo:"5s down",defaultWeight:"Bodyweight",rest:"2 min",
-         cue:"Knees on padded surface, feet anchored. Lower as slowly as possible - aim 5+ seconds. Catch with hands at bottom."},
-        {name:"Single Leg RDL",equip:"Dumbbell",sets:2,reps:"10",tempo:"3-1-3",defaultWeight:"50-55kg",rest:"90s",
-         cue:"Balance on one leg, hinge at hip, weight in opposite hand. 3 seconds down to deep hamstring stretch."},
+      {label:"Session A",day:"Calf, Quad, Hamstring",exercises:[
+        {name:"Single Leg Calf Raise",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",
+         cue:"One leg only. Four seconds up, one second hold at top, three seconds down to full stretch. Full range every rep. Use a rack for balance."},
+        {name:"Slow Sissy Squat",equip:"Light added weight",sets:3,reps:"8",tempo:"4-1-3",weight:"BW +5kg",rest:"2 min",
+         cue:"Hold something for balance. Lean back — knees travel far forward. Four seconds to max stretch, one pause, three up. True sissy pattern, not pendulum."},
+        {name:"Nordic Curl",equip:"Bodyweight",sets:3,reps:"6",tempo:"5s down",weight:"Bodyweight",rest:"2 min",
+         cue:"Knees on padded surface, feet anchored. Lower as slowly as possible — five seconds or more. Catch with hands at the bottom."},
+        {name:"Single Leg RDL",equip:"Dumbbell",sets:2,reps:"10",tempo:"3-1-3",weight:"50-55kg",rest:"90s",
+         cue:"Balance on one leg, hinge at hip, weight in the opposite hand. Three seconds down to deep hamstring stretch."},
       ]},
-      {label:"SESSION B",day:"Calf + Wrist",exercises:[
-        {name:"Single Leg Calf Raise B",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",defaultWeight:"+30-35kg DB",rest:"2 min",
-         cue:"Same as Session A. This session: emphasise extra time at the bottom stretch - pause a beat there before driving up."},
-        {name:"Weighted Wall Sit",equip:"Weight plate",sets:3,reps:"6",hold:"30s",defaultWeight:"+10kg plate",rest:"2 min",
-         cue:"Phase 1 wall sit with a plate resting across your thighs. Hold 90 degree position."},
-        {name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",defaultWeight:"7.5kg",rest:"60s",
-         cue:"Forearm fully supported, palm up. Wrist only. 3 seconds down, 1 second pause at stretch, 3 seconds up."},
-        {name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",defaultWeight:"5kg",rest:"60s",
-         cue:"Overhand grip. Same tempo. Wrist extensor tendon - critical for combat wrist stability."},
+      {label:"Session B",day:"Calf + Wrist",exercises:[
+        {name:"Single Leg Calf Raise B",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",
+         cue:"Same as Session A. Emphasise extra time at the bottom stretch — pause a beat before driving up."},
+        {name:"Weighted Wall Sit",equip:"Weight plate",sets:3,reps:"6",hold:"30s",weight:"+10kg plate",rest:"2 min",
+         cue:"Phase 1 wall sit with a plate resting across your thighs. Hold 90 degrees."},
+        {name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"7.5kg",rest:"60s",
+         cue:"Forearm fully supported, palm up. Wrist only. Three seconds down, one second pause at stretch, three seconds up."},
+        {name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"5kg",rest:"60s",
+         cue:"Overhand grip. Same tempo. Wrist extensor tendon — critical for combat wrist stability."},
       ]},
     ]},
-  p3:{label:"Phase 3",weeks:"Wks 9-12",name:"Plyometric",color:"#a78bfa",
-    meta:"Ground contact time matters more than height. Target under 150ms contact. All bodyweight. Quick, quiet landings.",
+  p3:{label:"Phase 3",weeks:"Weeks 9-12",name:"Plyometric",color:"#bf5af2",
+    meta:"Ground contact time matters more than height. Target under 150ms per contact. All bodyweight. Quick, quiet landings.",
     sessions:[
-      {label:"SESSION A",day:"Vertical + Reactive",exercises:[
-        {name:"Ankle Hops",equip:"Bodyweight",sets:4,reps:"25",defaultWeight:"Bodyweight",rest:"90s",
-         cue:"Minimal knee bend. Stiff ankles. Think the floor is hot - quick, quiet contacts. Balls of feet throughout."},
-        {name:"Pogo Jumps",equip:"Bodyweight",sets:4,reps:"20",defaultWeight:"Bodyweight",rest:"90s",
-         cue:"Slightly higher than ankle hops. Stiff through ankle and knee. Spring-like - no collapse on landing."},
-        {name:"Depth Drop to Freeze",equip:"Box 30-40cm",sets:3,reps:"6",defaultWeight:"Bodyweight",rest:"2 min",
-         cue:"Step off the box - don't jump. Land on both feet and hold for 2 seconds. Perfect landing mechanics."},
-        {name:"Depth Drop to Jump",equip:"Box 30-40cm",sets:3,reps:"6",defaultWeight:"Bodyweight",rest:"2 min",
-         cue:"Step off box, land, and immediately explode up. Minimal ground contact. Stay stiff - don't sink."},
-        {name:"Broad Jump",equip:"Bodyweight",sets:4,reps:"6",defaultWeight:"Bodyweight",rest:"2 min",
-         cue:"Maximal horizontal jump. Drive arms aggressively. Land softly. Walk back between reps."},
+      {label:"Session A",day:"Vertical + Reactive",exercises:[
+        {name:"Ankle Hops",equip:"Bodyweight",sets:4,reps:"25",weight:"Bodyweight",rest:"90s",
+         cue:"Minimal knee bend. Stiff ankles. Think the floor is hot — quick, quiet contacts. Balls of feet throughout."},
+        {name:"Pogo Jumps",equip:"Bodyweight",sets:4,reps:"20",weight:"Bodyweight",rest:"90s",
+         cue:"Slightly higher than ankle hops. Stiff through ankle and knee. Spring-like — no collapse on landing."},
+        {name:"Depth Drop to Freeze",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",
+         cue:"Step off the box — don't jump. Land on both feet and hold for two seconds. Build the landing before adding the jump."},
+        {name:"Depth Drop to Jump",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",
+         cue:"Step off, land, immediately explode up. Minimal ground contact. Stay stiff — don't sink into the landing."},
+        {name:"Broad Jump",equip:"Bodyweight",sets:4,reps:"6",weight:"Bodyweight",rest:"2 min",
+         cue:"Maximal horizontal jump. Drive arms aggressively. Land softly. Walk back between reps — quality work, not conditioning."},
       ]},
-      {label:"SESSION B",day:"Horizontal + Combat",exercises:[
-        {name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",defaultWeight:"Bodyweight",rest:"90s",
-         cue:"Progress from double-leg. If unstable, go back to double first. Stiff ankle, quick contacts."},
-        {name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",defaultWeight:"Bodyweight",rest:"90s",
+      {label:"Session B",day:"Horizontal + Combat",exercises:[
+        {name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",weight:"Bodyweight",rest:"90s",
+         cue:"Progress from the double-leg work. If unstable, return to double-leg. Stiff ankle, quick contacts."},
+        {name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",weight:"Bodyweight",rest:"90s",
          cue:"Push laterally off one leg, land on the other, immediately bound back. Explosive push-off, reactive landing."},
-        {name:"Continuous Broad Jump",equip:"Bodyweight",sets:3,reps:"5 in a row",defaultWeight:"Bodyweight",rest:"2 min",
-         cue:"Land and immediately jump again - 5 consecutive jumps. Reactive horizontal power."},
-        {name:"Rotational Med Ball Slam",equip:"Med ball",sets:3,reps:"8",defaultWeight:"5-8kg ball",rest:"90s",
-         cue:"Full hip rotation - drive from hips, not arms. Wrist snap at release. Combat rotational power."},
+        {name:"Continuous Broad Jump",equip:"Bodyweight",sets:3,reps:"5 in a row",weight:"Bodyweight",rest:"2 min",
+         cue:"Land from one broad jump and immediately jump again — five consecutive jumps. Reactive horizontal power."},
+        {name:"Rotational Med Ball Slam",equip:"Med ball",sets:3,reps:"8",weight:"5-8kg ball",rest:"90s",
+         cue:"Full hip rotation — drive from the hips, not the arms. Wrist snap at release. Combat rotational power."},
       ]},
     ]},
 };
 
-// ── STRETCH DATA (from v4 widget + phase cues) ─────────────────────────────────
 const STRETCHES = [
   {name:"Cat-Cow",totalSec:60,sideLabels:[],muscles:["Spine","Core"],isDynamic:true,
    phases:{
-     1:{dur:"60s",how:"On all-fours. Inhale and arch down (cow), exhale and round up (cat). 8-10 slow rhythmic cycles. Don't hold - keep moving throughout."},
-     2:{dur:"90s",how:"Same movement. Add a 3-second hold at each end range. Feel full spinal extension and flexion before transitioning."},
-     3:{dur:"60s active",how:"Try to move one vertebra at a time through the spine. Active spinal segmentation."},
-     4:{dur:"90s flow",how:"Add lateral flexion and gentle rotation. Explore the full 3D movement of the spine freely."},
-     5:{dur:"60s",how:"Daily warm-up spine flow. Move however feels right. Maintenance and body-check."},
+     1:{dur:"60s",how:"On all-fours. Inhale and arch down (cow), exhale and round up (cat). Eight to ten slow rhythmic cycles. Keep moving — don't hold at either end."},
+     2:{dur:"90s",how:"Same movement, but add a three-second hold at each end range before transitioning."},
+     3:{dur:"60s",how:"Try to articulate one vertebra at a time through the spine. Active spinal segmentation."},
+     4:{dur:"90s",how:"Add lateral flexion and gentle rotation. Explore the full three-dimensional movement of the spine."},
+     5:{dur:"60s",how:"Daily movement prep. Move however feels right. This is maintenance and a body check-in."},
    }},
-  {name:"World's Greatest Stretch",totalSec:120,sideLabels:["right side","left side"],muscles:["Hip flexors","Hips","Shoulders","Thoracic spine"],priority:true,
+  {name:"World's Greatest Stretch",totalSec:120,sideLabels:["right side","left side"],muscles:["Hip flexors","Thoracic spine","Hips","Shoulders"],priority:true,
    phases:{
-     1:{dur:"60s / side",how:"Deep lunge, same-side hand inside front foot. Rotate top arm to ceiling, eyes follow. Keep back knee lifted. Every exhale: drive the rear hip crease toward the floor."},
-     2:{dur:"45s / side",how:"Same. Add a deliberate 3-second hold at the top of each rotation. Feel the thoracic spine actively opening."},
-     3:{dur:"45s / side",how:"At the top of rotation, remove the hand from the floor and hold the balance. Active thoracic control without support."},
-     4:{dur:"60s flow",how:"Flow continuously through the full sequence - lunge, rotate, reach, fold - without stopping. One continuous movement."},
-     5:{dur:"30s / side",how:"Use as movement prep before any session. Explore the full range freely."},
+     1:{dur:"60s per side",how:"Deep lunge, same-side hand inside the front foot on the floor. Rotate your top arm up to the ceiling and let the eyes follow. Keep the back knee lifted. Every exhale, drive the rear hip crease toward the floor."},
+     2:{dur:"45s per side",how:"Same position. Add a deliberate three-second hold at the top of each rotation."},
+     3:{dur:"45s per side",how:"At peak rotation, remove the hand from the floor and hold the balance. Active thoracic control."},
+     4:{dur:"60s",how:"Flow continuously through the full sequence without stopping. One movement."},
+     5:{dur:"30s per side",how:"Movement prep. Use this before any session."},
    }},
-  {name:"Low Lunge - Quad Focus",totalSec:120,sideLabels:["right side","left side"],muscles:["Quads","Hip flexors"],priority:true,
+  {name:"Low Lunge — Quad Focus",totalSec:120,sideLabels:["right side","left side"],muscles:["Quads","Hip flexors"],priority:true,
    phases:{
-     1:{dur:"60s / side",how:"Back knee on floor. Reach back and grab your rear ankle, heel toward glute. Use a towel if needed. Keep hips square. Feel it in the front of the rear thigh."},
-     2:{dur:"60s / side",how:"At end range, press your back knee into the floor for 5 seconds (isometric). Exhale, relax, sink deeper. 3 cycles per side."},
-     3:{dur:"45s / side",how:"In the lunge, lift the back foot toward your glute and hold actively - no hands. Quad and hip flexor strength in the shortened position."},
-     4:{dur:"60s flow",how:"Add a thoracic rotation: in the lunge, rotate toward the front leg and open the arm to ceiling."},
-     5:{dur:"45s / side",how:"Maintenance. Hip flexors are your historically tight area - never skip this one."},
+     1:{dur:"60s per side",how:"Back knee on floor. Reach back and grab the rear ankle, drawing the heel toward your glute. Keep hips square. Feel the stretch in the front of the rear thigh."},
+     2:{dur:"60s per side",how:"At end range, press your back knee into the floor for five seconds (isometric). Exhale, relax, sink deeper. Three cycles per side."},
+     3:{dur:"45s per side",how:"Lift the back foot toward your glute and hold it there actively — no hands. Quad and hip flexor strength at end range."},
+     4:{dur:"60s",how:"Add a thoracic rotation: rotate toward the front leg and open the arm to the ceiling."},
+     5:{dur:"45s per side",how:"Maintenance. Your hip flexors are historically tight — never skip this one."},
    }},
   {name:"Butterfly Stretch",totalSec:90,sideLabels:[],muscles:["Adductors","Groin","Inner thighs"],
    phases:{
-     1:{dur:"90s",how:"Soles of feet together, knees fall wide. Hold feet, sit tall. Gently press knees toward the floor with elbows. Heels closer to groin = deeper stretch."},
-     2:{dur:"60s + PNF",how:"Press knees up against your hands for 5 seconds. Exhale, let knees drop further. 3 cycles."},
-     3:{dur:"45s active",how:"Without using your hands, lower knees using active hip external rotation. Hold the lowest position you can achieve actively."},
-     4:{dur:"60s",how:"Bring feet progressively closer to groin. Explore the full range."},
+     1:{dur:"90s",how:"Soles of feet together, knees fall wide. Hold your feet and sit tall. Gently press knees toward the floor with your elbows."},
+     2:{dur:"60s + PNF",how:"Press knees up against your hands for five seconds. Exhale, let knees drop further. Three cycles."},
+     3:{dur:"45s",how:"Without using your hands, lower knees through active hip external rotation. Hold the lowest actively achievable position."},
+     4:{dur:"60s",how:"Bring feet closer to your groin progressively. Explore the full range."},
      5:{dur:"45s",how:"Maintenance. Good for adductor health given your hip thrust and inner thigh training volume."},
    }},
   {name:"Figure-4 / 90-90",totalSec:90,sideLabels:["right hip","left hip"],muscles:["Glutes","Piriformis","Hip rotators"],
    phases:{
-     1:{dur:"45s / side",how:"Figure-4: lie on back, cross ankle over thigh, draw legs toward chest. OR 90-90: sit with both hips at 90 degrees, lean forward over front shin."},
-     2:{dur:"45s / side",how:"Press the ankle into the knee (isometric external rotation) for 5 seconds. Exhale, pull legs closer. 3 cycles per side."},
-     3:{dur:"45s / side",how:"Progress to 90-90 seated. Rotate torso forward over the front shin actively."},
-     4:{dur:"60s",how:"Flow from lying figure-4 to seated 90-90 to lean forward. One continuous exploration of the hip rotation chain."},
-     5:{dur:"45s / side",how:"Maintenance. Glute and piriformis health important given your hip thrust volume."},
+     1:{dur:"45s per side",how:"Figure-4: lie on your back, cross ankle over thigh, draw legs toward chest. Or 90-90: sit with both hips at 90 degrees, lean forward over the front shin."},
+     2:{dur:"45s per side",how:"Press the ankle into the knee for five seconds (isometric). Exhale, pull legs closer. Three cycles per side."},
+     3:{dur:"45s per side",how:"Progress to the 90-90 seated position. Rotate torso forward over the front shin actively."},
+     4:{dur:"60s",how:"Flow from lying figure-4 to seated 90-90 to a forward lean. One exploration of the hip rotation chain."},
+     5:{dur:"45s per side",how:"Maintenance. Important given your hip thrust volume."},
    }},
   {name:"Seated Forward Fold",totalSec:90,sideLabels:[],muscles:["Hamstrings","Lower back","Calves"],
    phases:{
-     1:{dur:"90s",how:"Legs straight, hinge forward from the hips - not the mid-back. Reach toward feet. Focus on a long neutral spine rather than extra depth."},
-     2:{dur:"60s + PNF",how:"Contract hamstrings by digging heels into floor (isometric) for 5 seconds. Exhale, fold deeper. 3 cycles."},
-     3:{dur:"45s active",how:"Straighten legs progressively. At end range, actively bring chest closer to legs using hip flexors - not just gravity."},
-     4:{dur:"60s",how:"Explore: narrow stance, wide stance, single leg forward fold. Find the tightest angle and spend time there."},
-     5:{dur:"45s",how:"Maintenance. Strong baseline here - just maintain."},
+     1:{dur:"90s",how:"Legs straight, hinge from the hips — not the mid-back. Reach toward your feet with a slight knee bend if needed. Long neutral spine first, depth second."},
+     2:{dur:"60s + PNF",how:"Dig your heels into the floor (isometric) for five seconds. Exhale, fold deeper. Three cycles."},
+     3:{dur:"45s",how:"At end range, actively pull your chest closer to your legs using your hip flexors — not gravity."},
+     4:{dur:"60s",how:"Explore narrow stance, wide stance, and single leg variations. Find the tightest angle."},
+     5:{dur:"45s",how:"Maintenance — your hamstring baseline is already strong."},
    }},
-  {name:"Cobra Waves",totalSec:60,sideLabels:[],muscles:["Core / abs","Chest","Spine"],isDynamic:true,
+  {name:"Cobra Waves",totalSec:60,sideLabels:[],muscles:["Spine","Abs","Chest"],isDynamic:true,
    phases:{
-     1:{dur:"60s / 5-7 waves",how:"Face down, hands under shoulders. Slowly press to cobra, hold 2-3 seconds, lower back, pause, rise again. 3-5 waves. Don't lock out or crank neck. Use back muscles, not just arms."},
-     2:{dur:"60s / 8-10 waves",how:"Progressively extend the range each wave. By the last few, aim for upward dog if comfortable."},
-     3:{dur:"45s active",how:"Hands hovering just off the floor - use your spinal extensors only to lift into cobra. Active back extension without arm assistance."},
-     4:{dur:"60s flow",how:"Full upward dog to downward dog flow. Combine extension and flexion in one wave pattern."},
-     5:{dur:"45s",how:"Maintenance. Dynamic spine work - keep it flowing, not held."},
+     1:{dur:"60s / 5-7 waves",how:"Face down, hands under shoulders. Press slowly up into cobra, hold two to three seconds, lower, pause, rise again. Three to five waves. Use the back muscles to lift, not just arm press."},
+     2:{dur:"60s / 8-10 waves",how:"Progressively extend the range each wave. Aim for upward dog by the last few if comfortable."},
+     3:{dur:"45s",how:"Hands hovering off the floor — use spinal extensors only. Active back extension without arm assistance."},
+     4:{dur:"60s",how:"Full upward dog to downward dog flow. Extension and flexion in one continuous wave."},
+     5:{dur:"45s",how:"Maintenance. Keep it flowing, never held."},
    }},
-  {name:"Thread the Needle",totalSec:120,sideLabels:["right arm under","left arm under"],muscles:["Shoulders","Chest","Thoracic spine"],
+  {name:"Thread the Needle",totalSec:120,sideLabels:["right arm under","left arm under"],muscles:["Thoracic spine","Posterior shoulder","Chest"],
    phases:{
-     1:{dur:"60s / side",how:"On all-fours, slide one arm under your body until shoulder and cheek rest on the ground. Press opposite hand into floor for deeper rotation. Keep hips level."},
-     2:{dur:"45s / side",how:"Add a gentle press of the extended arm into the floor at the deepest point to incrementally increase rotation."},
-     3:{dur:"30s / side",how:"Use the threading arm to press into the floor and actively drive the rotation deeper - use rhomboids and serratus rather than gravity."},
-     4:{dur:"45s",how:"Add small arm circles from the threaded position. Explore the full range of the posterior shoulder."},
-     5:{dur:"30s / side",how:"Maintenance. Important for overhead pressing and gymnastics shoulder health."},
+     1:{dur:"60s per side",how:"On all-fours, slide one arm under your body until the shoulder and cheek rest on the ground. Press the opposite hand into the floor for deeper rotation. Hips level."},
+     2:{dur:"45s per side",how:"Add a gentle press of the extended arm into the floor at the deepest point to increase rotation incrementally."},
+     3:{dur:"30s per side",how:"Use the threading arm to actively drive deeper rotation — engage the rhomboids and serratus rather than relying on gravity."},
+     4:{dur:"45s",how:"Add small arm circles from the threaded position. Explore the full range."},
+     5:{dur:"30s per side",how:"Maintenance. Important for overhead pressing and gymnastics shoulder health."},
    }},
-  {name:"Overhead Lat / Triceps Stretch",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Lats","Long head triceps","Overhead shoulder"],isNew:true,
+  {name:"Overhead Lat Stretch",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Lats","Long head triceps","Overhead shoulder flexion"],isNew:true,
    phases:{
-     1:{dur:"45s / side",how:"Raise one arm overhead, bend elbow so hand drops behind head. Use opposite hand to gently push elbow back and slightly across. Lean torso slightly away for lat bias. Keep ribs down."},
-     2:{dur:"45s / side",how:"Add a deliberate side bend away from the stretched arm to emphasise the lat. Feel the stretch run from hip to armpit."},
-     3:{dur:"30s / side",how:"Press your hand into the palm overhead - create resistance and hold the position actively without passive pull from the other arm."},
-     4:{dur:"45s / side",how:"Combine with world's greatest - from the lunge, reach the overhead lat stretch on the same side. Full anterior chain in one position."},
-     5:{dur:"30s / side",how:"Maintenance. Directly supports handstand overhead range and lat flexibility for pulling movements."},
+     1:{dur:"45s per side",how:"Raise one arm overhead, bend the elbow so your hand drops behind your head. Use the opposite hand to push the elbow back and slightly across. Lean torso slightly away for lat emphasis. Keep ribs down."},
+     2:{dur:"45s per side",how:"Add a deliberate side bend away from the stretch arm to emphasise the lat. Feel the stretch run from hip to armpit."},
+     3:{dur:"30s per side",how:"Press your hand into the palm overhead — create resistance and hold the position actively without the other arm pulling."},
+     4:{dur:"45s per side",how:"From a lunge, reach into the overhead lat stretch on the same side. Full anterior chain."},
+     5:{dur:"30s per side",how:"Maintenance. Directly supports handstand range and lat flexibility for pulling movements."},
    }},
-  {name:"Cross-Body Shoulder",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Rhomboids","Mid-back","Rear deltoid"],
+  {name:"Cross-Body Shoulder",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Rear deltoid","Rhomboids","Mid-back"],
    phases:{
-     1:{dur:"45s / side",how:"Arm across body at shoulder height. Hook opposite arm underneath and draw toward chest. Keep shoulder actively pressed down - don't let it shrug."},
-     2:{dur:"45s / side",how:"Explore at different heights - higher hits posterior capsule, lower hits rear delt. Spend more time at the tightest angle."},
-     3:{dur:"30s / side",how:"Slightly resist the pull with the stretched arm - create gentle tension without releasing. Eccentric hold in the posterior shoulder."},
-     4:{dur:"45s",how:"Combine with thoracic rotation - as you pull the arm across, rotate head and thorax in the opposite direction."},
-     5:{dur:"30s / side",how:"Maintenance. Rear delt health important given your lateral raise and reverse fly volume."},
+     1:{dur:"45s per side",how:"Arm across body at shoulder height. Hook the opposite arm underneath and draw it toward your chest. Shoulder actively pressed down — don't let it shrug."},
+     2:{dur:"45s per side",how:"Try different heights — higher hits the posterior capsule, lower hits the rear delt more. Spend time at the tightest angle."},
+     3:{dur:"30s per side",how:"Slightly resist the pull with the stretched arm. Eccentric hold in the posterior shoulder."},
+     4:{dur:"45s",how:"Combine with thoracic rotation — as you pull the arm across, rotate head and thorax in the opposite direction."},
+     5:{dur:"30s per side",how:"Maintenance. Important given your lateral raise and reverse fly training volume."},
    }},
   {name:"Knee-to-Wall Ankle",totalSec:90,sideLabels:["right ankle","left ankle"],muscles:["Ankle dorsiflexion","Achilles","Soleus"],isNew:true,isDynamic:true,
    phases:{
-     1:{dur:"45s / side",how:"Stand facing a wall, foot 3-4 inches away. Drive knee toward the wall over your little toe while keeping heel completely flat. Touch wall, return, repeat slowly."},
-     2:{dur:"45s / side",how:"Same. Add a 2-second hold at end range before returning. Gradually increase foot-to-wall distance as range improves."},
-     3:{dur:"10 reps + 10s hold",how:"At end range of each rep, hold for 10 seconds - dorsiflexion strength at end range. Direct transfer to jumping and landing."},
-     4:{dur:"10 reps / side",how:"Progress to doing this on a slight step or incline. Test from further away from the wall."},
-     5:{dur:"10 reps / side",how:"Maintenance. Critical alongside your tendon work - keep this throughout Phase 3 plyometrics."},
+     1:{dur:"45s per side",how:"Stand facing a wall, foot about three inches away. Drive your knee over your little toe keeping the heel flat. Touch wall, return, repeat slowly."},
+     2:{dur:"45s per side",how:"Add a two-second hold at end range. Gradually move the foot further from the wall as range improves."},
+     3:{dur:"10 reps + 10s holds",how:"At end range, hold for ten seconds. Dorsiflexion strength at end range — transfers directly to jumping and landing."},
+     4:{dur:"10 reps per side",how:"Progress to a slight step or incline. Test from further away from the wall."},
+     5:{dur:"10 reps per side",how:"Maintenance. Keep this running alongside the Phase 3 plyometrics."},
    }},
-  {name:"Wrist and Forearm",totalSec:90,sideLabels:["right - palm up","right - palm down","left - palm up","left - palm down"],muscles:["Wrist flexors","Wrist extensors","Forearms"],
+  {name:"Wrist and Forearm",totalSec:90,sideLabels:["right — palm up","right — palm down","left — palm up","left — palm down"],muscles:["Wrist flexors","Wrist extensors","Forearms"],
    phases:{
-     1:{dur:"90s total",how:"Arm extended at shoulder height. Palm up: pull fingers gently downward. Palm down: press the back of the hand toward you. About 22s per position."},
-     2:{dur:"90s + holds",how:"Add sustained holds in your most uncomfortable position - usually fingers pointing backwards. 10-second holds."},
-     3:{dur:"60s + holds",how:"Progress to wrist push-ups on knuckles. Then on finger pads if comfortable. Gymnastic wrist conditioning progression."},
-     4:{dur:"90s full",how:"Full gymnastic wrist conditioning: standard, knuckles, fingers, reverse, side-to-side, and active circles under load."},
-     5:{dur:"60s",how:"Maintenance. Supports handstand loading and long-term wrist health with keyboard use. Never skip."},
+     1:{dur:"90s total",how:"Arm extended at shoulder height. Palm up: pull fingers gently downward. Palm down: press the back of the hand toward you. About 22 seconds per position."},
+     2:{dur:"90s + holds",how:"Add ten-second holds in the most uncomfortable position — usually fingers pointing backwards."},
+     3:{dur:"60s + holds",how:"Progress to wrist push-ups on your knuckles, then finger pads. Gymnastic wrist conditioning."},
+     4:{dur:"90s",how:"Full sequence: standard, knuckles, fingers, reverse, side-to-side, and active circles under load."},
+     5:{dur:"60s",how:"Maintenance. Supports handstand loading and wrist health alongside keyboard work. Never skip."},
    }},
-  {name:"Neck Release",totalSec:90,sideLabels:["right side tilt","left side tilt"],muscles:["Neck","Upper traps"],
+  {name:"Neck Release",totalSec:90,sideLabels:["right side","left side"],muscles:["Neck","Upper traps"],
    phases:{
-     1:{dur:"45s / side",how:"Sit or stand tall. Gently tilt ear toward shoulder until you feel a pull along the side of the neck. Optional very light hand assist - do not crank. 45s per side."},
-     2:{dur:"30s / side",how:"Add gentle slow circles exploring the full cervical range. Keep it flowing, never jerky. Find the stiffest angles and breathe into them."},
-     3:{dur:"20s / side",how:"No hand assistance. Hold the tilted position using only neck muscles on the opposite side. Active cervical lateral flexion hold."},
-     4:{dur:"30s",how:"Explore combined movements - tilt and slight rotation simultaneously. Find the angles that feel compressed and breathe through them."},
-     5:{dur:"20s / side",how:"Maintenance. CS student priority - desk posture loads upper traps constantly. Never skip this."},
+     1:{dur:"45s per side",how:"Sit tall. Gently tilt your ear toward your shoulder until you feel a pull along the side of the neck. Very light hand assist — do not crank."},
+     2:{dur:"30s per side",how:"Add slow circles through the full cervical range. Find the stiffest angles and breathe through them."},
+     3:{dur:"20s per side",how:"No hand assistance. Hold the tilted position using only the neck muscles on the opposite side."},
+     4:{dur:"30s",how:"Combine tilt and gentle rotation simultaneously."},
+     5:{dur:"20s per side",how:"Maintenance. Upper trap tension from desk and screen use accumulates fast — never skip."},
    }},
 ];
 
 const SPHASE = {
-  1:{name:"Foundation",color:"#06b6d4",months:"Months 1-3",
-     desc:"Static holds only. 3x per week minimum. Learn your body cues. Hip flexors are your priority area."},
-  2:{name:"PNF Introduction",color:"#8b5cf6",months:"Months 4-6",
-     desc:"Add contract-relax PNF to key stretches. Contract for 5s, exhale and relax deeper. 3 cycles per stretch."},
-  3:{name:"Active Flexibility",color:"#f59e0b",months:"Months 7-9",
-     desc:"Hold stretch positions without passive support. Build strength at end-range - critical for gymnastics and handstands."},
-  4:{name:"Integration",color:"#ec4899",months:"Months 10-12",
-     desc:"Flow between positions. Combine techniques. Explore advanced variations. Express the mobility you have built."},
-  5:{name:"Mastery + Maintenance",color:"#22c55e",months:"Ongoing",
-     desc:"3-4x per week maintenance. The goal now is to use the range in handstands, overhead pressing, and combat movement."},
+  1:{name:"Foundation",color:"#32ade6",months:"Months 1-3",
+     desc:"Static holds only, at least three times a week. Learn your body's cues. Hip flexors are your priority area."},
+  2:{name:"PNF",color:"#bf5af2",months:"Months 4-6",
+     desc:"Add contract-relax PNF to key stretches. Contract for five seconds, exhale deeper. Three cycles per stretch. Daily if you can."},
+  3:{name:"Active Flexibility",color:"#ff9f0a",months:"Months 7-9",
+     desc:"Hold stretch positions without passive support. Build end-range strength — critical for gymnastics and handstands."},
+  4:{name:"Integration",color:"#ff375f",months:"Months 10-12",
+     desc:"Flow between positions. Combine techniques. Explore advanced variations. Use the mobility you've built."},
+  5:{name:"Maintenance",color:"#30d158",months:"Ongoing",
+     desc:"Three to four times a week. Focus on your weakest areas. The goal is to express this range in movement."},
 };
 
-// ── WEIGHT CHIP ────────────────────────────────────────────────────────────────
-function WeightChip({exKey,defaultWeight,color,weights,onSave}) {
-  const [editing,setEditing]=useState(false);
-  const inputRef=useRef(null);
-  const stored=weights[exKey];
-  const current=stored!==undefined?stored:(defaultWeight||"");
-  const [draft,setDraft]=useState(current);
-  const startEdit=e=>{
-    e.stopPropagation();setDraft(current);setEditing(true);
-    setTimeout(()=>{if(inputRef.current){inputRef.current.focus();inputRef.current.select();}},30);
-  };
-  const commit=()=>{onSave(exKey,draft.trim());setEditing(false);};
-  if(editing) return <input ref={inputRef} value={draft} onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} placeholder="e.g. 30kg" style={{background:"#1e1e1e",border:`1.5px solid ${color}`,borderRadius:"7px",color:"#fff",fontSize:"12px",fontWeight:"600",padding:"4px 9px",outline:"none",width:"110px"}}/>;
-  return <div onClick={startEdit} style={{display:"inline-flex",alignItems:"center",gap:"5px",fontSize:"12px",fontWeight:"600",color:current?color:"#3a3a3a",background:"#161616",border:`1px solid ${current?color+"35":"#222"}`,padding:"4px 9px",borderRadius:"7px",cursor:"pointer",userSelect:"none"}}>{current?<><span>{current}</span><span style={{fontSize:"9px",color:"#555"}}>✏</span></>:<span>+ weight</span>}</div>;
-}
+// ── Icons ─────────────────────────────────────────────────────────────────────
+const DumbbellIcon = ({size=22,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <rect x="1" y="10" width="3" height="4" rx="1.5"/>
+    <rect x="4" y="8" width="3" height="8" rx="1.5"/>
+    <rect x="7" y="11" width="10" height="2"/>
+    <rect x="17" y="8" width="3" height="8" rx="1.5"/>
+    <rect x="20" y="10" width="3" height="4" rx="1.5"/>
+  </svg>
+);
+const BoltIcon = ({size=22,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <path d="M13 2L3 14h8l-1 8 11-12h-8z"/>
+  </svg>
+);
+const PersonIcon = ({size=22,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" stroke={color} fill="none" strokeWidth="1.8" strokeLinecap="round">
+    <circle cx="12" cy="7" r="4"/>
+    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+  </svg>
+);
 
-// ── EXERCISE CARD (list mode) ──────────────────────────────────────────────────
-function ExCard({ex,idx,color,weights,onSave}) {
-  const [open,setOpen]=useState(false);
-  const [done,setDone]=useState(false);
-  const reps=ex.hold?`${ex.sets}x${ex.reps} - ${ex.hold}`:`${ex.sets}x${ex.reps}`;
+// ── Weight chip ───────────────────────────────────────────────────────────────
+function WeightChip({exKey, defaultWeight, color, weights, onSave}) {
+  const [editing, setEditing] = useState(false);
+  const ref = useRef(null);
+  const stored = weights[exKey];
+  const val = stored !== undefined ? stored : (defaultWeight || "");
+  const [draft, setDraft] = useState(val);
+
+  const startEdit = e => {
+    e.stopPropagation();
+    setDraft(val);
+    setEditing(true);
+    setTimeout(() => { if (ref.current) { ref.current.focus(); ref.current.select(); } }, 20);
+  };
+  const commit = () => { onSave(exKey, draft.trim()); setEditing(false); };
+
+  if (editing) return (
+    <input ref={ref} value={draft}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+      onClick={e => e.stopPropagation()}
+      placeholder="e.g. 30kg"
+      style={{background:"rgba(255,255,255,0.1)",border:`1px solid ${color}`,borderRadius:"8px",
+        color:"#fff",fontSize:"14px",padding:"5px 11px",width:"100px"}}
+    />
+  );
+
   return (
-    <div style={{background:ex.hero?color+"0f":"#111",border:`1px solid ${ex.hero?color+"45":"#1d1d1d"}`,borderRadius:"13px",marginBottom:"7px",overflow:"hidden",opacity:done?0.35:1,transition:"opacity 0.18s"}}>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"13px 13px 0"}}>
-        <div onClick={()=>setDone(d=>!d)} style={{width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,border:done?"none":`1.5px solid ${color}50`,background:done?color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:done?"13px":"11px",fontWeight:"800",color:done?"#000":color}}>{done?"✓":idx+1}</div>
-        <div style={{flex:1,minWidth:0}} onClick={()=>setOpen(o=>!o)}>
-          <div style={{fontSize:"14px",fontWeight:"600",color:ex.hero?color:"#efefef",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"5px"}}>{ex.name}{ex.hero&&<span style={{fontSize:"9px",background:color,color:"#000",padding:"2px 6px",borderRadius:"4px",fontWeight:"800"}}>HERO</span>}</div>
-          <div style={{fontSize:"11px",color:"#404040",marginTop:"2px"}}>{ex.equip}</div>
-        </div>
-        <div style={{textAlign:"right",flexShrink:0}} onClick={()=>setOpen(o=>!o)}>
-          <div style={{fontSize:"12px",fontWeight:"700",color:"#ddd"}}>{reps}</div>
-          {ex.tempo&&<div style={{fontSize:"10px",color:"#555",marginTop:"2px"}}>{ex.tempo}</div>}
-        </div>
-      </div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 13px 11px",gap:"8px"}}>
-        <WeightChip exKey={ex.name} defaultWeight={ex.defaultWeight} color={color} weights={weights} onSave={onSave}/>
-        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <span style={{fontSize:"11px",color:"#555",background:"#1a1a1a",padding:"3px 8px",borderRadius:"6px"}}>rest {ex.rest}</span>
-          <span onClick={()=>setOpen(o=>!o)} style={{fontSize:"11px",color:"#333",cursor:"pointer",padding:"4px"}}>{open?"^ hide":"v cue"}</span>
-        </div>
-      </div>
-      {open&&<div style={{padding:"11px 13px 14px",borderTop:"1px solid #1a1a1a",background:"#0c0c0c",fontSize:"13px",color:"#bbb",lineHeight:"1.65"}}>{ex.cue}</div>}
-    </div>
+    <button onClick={startEdit} style={{
+      background: val ? "rgba(255,255,255,0.08)" : "transparent",
+      border: `1px solid ${val ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.12)"}`,
+      borderRadius:"8px", color: val ? "#fff" : "#636366",
+      fontSize:"14px", fontWeight: val ? "500" : "400",
+      padding:"5px 11px", cursor:"pointer",
+    }}>
+      {val || "Set weight"}
+    </button>
   );
 }
 
-// ── SESSION MODE ───────────────────────────────────────────────────────────────
-function Session({exercises,color,weights,onSave,onExit}) {
-  const [exIdx,setExIdx]=useState(0);
-  const [setNum,setSetNum]=useState(1);
-  const [state,setState]=useState("working"); // working | resting | done
-  const [restSec,setRestSec]=useState(0);
-  const restTotal=useRef(0);
-  const timer=useRef(null);
-  
-  const ex=exercises[exIdx];
-  const totalSets=ex?ex.sets:1;
-  const doneSets=exercises.slice(0,exIdx).reduce((a,e)=>a+e.sets,0)+setNum-1;
-  const allSets=exercises.reduce((a,e)=>a+e.sets,0);
-  
-  const clear=()=>{if(timer.current){clearInterval(timer.current);timer.current=null;}};
-  
-  const advance=()=>{
-    clear();setRestSec(0);
-    const lastSet=setNum>=totalSets;
-    const lastEx=exIdx>=exercises.length-1;
-    if(lastSet&&lastEx){setState("done");return;}
-    if(lastSet){setExIdx(i=>i+1);setSetNum(1);}
-    else setSetNum(s=>s+1);
-    setState("working");
-  };
-  
-  const doneSet=()=>{
-    clear();
-    const lastSet=setNum>=totalSets;
-    const lastEx=exIdx>=exercises.length-1;
-    if(lastSet&&lastEx){setState("done");return;}
-    const secs=parseRestSec(ex.rest);
-    restTotal.current=secs;setRestSec(secs);setState("resting");
-    timer.current=setInterval(()=>{
-      setRestSec(s=>{
-        if(s<=1){clear();advance();return 0;}
-        return s-1;
-      });
-    },1000);
-  };
-  
-  const goTo=(i)=>{clear();setExIdx(Math.max(0,Math.min(i,exercises.length-1)));setSetNum(1);setState("working");setRestSec(0);};
-  useEffect(()=>()=>clear(),[]);
-  
-  if(state==="done") return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",height:"calc(100vh - 72px)"}}>
-      <div style={{fontSize:"52px",marginBottom:"16px"}}>🎉</div>
-      <div style={{fontSize:"22px",fontWeight:"700",marginBottom:"8px"}}>Session Complete</div>
-      <div style={{fontSize:"14px",color:"#666",marginBottom:"32px"}}>{allSets} sets done</div>
-      <button onClick={onExit} style={{padding:"14px 36px",borderRadius:"14px",background:color,color:"#000",fontSize:"16px",fontWeight:"800",cursor:"pointer",border:"none"}}>Done</button>
-    </div>
-  );
-  
-  const R=40,C=2*Math.PI*R;
-  const rProg=restTotal.current>0?(restTotal.current-restSec)/restTotal.current:0;
-  
+// ── Edit / Add modal ──────────────────────────────────────────────────────────
+function EditModal({ex, onSave, onDelete, onClose, isNew}) {
+  const [f, setF] = useState({
+    name: ex.name || "",
+    equip: ex.equip || "",
+    sets: String(ex.sets || 1),
+    reps: String(ex.reps || "10-12"),
+    rest: ex.rest || "90s",
+    weight: ex.weight || ex.defaultWeight || "",
+    cue: ex.cue || "",
+    hold: ex.hold || "",
+    tempo: ex.tempo || "",
+  });
+  const upd = (k, v) => setF(p => ({...p, [k]: v}));
+  const handleSave = () => onSave({...f, sets: parseInt(f.sets) || 1, defaultWeight: f.weight});
+
   return (
-    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 72px)"}}>
-      {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:"1px solid #1a1a1a",flexShrink:0}}>
-        <button onClick={onExit} style={{background:"none",color:"#555",fontSize:"13px",fontWeight:"600",cursor:"pointer",padding:"6px 0",border:"none"}}>← List</button>
-        <div style={{fontSize:"12px",color:"#666",textAlign:"center"}}>
-          <div style={{fontWeight:"700"}}>{doneSets}/{allSets} sets</div>
-          <div style={{color:"#444",fontSize:"11px"}}>exercise {exIdx+1}/{exercises.length}</div>
+    <div className="modal-bg" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-body">
+        <div className="drag-bar"/>
+        <h2 style={{fontSize:"20px",fontWeight:"700",marginBottom:"4px"}}>{isNew ? "Add Exercise" : "Edit Exercise"}</h2>
+        <p style={{fontSize:"14px",color:"#636366",marginBottom:"24px"}}>Saved to this device.</p>
+
+        <div className="row">
+          <span className="field-label">Exercise name</span>
+          <input className="field" value={f.name} onChange={e=>upd("name",e.target.value)} placeholder="e.g. Cable Fly"/>
         </div>
-        <div style={{display:"flex",gap:"6px"}}>
-          <button onClick={()=>goTo(exIdx-1)} disabled={exIdx===0} style={{background:"#1a1a1a",color:exIdx===0?"#2a2a2a":"#777",padding:"6px 12px",borderRadius:"8px",fontSize:"13px",fontWeight:"700",cursor:exIdx===0?"default":"pointer",border:"none"}}>←</button>
-          <button onClick={()=>goTo(exIdx+1)} disabled={exIdx===exercises.length-1} style={{background:"#1a1a1a",color:exIdx===exercises.length-1?"#2a2a2a":"#777",padding:"6px 12px",borderRadius:"8px",fontSize:"13px",fontWeight:"700",cursor:exIdx===exercises.length-1?"default":"pointer",border:"none"}}>→</button>
+        <div className="row">
+          <span className="field-label">Equipment</span>
+          <input className="field" value={f.equip} onChange={e=>upd("equip",e.target.value)} placeholder="e.g. Cable, Machine, Dumbbell"/>
         </div>
-      </div>
-      
-      <div style={{flex:1,overflowY:"auto",padding:"20px 20px 0"}}>
-        {ex.section&&<div style={{fontSize:"10px",fontWeight:"800",color:"#3a3a3a",letterSpacing:"0.12em",marginBottom:"6px"}}>{ex.section}</div>}
-        <div style={{fontSize:"24px",fontWeight:"700",lineHeight:"1.2",marginBottom:"6px",color:ex.hero?color:"#fff"}}>{ex.name}</div>
-        <div style={{fontSize:"13px",color:"#555",marginBottom:"16px"}}>{ex.equip}</div>
-        
-        {/* Set progress bars */}
-        <div style={{display:"flex",gap:"6px",marginBottom:"16px"}}>
-          {Array.from({length:totalSets},(_,i)=>(
-            <div key={i} style={{flex:1,height:"5px",borderRadius:"3px",transition:"background 0.3s",
-              background:i<setNum-1?color:i===setNum-1?state==="resting"?color+"66":color:"#222"}}/>
-          ))}
+        <div style={{display:"flex",gap:"12px",marginBottom:"18px"}}>
+          <div style={{flex:1}}><span className="field-label">Sets</span>
+            <input className="field" type="number" min="1" max="20" value={f.sets} onChange={e=>upd("sets",e.target.value)}/></div>
+          <div style={{flex:1}}><span className="field-label">Reps</span>
+            <input className="field" value={f.reps} onChange={e=>upd("reps",e.target.value)} placeholder="8-12"/></div>
+          <div style={{flex:1}}><span className="field-label">Rest</span>
+            <input className="field" value={f.rest} onChange={e=>upd("rest",e.target.value)} placeholder="90s"/></div>
         </div>
-        
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
-          <div style={{fontSize:"22px",fontWeight:"700",color:color}}>SET {setNum}<span style={{fontSize:"14px",color:"#555"}}> / {totalSets}</span></div>
-          <WeightChip exKey={ex.name} defaultWeight={ex.defaultWeight} color={color} weights={weights} onSave={onSave}/>
+        <div className="row">
+          <span className="field-label">Weight</span>
+          <input className="field" value={f.weight} onChange={e=>upd("weight",e.target.value)} placeholder="e.g. 60kg"/>
         </div>
-        
-        {ex.reps&&<div style={{display:"inline-flex",alignItems:"center",background:"#1a1a1a",padding:"8px 14px",borderRadius:"10px",fontSize:"14px",color:"#ddd",fontWeight:"600",marginBottom:"14px"}}>{ex.reps}</div>}
-        
-        <div style={{fontSize:"13px",color:"#888",lineHeight:"1.6",marginBottom:"16px"}}>{ex.cue}</div>
-      </div>
-      
-      {/* Bottom */}
-      <div style={{padding:"14px 20px 30px",borderTop:"1px solid #1a1a1a",flexShrink:0}}>
-        {state==="working"&&(
-          <button onClick={doneSet} style={{width:"100%",padding:"18px",borderRadius:"16px",background:color,color:"#000",fontSize:"18px",fontWeight:"800",cursor:"pointer",border:"none"}}>
-            ✓ Done Set {setNum}
+        <div style={{display:"flex",gap:"12px",marginBottom:"18px"}}>
+          <div style={{flex:1}}><span className="field-label">Hold (optional)</span>
+            <input className="field" value={f.hold} onChange={e=>upd("hold",e.target.value)} placeholder="30s"/></div>
+          <div style={{flex:1}}><span className="field-label">Tempo (optional)</span>
+            <input className="field" value={f.tempo} onChange={e=>upd("tempo",e.target.value)} placeholder="4-1-3"/></div>
+        </div>
+        <div className="row">
+          <span className="field-label">Notes / cue</span>
+          <textarea className="field" rows="4" value={f.cue} onChange={e=>upd("cue",e.target.value)} placeholder="Form cues, technique notes..."/>
+        </div>
+
+        <button onClick={handleSave} style={{width:"100%",padding:"16px",borderRadius:"13px",
+          background:"#0a84ff",color:"#fff",fontSize:"17px",fontWeight:"700",cursor:"pointer",marginBottom:"10px"}}>
+          {isNew ? "Add to workout" : "Save changes"}
+        </button>
+        {onDelete && (
+          <button onClick={onDelete} style={{width:"100%",padding:"14px",borderRadius:"13px",
+            background:"transparent",color:"#ff453a",fontSize:"16px",fontWeight:"600",
+            cursor:"pointer",border:"1px solid rgba(255,69,58,0.3)",marginBottom:"10px"}}>
+            Remove exercise
           </button>
         )}
-        {state==="resting"&&(
+        <button onClick={onClose} style={{width:"100%",padding:"14px",borderRadius:"13px",
+          background:"rgba(255,255,255,0.07)",color:"#8e8e93",fontSize:"16px",cursor:"pointer"}}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Exercise card ─────────────────────────────────────────────────────────────
+function ExCard({ex, idx, color, weights, onSave, onEdit, isCustom}) {
+  const [open, setOpen] = useState(false);
+  const [done, setDone] = useState(false);
+  const reps = ex.hold ? `${ex.sets}x${ex.reps} · ${ex.hold}` : `${ex.sets}x${ex.reps}`;
+
+  return (
+    <div style={{
+      background: "#1c1c1e",
+      borderRadius:"14px", marginBottom:"8px", overflow:"hidden",
+      opacity: done ? 0.3 : 1, transition:"opacity 0.2s",
+      border: ex.hero ? `1px solid ${color}35` : "1px solid rgba(255,255,255,0.06)",
+    }}>
+      <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 14px 0"}}>
+        <button onClick={()=>setDone(d=>!d)} style={{
+          width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,
+          border: done ? "none" : "1.5px solid rgba(255,255,255,0.2)",
+          background: done ? color : "transparent",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          cursor:"pointer",fontSize: done ? "14px" : "12px",
+          fontWeight:"600",color: done ? "#000" : "#8e8e93",
+        }}>
+          {done ? "✓" : idx + 1}
+        </button>
+        <div style={{flex:1,minWidth:0}} onClick={()=>setOpen(o=>!o)}>
+          <div style={{fontSize:"16px",fontWeight:"600",color: ex.hero ? color : "#fff",
+            lineHeight:"1.3",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
+            {ex.name}
+            {isCustom && <span style={{fontSize:"11px",color:"#636366",fontWeight:"500"}}>custom</span>}
+          </div>
+          <div style={{fontSize:"13px",color:"#636366",marginTop:"3px"}}>{ex.equip}</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
+          <div onClick={()=>setOpen(o=>!o)} style={{textAlign:"right"}}>
+            <div style={{fontSize:"14px",fontWeight:"600",color:"#8e8e93"}}>{reps}</div>
+            {ex.tempo && <div style={{fontSize:"12px",color:"#636366",marginTop:"2px"}}>{ex.tempo}</div>}
+          </div>
+          <button onClick={e=>{e.stopPropagation();onEdit();}} style={{
+            background:"transparent",color:"#636366",fontSize:"13px",fontWeight:"500",
+            cursor:"pointer",padding:"4px 8px",borderRadius:"6px",
+            border:"1px solid rgba(255,255,255,0.1)",
+          }}>
+            Edit
+          </button>
+        </div>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding:"10px 14px 14px",gap:"8px"}}>
+        <WeightChip exKey={ex.name} defaultWeight={ex.defaultWeight || ex.weight} color={color} weights={weights} onSave={onSave}/>
+        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <span style={{fontSize:"13px",color:"#636366"}}>Rest {ex.rest}</span>
+          <button onClick={()=>setOpen(o=>!o)} style={{
+            background:"transparent",color:"#636366",fontSize:"13px",cursor:"pointer",
+            padding:"2px 6px",border:"none",
+          }}>
+            {open ? "▲" : "▼"}
+          </button>
+        </div>
+      </div>
+      {open && (
+        <div style={{padding:"12px 14px 16px",borderTop:"1px solid rgba(255,255,255,0.07)",
+          fontSize:"14px",color:"#8e8e93",lineHeight:"1.65",background:"#111"}}>
+          {ex.cue}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddExBtn({color, onClick}) {
+  return (
+    <button onClick={onClick} style={{
+      width:"100%",padding:"14px 16px",
+      borderRadius:"12px",marginBottom:"16px",marginTop:"4px",
+      background:"transparent",
+      border:"1px dashed rgba(255,255,255,0.15)",
+      color:"#636366",fontSize:"15px",cursor:"pointer",
+      display:"flex",alignItems:"center",gap:"10px",
+    }}>
+      <span style={{fontSize:"20px",lineHeight:1,color:"#8e8e93"}}>+</span>
+      Add exercise
+    </button>
+  );
+}
+
+// ── Session ───────────────────────────────────────────────────────────────────
+function Session({exercises, color, weights, onSave, onExit}) {
+  const [exIdx, setExIdx] = useState(0);
+  const [setNum, setSetNum] = useState(1);
+  const [phase, setPhase] = useState("working");
+  const [restSec, setRestSec] = useState(0);
+  const restTotal = useRef(0);
+  const timer = useRef(null);
+
+  const ex = exercises[exIdx] || exercises[0];
+  const totalSets = ex ? ex.sets : 1;
+  const doneSets = exercises.slice(0, exIdx).reduce((a, e) => a + e.sets, 0) + setNum - 1;
+  const allSets = exercises.reduce((a, e) => a + e.sets, 0);
+
+  const clearTimer = () => { if (timer.current) { clearInterval(timer.current); timer.current = null; } };
+
+  const advance = () => {
+    clearTimer(); setRestSec(0);
+    const lastSet = setNum >= totalSets;
+    const lastEx = exIdx >= exercises.length - 1;
+    if (lastSet && lastEx) { setPhase("done"); return; }
+    if (lastSet) { setExIdx(i => i + 1); setSetNum(1); }
+    else setSetNum(s => s + 1);
+    setPhase("working");
+  };
+
+  const logSet = () => {
+    clearTimer();
+    const lastSet = setNum >= totalSets;
+    const lastEx = exIdx >= exercises.length - 1;
+    if (lastSet && lastEx) { setPhase("done"); return; }
+    const secs = parseRestSec(ex.rest);
+    restTotal.current = secs;
+    setRestSec(secs);
+    setPhase("resting");
+    timer.current = setInterval(() => setRestSec(s => {
+      if (s <= 1) { clearTimer(); advance(); return 0; }
+      return s - 1;
+    }), 1000);
+  };
+
+  const goTo = i => {
+    clearTimer();
+    setExIdx(Math.max(0, Math.min(i, exercises.length - 1)));
+    setSetNum(1); setPhase("working"); setRestSec(0);
+  };
+
+  useEffect(() => () => clearTimer(), []);
+
+  if (phase === "done") return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      height:"100%",padding:"40px 24px",textAlign:"center"}}>
+      <div style={{width:"64px",height:"64px",borderRadius:"50%",background:`${color}20`,
+        display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"20px"}}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2 style={{fontSize:"26px",fontWeight:"700",marginBottom:"8px"}}>Session complete</h2>
+      <p style={{fontSize:"15px",color:"#8e8e93",marginBottom:"40px"}}>{allSets} sets done</p>
+      <button onClick={onExit} style={{padding:"16px 48px",borderRadius:"14px",
+        background:color,color:"#000",fontSize:"17px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+        Finish
+      </button>
+    </div>
+  );
+
+  const R = 42, C = 2 * Math.PI * R;
+  const ringProg = restTotal.current > 0 ? (restTotal.current - restSec) / restTotal.current : 0;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding:"14px 18px",borderBottom:"1px solid rgba(255,255,255,0.07)",flexShrink:0}}>
+        <button onClick={onExit} style={{background:"none",color:"#8e8e93",fontSize:"14px",
+          fontWeight:"500",cursor:"pointer",border:"none"}}>
+          Back to list
+        </button>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:"14px",fontWeight:"600",color:"#fff"}}>{doneSets} / {allSets} sets</div>
+          <div style={{fontSize:"12px",color:"#636366",marginTop:"1px"}}>{exIdx + 1} of {exercises.length}</div>
+        </div>
+        <div style={{display:"flex",gap:"8px"}}>
+          <button onClick={()=>goTo(exIdx-1)} disabled={exIdx===0} style={{
+            background:"#2c2c2e",color:exIdx===0?"#3a3a3c":"#8e8e93",
+            padding:"7px 12px",borderRadius:"9px",fontSize:"14px",fontWeight:"600",
+            cursor:exIdx===0?"default":"pointer",border:"none"}}>
+            ←
+          </button>
+          <button onClick={()=>goTo(exIdx+1)} disabled={exIdx===exercises.length-1} style={{
+            background:"#2c2c2e",color:exIdx===exercises.length-1?"#3a3a3c":"#8e8e93",
+            padding:"7px 12px",borderRadius:"9px",fontSize:"14px",fontWeight:"600",
+            cursor:exIdx===exercises.length-1?"default":"pointer",border:"none"}}>
+            →
+          </button>
+        </div>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",padding:"24px 20px 0"}}>
+        {ex.section && (
+          <div style={{fontSize:"12px",fontWeight:"600",color:"#636366",
+            textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"10px"}}>
+            {ex.section}
+          </div>
+        )}
+        <h2 style={{fontSize:"28px",fontWeight:"700",lineHeight:"1.2",
+          marginBottom:"6px",color:ex.hero?color:"#fff"}}>{ex.name}</h2>
+        <p style={{fontSize:"15px",color:"#636366",marginBottom:"24px"}}>{ex.equip}</p>
+
+        <div style={{display:"flex",gap:"6px",marginBottom:"24px"}}>
+          {Array.from({length:totalSets},(_,i)=>(
+            <div key={i} style={{flex:1,height:"4px",borderRadius:"2px",
+              background:i<setNum-1?color:i===setNum-1?"#fff":"rgba(255,255,255,0.15)",
+              transition:"background 0.25s"}}/>
+          ))}
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}}>
+          <div>
+            <span style={{fontSize:"36px",fontWeight:"800",color:color}}>Set {setNum}</span>
+            <span style={{fontSize:"18px",color:"#636366",fontWeight:"400"}}> / {totalSets}</span>
+          </div>
+          <WeightChip exKey={ex.name} defaultWeight={ex.defaultWeight || ex.weight}
+            color={color} weights={weights} onSave={onSave}/>
+        </div>
+
+        {ex.reps && (
+          <div style={{background:"#1c1c1e",borderRadius:"12px",padding:"14px 16px",
+            marginBottom:"18px",display:"inline-block"}}>
+            <span style={{fontSize:"16px",fontWeight:"600",color:"#fff"}}>{ex.reps}</span>
+            {ex.hold && <span style={{fontSize:"16px",color:"#8e8e93"}}> · {ex.hold}</span>}
+          </div>
+        )}
+
+        <p style={{fontSize:"14px",color:"#636366",lineHeight:"1.65",marginBottom:"24px"}}>{ex.cue}</p>
+      </div>
+
+      <div style={{padding:"16px 20px",borderTop:"1px solid rgba(255,255,255,0.07)",flexShrink:0,
+        paddingBottom:"calc(16px + env(safe-area-inset-bottom))"}}>
+        {phase === "working" && (
+          <button onClick={logSet} style={{width:"100%",padding:"20px",borderRadius:"16px",
+            background:color,color:"#000",fontSize:"18px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+            Log set {setNum}
+          </button>
+        )}
+        {phase === "resting" && (
           <div style={{textAlign:"center"}}>
-            <div style={{fontSize:"12px",color:"#555",marginBottom:"10px",fontWeight:"600",letterSpacing:"0.08em"}}>REST</div>
-            <div style={{display:"flex",justifyContent:"center",marginBottom:"10px"}}>
-              <svg width="96" height="96" viewBox="0 0 96 96">
-                <circle cx="48" cy="48" r={R} fill="none" stroke="#1e1e1e" strokeWidth="7"/>
-                <circle cx="48" cy="48" r={R} fill="none" stroke={color} strokeWidth="7"
-                  strokeDasharray={C} strokeDashoffset={C*(1-rProg)} strokeLinecap="round"
-                  transform="rotate(-90 48 48)" style={{transition:"stroke-dashoffset 0.9s linear"}}/>
-                <text x="48" y="55" textAnchor="middle" style={{fontSize:"20px",fontWeight:"700",fill:"#fff"}}>{fmt(restSec)}</text>
+            <p style={{fontSize:"12px",color:"#636366",marginBottom:"12px",fontWeight:"600",letterSpacing:"0.08em",textTransform:"uppercase"}}>Resting</p>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:"14px"}}>
+              <svg width="104" height="104" viewBox="0 0 104 104">
+                <circle cx="52" cy="52" r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6"/>
+                <circle cx="52" cy="52" r={R} fill="none" stroke={color} strokeWidth="6"
+                  strokeDasharray={C} strokeDashoffset={C*(1-ringProg)} strokeLinecap="round"
+                  transform="rotate(-90 52 52)" style={{transition:"stroke-dashoffset 0.9s linear"}}/>
+                <text x="52" y="60" textAnchor="middle" style={{fontSize:"22px",fontWeight:"700",fill:"#fff"}}>
+                  {fmtTime(restSec)}
+                </text>
               </svg>
             </div>
-            <button onClick={()=>{clear();advance();}} style={{width:"100%",padding:"15px",borderRadius:"14px",background:"#1a1a1a",color:"#777",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"1px solid #2a2a2a"}}>
-              Skip Rest →
+            <button onClick={()=>{clearTimer();advance();}} style={{width:"100%",padding:"16px",
+              borderRadius:"14px",background:"#2c2c2e",color:"#8e8e93",
+              fontSize:"16px",fontWeight:"600",cursor:"pointer",border:"none"}}>
+              Skip rest
             </button>
           </div>
         )}
@@ -453,299 +742,513 @@ function Session({exercises,color,weights,onSave,onExit}) {
   );
 }
 
-// ── STRETCH TIMER ──────────────────────────────────────────────────────────────
-function StretchTimer({phase,onExit}) {
-  const meta=SPHASE[phase];
-  const [idx,setIdx]=useState(0);
-  const [sec,setSec]=useState(0);
-  const [sideIdx,setSideIdx]=useState(0);
-  const [running,setRunning]=useState(false);
-  const [finished,setFinished]=useState(false);
-  const timer=useRef(null);
-  
-  const S=STRETCHES;
-  const ns=s=>s.sideLabels.length||1;
-  const sps=s=>Math.round(s.totalSec/ns(s));
-  const cumStarts=[];let cum=0;S.forEach(s=>{cumStarts.push(cum);cum+=s.totalSec;});
-  const totalSec=cum;
-  
-  const clear=()=>{if(timer.current){clearInterval(timer.current);timer.current=null;}};
-  
-  useEffect(()=>{
-    if(!running)return;
-    timer.current=setInterval(()=>{
-      setSec(prev=>{
-        const s=S[idx];
-        const ns2=prev+1;
-        const sp=sps(s);
-        const newSide=Math.min(Math.floor(ns2/sp),ns(s)-1);
-        if(newSide!==sideIdx)setSideIdx(newSide);
-        if(ns2>=s.totalSec){
-          clear();setRunning(false);
-          if(idx<S.length-1){
-            setTimeout(()=>{setIdx(i=>i+1);setSec(0);setSideIdx(0);setRunning(true);},700);
+// ── Stretch timer ─────────────────────────────────────────────────────────────
+function StretchTimer({phase, onExit}) {
+  const meta = SPHASE[phase];
+  const [idx, setIdx] = useState(0);
+  const [sec, setSec] = useState(0);
+  const [sideIdx, setSideIdx] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+  const timer = useRef(null);
+
+  const numSides = s => s.sideLabels.length || 1;
+  const secsPerSide = s => Math.round(s.totalSec / numSides(s));
+  const cumulativeStarts = [];
+  let cum = 0;
+  STRETCHES.forEach(s => { cumulativeStarts.push(cum); cum += s.totalSec; });
+
+  const clearTimer = () => { if (timer.current) { clearInterval(timer.current); timer.current = null; } };
+
+  useEffect(() => {
+    if (!running) return;
+    timer.current = setInterval(() => {
+      setSec(prev => {
+        const stretch = STRETCHES[idx];
+        const next = prev + 1;
+        const newSide = Math.min(Math.floor(next / secsPerSide(stretch)), numSides(stretch) - 1);
+        if (newSide !== sideIdx) setSideIdx(newSide);
+        if (next >= stretch.totalSec) {
+          clearTimer(); setRunning(false);
+          if (idx < STRETCHES.length - 1) {
+            setTimeout(() => { setIdx(i => i + 1); setSec(0); setSideIdx(0); setRunning(true); }, 700);
           } else {
-            setFinished(true);
+            setDone(true);
           }
-          return s.totalSec;
+          return stretch.totalSec;
         }
-        return ns2;
+        return next;
       });
-    },1000);
-    return clear;
-  },[running,idx,sideIdx]);
-  
-  useEffect(()=>()=>clear(),[]);
-  
-  const next=()=>{clear();setRunning(false);if(idx<S.length-1){setIdx(i=>i+1);setSec(0);setSideIdx(0);}};
-  const prev=()=>{clear();setRunning(false);if(idx>0){setIdx(i=>i-1);setSec(0);setSideIdx(0);}};
-  const toggle=()=>{if(running){clear();setRunning(false);}else setRunning(true);};
-  const reset=()=>{clear();setRunning(false);setIdx(0);setSec(0);setSideIdx(0);setFinished(false);};
-  
-  if(finished) return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 24px",textAlign:"center",height:"calc(100vh - 72px)"}}>
-      <div style={{fontSize:"52px",marginBottom:"16px"}}>✨</div>
-      <div style={{fontSize:"22px",fontWeight:"700",marginBottom:"8px"}}>Stretch Complete</div>
-      <div style={{fontSize:"14px",color:"#666",marginBottom:"32px"}}>20 min · 13 stretches done</div>
+    }, 1000);
+    return clearTimer;
+  }, [running, idx, sideIdx]);
+
+  useEffect(() => () => clearTimer(), []);
+
+  const next = () => { clearTimer(); setRunning(false); if (idx < STRETCHES.length-1) { setIdx(i=>i+1); setSec(0); setSideIdx(0); } };
+  const prev = () => { clearTimer(); setRunning(false); if (idx > 0) { setIdx(i=>i-1); setSec(0); setSideIdx(0); } };
+  const reset = () => { clearTimer(); setRunning(false); setIdx(0); setSec(0); setSideIdx(0); setDone(false); };
+
+  if (done) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      height:"100%",padding:"40px 24px",textAlign:"center"}}>
+      <div style={{width:"64px",height:"64px",borderRadius:"50%",background:`${meta.color}20`,
+        display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"20px"}}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={meta.color} strokeWidth="2.5" strokeLinecap="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2 style={{fontSize:"26px",fontWeight:"700",marginBottom:"8px"}}>All done</h2>
+      <p style={{fontSize:"15px",color:"#8e8e93",marginBottom:"40px"}}>20 minutes · 13 stretches</p>
       <div style={{display:"flex",gap:"12px"}}>
-        <button onClick={reset} style={{padding:"14px 24px",borderRadius:"14px",background:"#1a1a1a",color:"#888",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>Again</button>
-        <button onClick={onExit} style={{padding:"14px 24px",borderRadius:"14px",background:meta.color,color:"#000",fontSize:"14px",fontWeight:"800",cursor:"pointer",border:"none"}}>Done</button>
+        <button onClick={reset} style={{padding:"15px 28px",borderRadius:"13px",
+          background:"#2c2c2e",color:"#8e8e93",fontSize:"15px",fontWeight:"600",cursor:"pointer",border:"none"}}>
+          Again
+        </button>
+        <button onClick={onExit} style={{padding:"15px 28px",borderRadius:"13px",
+          background:meta.color,color:"#000",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+          Done
+        </button>
       </div>
     </div>
   );
-  
-  const stretch=S[idx];
-  const sp=sps(stretch);
-  const sideElapsed=sec-sideIdx*sp;
-  const frac=Math.min(sideElapsed/sp,1);
-  const R=38,Circ=2*Math.PI*R;
-  const elapsed=cumStarts[idx]+sec;
-  const totalPct=Math.min(Math.round(elapsed/totalSec*100),100);
-  const em=Math.floor(elapsed/60),es=elapsed%60;
-  const how=stretch.phases[phase]?.how||stretch.phases[1].how;
-  const dur=stretch.phases[phase]?.dur||"";
-  
+
+  const stretch = STRETCHES[idx];
+  const sps = secsPerSide(stretch);
+  const sideElapsed = sec - sideIdx * sps;
+  const frac = Math.min(sideElapsed / sps, 1);
+  const R = 40, Circ = 2 * Math.PI * R;
+  const elapsed = cumulativeStarts[idx] + sec;
+  const pct = Math.min(Math.round(elapsed / cum * 100), 100);
+  const em = Math.floor(elapsed / 60), es = elapsed % 60;
+  const how = stretch.phases[phase]?.how || stretch.phases[1].how;
+  const dur = stretch.phases[phase]?.dur || "";
+
   return (
-    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 72px)"}}>
-      {/* Progress dots */}
-      <div style={{padding:"10px 16px 0",display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+    <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+      <div style={{padding:"12px 18px 0",display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
         <div style={{display:"flex",gap:"4px",flex:1,flexWrap:"wrap"}}>
-          {S.map((_,i)=>(
-            <div key={i} style={{width:"8px",height:"8px",borderRadius:"50%",background:i<idx?meta.color:i===idx?"#fff":"#222",transition:"background 0.3s"}}/>
+          {STRETCHES.map((_,i) => (
+            <div key={i} style={{width:"8px",height:"8px",borderRadius:"50%",
+              background:i<idx?meta.color:i===idx?"#fff":"rgba(255,255,255,0.15)",
+              transition:"background 0.3s"}}/>
           ))}
         </div>
-        <span style={{fontSize:"11px",color:"#555",whiteSpace:"nowrap",marginLeft:"6px"}}>{idx+1}/13</span>
-        <button onClick={onExit} style={{background:"none",color:"#444",fontSize:"13px",cursor:"pointer",padding:"0 0 0 10px",border:"none",fontWeight:"600"}}>Exit</button>
+        <span style={{fontSize:"13px",color:"#636366"}}>{idx+1} / 13</span>
+        <button onClick={onExit} style={{background:"none",color:"#636366",fontSize:"14px",
+          cursor:"pointer",border:"none",padding:"0 0 0 12px",fontWeight:"500"}}>
+          Exit
+        </button>
       </div>
-      
-      {/* Main card */}
-      <div style={{flex:1,padding:"14px 16px",overflowY:"auto"}}>
-        <div style={{background:"#111",border:"1px solid #1d1d1d",borderRadius:"16px",padding:"16px",marginBottom:"10px"}}>
-          <div style={{display:"flex",gap:"14px"}}>
-            {/* Ring */}
-            <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
-              <svg width="88" height="88" viewBox="0 0 88 88">
-                <circle cx="44" cy="44" r={R} fill="none" stroke="#1e1e1e" strokeWidth="6"/>
-                <circle cx="44" cy="44" r={R} fill="none" stroke={meta.color} strokeWidth="6"
+
+      <div style={{flex:1,padding:"14px 18px",overflowY:"auto"}}>
+        <div style={{background:"#1c1c1e",border:"1px solid rgba(255,255,255,0.06)",
+          borderRadius:"18px",padding:"18px"}}>
+          <div style={{display:"flex",gap:"18px"}}>
+            <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:"10px"}}>
+              <svg width="92" height="92" viewBox="0 0 92 92">
+                <circle cx="46" cy="46" r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6"/>
+                <circle cx="46" cy="46" r={R} fill="none" stroke={meta.color} strokeWidth="6"
                   strokeDasharray={Circ} strokeDashoffset={frac*Circ} strokeLinecap="round"
-                  transform="rotate(-90 44 44)" style={{transition:"stroke-dashoffset 0.95s linear"}}/>
-                <text x="44" y="51" textAnchor="middle" style={{fontSize:"16px",fontWeight:"700",fill:"#fff"}}>{Math.max(stretch.totalSec-sec,0)}s</text>
+                  transform="rotate(-90 46 46)" style={{transition:"stroke-dashoffset 0.95s linear"}}/>
+                <text x="46" y="53" textAnchor="middle" style={{fontSize:"17px",fontWeight:"700",fill:"#fff"}}>
+                  {Math.max(stretch.totalSec - sec, 0)}s
+                </text>
               </svg>
-              <span style={{fontSize:"11px",color:"#555",fontStyle:"italic",textAlign:"center",maxWidth:"88px",minHeight:"14px"}}>
-                {stretch.sideLabels.length>0?stretch.sideLabels[Math.min(sideIdx,stretch.sideLabels.length-1)]:running?"hold":sec>0?"paused":"ready"}
+              <span style={{fontSize:"12px",color:"#636366",textAlign:"center",maxWidth:"92px",minHeight:"16px",fontStyle:"italic"}}>
+                {stretch.sideLabels.length > 0
+                  ? stretch.sideLabels[Math.min(sideIdx, stretch.sideLabels.length-1)]
+                  : running ? "hold" : sec > 0 ? "paused" : "ready"}
               </span>
             </div>
-            {/* Info */}
             <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",gap:"4px",marginBottom:"5px",flexWrap:"wrap"}}>
-                {stretch.priority&&<span style={{fontSize:"10px",fontWeight:"700",background:meta.color+"30",color:meta.color,padding:"2px 7px",borderRadius:"8px"}}>Priority</span>}
-                {stretch.isNew&&<span style={{fontSize:"10px",fontWeight:"700",background:"#22c55e20",color:"#22c55e",padding:"2px 7px",borderRadius:"8px"}}>New</span>}
-                {stretch.isDynamic&&<span style={{fontSize:"10px",fontWeight:"700",background:"#3b82f620",color:"#3b82f6",padding:"2px 7px",borderRadius:"8px"}}>Dynamic</span>}
+              <div style={{display:"flex",gap:"5px",marginBottom:"8px",flexWrap:"wrap"}}>
+                {stretch.priority && <span style={{fontSize:"11px",fontWeight:"600",
+                  background:`${meta.color}22`,color:meta.color,padding:"3px 8px",borderRadius:"6px"}}>Priority</span>}
+                {stretch.isNew && <span style={{fontSize:"11px",fontWeight:"600",
+                  background:"rgba(48,209,88,0.15)",color:"#30d158",padding:"3px 8px",borderRadius:"6px"}}>New</span>}
+                {stretch.isDynamic && <span style={{fontSize:"11px",fontWeight:"600",
+                  background:"rgba(10,132,255,0.15)",color:"#0a84ff",padding:"3px 8px",borderRadius:"6px"}}>Dynamic</span>}
               </div>
-              <div style={{fontSize:"17px",fontWeight:"700",marginBottom:"4px",lineHeight:"1.2"}}>{stretch.name}</div>
-              <div style={{fontSize:"11px",color:meta.color,marginBottom:"6px",fontWeight:"600"}}>{dur}</div>
-              <div style={{fontSize:"11px",color:"#404040",marginBottom:"8px"}}>{stretch.muscles.join(" · ")}</div>
+              <h3 style={{fontSize:"19px",fontWeight:"700",lineHeight:"1.2",marginBottom:"5px"}}>{stretch.name}</h3>
+              <p style={{fontSize:"13px",color:meta.color,fontWeight:"600",marginBottom:"6px"}}>{dur}</p>
+              <p style={{fontSize:"13px",color:"#636366"}}>{stretch.muscles.join(" · ")}</p>
             </div>
           </div>
-          <div style={{fontSize:"13px",color:"#999",lineHeight:"1.65",marginTop:"10px",paddingTop:"10px",borderTop:"1px solid #1a1a1a"}}>{how}</div>
+          <p style={{fontSize:"14px",color:"#8e8e93",lineHeight:"1.7",
+            marginTop:"16px",paddingTop:"14px",borderTop:"1px solid rgba(255,255,255,0.07)"}}>{how}</p>
         </div>
       </div>
-      
-      {/* Controls */}
-      <div style={{padding:"10px 16px 26px",borderTop:"1px solid #1a1a1a",flexShrink:0}}>
-        <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
-          <button onClick={prev} style={{padding:"12px 14px",borderRadius:"12px",background:"#1a1a1a",color:"#666",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>← Back</button>
-          <button onClick={toggle} style={{flex:1,padding:"12px",borderRadius:"12px",background:meta.color,color:"#000",fontSize:"15px",fontWeight:"800",cursor:"pointer",border:"none"}}>
-            {running?"Pause":sec===0?"Start Timer":"Resume"}
+
+      <div style={{padding:"12px 18px",borderTop:"1px solid rgba(255,255,255,0.07)",flexShrink:0,
+        paddingBottom:"calc(12px + env(safe-area-inset-bottom))"}}>
+        <div style={{display:"flex",gap:"10px",marginBottom:"12px"}}>
+          <button onClick={prev} style={{padding:"14px 18px",borderRadius:"13px",
+            background:"#2c2c2e",color:"#8e8e93",fontSize:"16px",fontWeight:"600",cursor:"pointer",border:"none"}}>
+            ←
           </button>
-          <button onClick={next} style={{padding:"12px 14px",borderRadius:"12px",background:"#1a1a1a",color:"#666",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>Skip →</button>
+          <button onClick={()=>{if(running){clearTimer();setRunning(false);}else setRunning(true);}}
+            style={{flex:1,padding:"14px",borderRadius:"13px",background:meta.color,
+              color:"#000",fontSize:"16px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+            {running ? "Pause" : sec === 0 ? "Start" : "Resume"}
+          </button>
+          <button onClick={next} style={{padding:"14px 18px",borderRadius:"13px",
+            background:"#2c2c2e",color:"#8e8e93",fontSize:"16px",fontWeight:"600",cursor:"pointer",border:"none"}}>
+            →
+          </button>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <div style={{flex:1,height:"3px",background:"#1a1a1a",borderRadius:"2px"}}>
-            <div style={{height:"100%",borderRadius:"2px",background:meta.color,width:`${totalPct}%`,transition:"width 0.4s"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <div style={{flex:1,height:"3px",background:"rgba(255,255,255,0.1)",borderRadius:"2px"}}>
+            <div style={{height:"100%",borderRadius:"2px",background:meta.color,
+              width:`${pct}%`,transition:"width 0.4s"}}/>
           </div>
-          <span style={{fontSize:"11px",color:"#444",whiteSpace:"nowrap"}}>{em}:{String(es).padStart(2,"0")} / 20:00</span>
+          <span style={{fontSize:"12px",color:"#636366",whiteSpace:"nowrap"}}>
+            {em}:{String(es).padStart(2,"0")} / 20:00
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
-// ── FULL BODY VIEW ──────────────────────────────────────────────────────────────
-function FBView({weights,onSave}) {
-  const color="#22c55e";
-  const [mode,setMode]=useState("list");
-  let idx=0;
-  if(mode==="session") return <Session exercises={FB_FLAT} color={color} weights={weights} onSave={onSave} onExit={()=>setMode("list")}/>;
+// ── Full Body view ────────────────────────────────────────────────────────────
+function FBView({weights, onSave}) {
+  const color = "#32d74b";
+  const [mode, setMode] = useState("list");
+  const [editTarget, setEditTarget] = useState(null);
+  const [addSection, setAddSection] = useState(null);
+  const [overrides, setOverrides] = useState(() => store.get("fb-overrides"));
+  const [customs, setCustoms] = useState(() => store.get("fb-customs", []));
+
+  const saveOverride = (name, patch) => {
+    const o = {...overrides, [name]: patch};
+    setOverrides(o); store.set("fb-overrides", o);
+  };
+  const addCustom = (section, data) => {
+    const c = [...customs, {...data, id: uid(), section}];
+    setCustoms(c); store.set("fb-customs", c);
+  };
+  const editCustom = (id, data) => {
+    const c = customs.map(x => x.id === id ? {...x, ...data} : x);
+    setCustoms(c); store.set("fb-customs", c);
+  };
+  const removeCustom = id => {
+    const c = customs.filter(x => x.id !== id);
+    setCustoms(c); store.set("fb-customs", c);
+  };
+  const resolve = ex => ({...ex, ...overrides[ex.name]});
+  const allFlat = FB_SECTIONS.flatMap(s => {
+    const base = s.exercises.map(e => resolve({...e, section: s.section}));
+    const cust = customs.filter(c => c.section === s.section);
+    return [...base, ...cust];
+  });
+
+  if (mode === "session") return (
+    <Session exercises={allFlat} color={color} weights={weights} onSave={onSave} onExit={()=>setMode("list")}/>
+  );
+
+  let idx = 0;
   return (
     <div>
-      <div style={{padding:"12px 16px 6px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{fontSize:"12px",color:"#555"}}>0-2 RIR · 28 sets · ~75 min · tap weight to edit</div>
-        <button onClick={()=>setMode("session")} style={{padding:"8px 18px",borderRadius:"10px",background:color,color:"#000",fontSize:"13px",fontWeight:"800",cursor:"pointer",border:"none"}}>Start ▶</button>
+      <div style={{padding:"18px 18px 10px",display:"flex",alignItems:"center",
+        justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        <div>
+          <h1 style={{fontSize:"22px",fontWeight:"700"}}>Full Body</h1>
+          <p style={{fontSize:"14px",color:"#636366",marginTop:"3px"}}>0–2 RIR · 28 sets · ~75 min</p>
+        </div>
+        <button onClick={()=>setMode("session")} style={{padding:"11px 22px",borderRadius:"12px",
+          background:color,color:"#000",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+          Start
+        </button>
       </div>
-      <div style={{padding:"0 12px 80px"}}>
-        {FB_SECTIONS.map(sec=>(
+      <div style={{padding:"0 14px 20px"}}>
+        {FB_SECTIONS.map(sec => (
           <div key={sec.section}>
-            <div style={{fontSize:"10px",fontWeight:"800",color:"#3a3a3a",letterSpacing:"0.12em",padding:"10px 2px 6px"}}>{sec.section}</div>
-            {sec.exercises.map(ex=><ExCard key={ex.name} ex={ex} idx={idx++} color={color} weights={weights} onSave={onSave}/>)}
+            <div style={{fontSize:"12px",fontWeight:"600",color:"#636366",
+              textTransform:"uppercase",letterSpacing:"0.07em",padding:"18px 4px 10px"}}>
+              {sec.section}
+            </div>
+            {sec.exercises.map(ex => {
+              const resolved = resolve(ex);
+              return <ExCard key={ex.name} ex={resolved} idx={idx++} color={color}
+                weights={weights} onSave={onSave} isCustom={false}
+                onEdit={()=>setEditTarget({ex:resolved, origName:ex.name, isCustom:false})}/>;
+            })}
+            {customs.filter(c => c.section === sec.section).map(cx => (
+              <ExCard key={cx.id} ex={cx} idx={idx++} color={color}
+                weights={weights} onSave={onSave} isCustom={true}
+                onEdit={()=>setEditTarget({ex:cx, isCustom:true})}/>
+            ))}
+            <AddExBtn color={color} onClick={()=>setAddSection(sec.section)}/>
           </div>
         ))}
       </div>
+
+      {editTarget && (
+        <EditModal ex={editTarget.ex}
+          onSave={data => {
+            if (editTarget.isCustom) editCustom(editTarget.ex.id, data);
+            else saveOverride(editTarget.origName, data);
+            setEditTarget(null);
+          }}
+          onDelete={editTarget.isCustom ? () => { removeCustom(editTarget.ex.id); setEditTarget(null); } : null}
+          onClose={()=>setEditTarget(null)}
+        />
+      )}
+      {addSection && (
+        <EditModal isNew ex={{name:"",equip:"",sets:1,reps:"10-12",rest:"90s",weight:"",cue:"",hold:"",tempo:""}}
+          onSave={data=>{ addCustom(addSection, data); setAddSection(null); }}
+          onDelete={null} onClose={()=>setAddSection(null)}
+        />
+      )}
     </div>
   );
 }
 
-// ── TENDON VIEW ─────────────────────────────────────────────────────────────────
-function TendonView({weights,onSave}) {
-  const [phase,setPhase]=useState("p1");
-  const [session,setSession]=useState("A");
-  const [mode,setMode]=useState("list");
-  const pd=TENDON[phase];
-  const color=pd.color;
-  const sd=pd.sessions.find(s=>s.label===`SESSION ${session}`);
-  const exercises=sd.exercises;
-  let idx=0;
-  
-  if(mode==="session") return <Session exercises={exercises} color={color} weights={weights} onSave={onSave} onExit={()=>setMode("list")}/>;
-  
+// ── Tendon view ───────────────────────────────────────────────────────────────
+function TendonView({weights, onSave}) {
+  const [phaseKey, setPhaseKey] = useState("p1");
+  const [sessionLetter, setSessionLetter] = useState("A");
+  const [mode, setMode] = useState("list");
+  const [editTarget, setEditTarget] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [overrides, setOverrides] = useState(() => store.get("ten-overrides"));
+  const [customs, setCustoms] = useState(() => store.get("ten-customs", []));
+
+  const pd = TENDON[phaseKey];
+  const color = pd.color;
+  const sd = pd.sessions.find(s => s.label === `Session ${sessionLetter}`) || pd.sessions[0];
+
+  const saveOverride = (name, patch) => { const o={...overrides,[name]:patch}; setOverrides(o); store.set("ten-overrides",o); };
+  const addCustom = data => { const c=[...customs,{...data,id:uid(),phaseKey,sessionLetter}]; setCustoms(c); store.set("ten-customs",c); };
+  const editCustom = (id, data) => { const c=customs.map(x=>x.id===id?{...x,...data}:x); setCustoms(c); store.set("ten-customs",c); };
+  const removeCustom = id => { const c=customs.filter(x=>x.id!==id); setCustoms(c); store.set("ten-customs",c); };
+
+  const allEx = [
+    ...sd.exercises.map(e => ({...e, ...overrides[e.name]})),
+    ...customs.filter(c => c.phaseKey === phaseKey && c.sessionLetter === sessionLetter),
+  ];
+
+  if (mode === "session") return (
+    <Session exercises={allEx} color={color} weights={weights} onSave={onSave} onExit={()=>setMode("list")}/>
+  );
+
+  let idx = 0;
   return (
     <div>
-      <div style={{padding:"12px 12px 8px"}}>
-        {/* Phase picker */}
-        <div style={{display:"flex",gap:"6px",marginBottom:"8px"}}>
-          {["p1","p2","p3"].map(p=>{
-            const d=TENDON[p],a=phase===p;
-            return <button key={p} onClick={()=>{setPhase(p);setMode("list");}} style={{flex:1,padding:"8px 4px",borderRadius:"10px",border:a?`1.5px solid ${d.color}`:"1.5px solid #1e1e1e",background:a?d.color+"18":"transparent",color:a?d.color:"#444",fontSize:"11px",fontWeight:"800",cursor:"pointer",transition:"all 0.12s"}}>{d.label}<br/><span style={{fontSize:"9px",fontWeight:"600",opacity:0.7}}>{d.name}</span></button>;
+      <div style={{padding:"18px 18px 0",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        <div style={{display:"flex",gap:"8px",marginBottom:"12px"}}>
+          {["p1","p2","p3"].map(pk => {
+            const d = TENDON[pk], active = phaseKey === pk;
+            return (
+              <button key={pk} onClick={()=>{setPhaseKey(pk);setMode("list");}} style={{
+                flex:1,padding:"10px 6px",borderRadius:"12px",
+                border:active?`1.5px solid ${d.color}`:"1px solid rgba(255,255,255,0.1)",
+                background:active?`${d.color}18`:"#1c1c1e",
+                color:active?d.color:"#636366",
+                fontSize:"13px",fontWeight:"600",cursor:"pointer",lineHeight:"1.4",
+              }}>
+                {d.label}<br/>
+                <span style={{fontSize:"11px",fontWeight:"400",opacity:0.8}}>{d.name}</span>
+              </button>
+            );
           })}
         </div>
-        {/* Session picker */}
-        <div style={{display:"flex",gap:"6px",marginBottom:"10px"}}>
-          {["A","B"].map(s=>(
-            <button key={s} onClick={()=>setSession(s)} style={{flex:1,padding:"9px",borderRadius:"10px",border:session===s?`1.5px solid ${color}`:"1.5px solid #1e1e1e",background:session===s?color+"18":"transparent",color:session===s?color:"#444",fontSize:"13px",fontWeight:"700",cursor:"pointer",transition:"all 0.12s"}}>
-              Session {s}<br/><span style={{fontSize:"10px",fontWeight:"500",opacity:0.7}}>{TENDON[phase].sessions.find(x=>x.label===`SESSION ${s}`)?.day}</span>
+        <div style={{display:"flex",gap:"8px",marginBottom:"14px"}}>
+          {["A","B"].map(s => (
+            <button key={s} onClick={()=>setSessionLetter(s)} style={{
+              flex:1,padding:"12px 16px",borderRadius:"12px",textAlign:"left",
+              border:sessionLetter===s?`1.5px solid ${color}`:"1px solid rgba(255,255,255,0.1)",
+              background:sessionLetter===s?`${color}18`:"#1c1c1e",
+              color:sessionLetter===s?color:"#8e8e93",
+              fontSize:"14px",fontWeight:"600",cursor:"pointer",
+            }}>
+              <div>Session {s}</div>
+              <div style={{fontSize:"12px",fontWeight:"400",color:sessionLetter===s?`${color}99`:"#636366",marginTop:"2px"}}>
+                {pd.sessions.find(x=>x.label===`Session ${s}`)?.day}
+              </div>
             </button>
           ))}
         </div>
-        {/* Meta */}
-        <div style={{background:"#111",border:"1px solid #1e1e1e",borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}}>
-          <div style={{fontSize:"12px",fontWeight:"700",color,marginBottom:"3px"}}>{pd.name} · {pd.weeks}</div>
-          <div style={{fontSize:"12px",color:"#888",lineHeight:"1.5"}}>{pd.meta}</div>
+        <div style={{background:"#1c1c1e",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px"}}>
+          <p style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6"}}>{pd.meta}</p>
         </div>
-        <div style={{display:"flex",justifyContent:"flex-end"}}>
-          <button onClick={()=>setMode("session")} style={{padding:"9px 20px",borderRadius:"10px",background:color,color:"#000",fontSize:"13px",fontWeight:"800",cursor:"pointer",border:"none"}}>Start ▶</button>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+          <span style={{fontSize:"14px",color:"#636366"}}>{pd.name} · {pd.weeks}</span>
+          <button onClick={()=>setMode("session")} style={{padding:"10px 22px",borderRadius:"11px",
+            background:color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+            Start
+          </button>
         </div>
       </div>
-      <div style={{padding:"0 12px 80px"}}>
-        {exercises.map(ex=><ExCard key={ex.name+phase+session} ex={ex} idx={idx++} color={color} weights={weights} onSave={onSave}/>)}
+      <div style={{padding:"0 14px 20px"}}>
+        {allEx.map((ex, i) => (
+          <ExCard key={ex.id||ex.name} ex={ex} idx={i} color={color}
+            weights={weights} onSave={onSave} isCustom={!!ex.id}
+            onEdit={()=>setEditTarget({ex, isCustom:!!ex.id})}/>
+        ))}
+        <AddExBtn color={color} onClick={()=>setAdding(true)}/>
       </div>
+
+      {editTarget && (
+        <EditModal ex={editTarget.ex}
+          onSave={data=>{ if(editTarget.isCustom) editCustom(editTarget.ex.id,data); else saveOverride(editTarget.ex.name,data); setEditTarget(null); }}
+          onDelete={editTarget.isCustom?()=>{removeCustom(editTarget.ex.id);setEditTarget(null);}:null}
+          onClose={()=>setEditTarget(null)}
+        />
+      )}
+      {adding && (
+        <EditModal isNew ex={{name:"",equip:"",sets:1,reps:"6",hold:"30s",rest:"90s",weight:"",cue:"",tempo:""}}
+          onSave={data=>{ addCustom(data); setAdding(false); }}
+          onDelete={null} onClose={()=>setAdding(false)}
+        />
+      )}
     </div>
   );
 }
 
-// ── STRETCH LIST CARD (needs own component so useState is legal) ────────────────
-function StretchListCard({stretch,idx,phase,meta}) {
-  const [open,setOpen]=useState(false);
-  const pd=stretch.phases[phase];
+// ── Stretch list card (separate component to keep hooks legal) ────────────────
+function StretchListCard({stretch, idx, phase, meta}) {
+  const [open, setOpen] = useState(false);
+  const pd = stretch.phases[phase];
   return (
-    <div style={{background:"#111",border:`1px solid ${stretch.priority?meta.color+"40":"#1d1d1d"}`,borderRadius:"13px",marginBottom:"7px",overflow:"hidden"}}>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"13px 13px 11px",cursor:"pointer"}} onClick={()=>setOpen(o=>!o)}>
-        <div style={{width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,border:`1.5px solid ${meta.color}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",fontWeight:"800",color:meta.color}}>{idx+1}</div>
+    <div style={{
+      background:"#1c1c1e",borderRadius:"14px",marginBottom:"8px",overflow:"hidden",
+      border: stretch.priority ? `1px solid ${meta.color}30` : "1px solid rgba(255,255,255,0.06)",
+    }}>
+      <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px",cursor:"pointer"}} onClick={()=>setOpen(o=>!o)}>
+        <div style={{width:"28px",height:"28px",borderRadius:"50%",flexShrink:0,
+          border:`1.5px solid ${meta.color}40`,display:"flex",alignItems:"center",
+          justifyContent:"center",fontSize:"13px",fontWeight:"600",color:meta.color}}>
+          {idx+1}
+        </div>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:"14px",fontWeight:"600",color:"#efefef",display:"flex",alignItems:"center",gap:"5px",flexWrap:"wrap"}}>
+          <div style={{fontSize:"16px",fontWeight:"600",color:"#fff",display:"flex",
+            alignItems:"center",gap:"8px",flexWrap:"wrap",lineHeight:"1.3"}}>
             {stretch.name}
-            {stretch.priority&&<span style={{fontSize:"9px",background:meta.color,color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>PRIORITY</span>}
-            {stretch.isNew&&<span style={{fontSize:"9px",background:"#22c55e",color:"#000",padding:"2px 5px",borderRadius:"4px",fontWeight:"800"}}>NEW</span>}
+            {stretch.priority && <span style={{fontSize:"11px",fontWeight:"700",
+              background:`${meta.color}20`,color:meta.color,padding:"2px 7px",borderRadius:"6px"}}>
+              Priority
+            </span>}
+            {stretch.isNew && <span style={{fontSize:"11px",fontWeight:"700",
+              background:"rgba(48,209,88,0.15)",color:"#30d158",padding:"2px 7px",borderRadius:"6px"}}>
+              New
+            </span>}
           </div>
-          <div style={{fontSize:"11px",color:"#404040",marginTop:"2px"}}>{stretch.muscles.join(" · ")}</div>
+          <div style={{fontSize:"13px",color:"#636366",marginTop:"3px"}}>{stretch.muscles.join(" · ")}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{fontSize:"11px",fontWeight:"700",color:meta.color}}>{pd?.dur}</div>
-          <div style={{fontSize:"10px",color:"#444",marginTop:"2px"}}>{stretch.isDynamic?"Dynamic":"Static"}</div>
+          <div style={{fontSize:"13px",fontWeight:"600",color:meta.color}}>{pd?.dur}</div>
+          <div style={{fontSize:"12px",color:"#636366",marginTop:"2px"}}>{stretch.isDynamic ? "Dynamic" : "Static"}</div>
         </div>
       </div>
-      {open&&<div style={{padding:"11px 13px 13px",fontSize:"13px",color:"#bbb",lineHeight:"1.65",borderTop:"1px solid #1a1a1a"}}>{pd?.how}</div>}
+      {open && (
+        <div style={{padding:"12px 14px 16px",borderTop:"1px solid rgba(255,255,255,0.07)",
+          fontSize:"14px",color:"#8e8e93",lineHeight:"1.65",background:"#111"}}>
+          {pd?.how}
+        </div>
+      )}
     </div>
   );
 }
 
-// ── STRETCH VIEW ────────────────────────────────────────────────────────────────
+// ── Stretch view ──────────────────────────────────────────────────────────────
 function StretchView() {
-  const [phase,setPhase]=useState(1);
-  const [mode,setMode]=useState("list");
-  const meta=SPHASE[phase];
-  
-  if(mode==="timer") return <StretchTimer phase={phase} onExit={()=>setMode("list")}/>;
-  
+  const [phase, setPhase] = useState(1);
+  const [mode, setMode] = useState("list");
+  const meta = SPHASE[phase];
+
+  if (mode === "timer") return <StretchTimer phase={phase} onExit={()=>setMode("list")}/>;
+
   return (
     <div>
-      <div style={{padding:"12px 12px 8px"}}>
-        <div style={{display:"flex",gap:"5px",marginBottom:"10px"}}>
-          {[1,2,3,4,5].map(p=>{
-            const pm=SPHASE[p],a=phase===p;
-            return <button key={p} onClick={()=>setPhase(p)} style={{flex:1,padding:"7px 2px",borderRadius:"9px",border:a?`1.5px solid ${pm.color}`:"1.5px solid #1e1e1e",background:a?pm.color+"18":"transparent",color:a?pm.color:"#444",fontSize:"11px",fontWeight:"800",cursor:"pointer",transition:"all 0.12s"}}>P{p}</button>;
+      <div style={{padding:"18px 18px 0",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        <div style={{display:"flex",gap:"6px",marginBottom:"14px"}}>
+          {[1,2,3,4,5].map(p => {
+            const pm = SPHASE[p], active = phase === p;
+            return (
+              <button key={p} onClick={()=>setPhase(p)} style={{
+                flex:1,padding:"10px 2px",borderRadius:"10px",
+                border:active?`1.5px solid ${pm.color}`:"1px solid rgba(255,255,255,0.1)",
+                background:active?`${pm.color}18`:"#1c1c1e",
+                color:active?pm.color:"#636366",
+                fontSize:"12px",fontWeight:"700",cursor:"pointer",lineHeight:"1.4",
+              }}>
+                P{p}<br/>
+                <span style={{fontSize:"10px",fontWeight:"400",opacity:0.8}}>{pm.name.split(" ")[0]}</span>
+              </button>
+            );
           })}
         </div>
-        <div style={{background:"#111",border:"1px solid #1e1e1e",borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}}>
-          <div style={{fontSize:"12px",fontWeight:"700",color:meta.color,marginBottom:"3px"}}>{meta.name} · {meta.months}</div>
-          <div style={{fontSize:"12px",color:"#888",lineHeight:"1.5"}}>{meta.desc}</div>
+        <div style={{background:"#1c1c1e",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px"}}>
+          <p style={{fontSize:"13px",fontWeight:"700",color:meta.color,marginBottom:"4px"}}>{meta.name} — {meta.months}</p>
+          <p style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6"}}>{meta.desc}</p>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
-          <div style={{fontSize:"12px",color:"#555"}}>13 stretches · 20 min · tap card for cue</div>
-          <button onClick={()=>setMode("timer")} style={{padding:"9px 18px",borderRadius:"10px",background:meta.color,color:"#000",fontSize:"13px",fontWeight:"800",cursor:"pointer",border:"none"}}>Start Timer ▶</button>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+          <p style={{fontSize:"14px",color:"#636366"}}>13 stretches · 20 minutes</p>
+          <button onClick={()=>setMode("timer")} style={{padding:"10px 22px",borderRadius:"11px",
+            background:meta.color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+            Start
+          </button>
         </div>
       </div>
-      <div style={{padding:"0 12px 80px"}}>
-        {STRETCHES.map((stretch,i)=>(
-          <StretchListCard key={stretch.name} stretch={stretch} idx={i} phase={phase} meta={meta}/>
+      <div style={{padding:"8px 14px 20px"}}>
+        {STRETCHES.map((s,i) => (
+          <StretchListCard key={s.name} stretch={s} idx={i} phase={phase} meta={meta}/>
         ))}
       </div>
     </div>
   );
 }
 
-// ── APP ────────────────────────────────────────────────────────────────────────
+// ── App ───────────────────────────────────────────────────────────────────────
 function App() {
-  const [tab,setTab]=useState("fb");
-  const [weights,setWeights]=useState({});
-  useEffect(()=>{try{const s=localStorage.getItem("workout-weights");if(s)setWeights(JSON.parse(s));}catch(_){};},[]);
-  const save=(key,val)=>{const u={...weights,[key]:val};setWeights(u);try{localStorage.setItem("workout-weights",JSON.stringify(u));}catch(_){}};
-  const TABS=[{id:"fb",label:"Full Body",color:"#22c55e"},{id:"ten",label:"Tendon",color:"#ef4444"},{id:"str",label:"Stretch",color:"#06b6d4"}];
-  const TT={fb:"Full Body",ten:"Tendon Strengthening",str:"Stretching"};
-  const TS={fb:"0-2 RIR · 28 sets · ~75 min",ten:"12-week program · Phases 1-3",str:"13 stretches · 20 min · 5-phase plan"};
+  const [tab, setTab] = useState("fb");
+  const [weights, setWeights] = useState(() => store.get("weights"));
+  const save = (k, v) => { const u = {...weights, [k]: v}; setWeights(u); store.set("weights", u); };
+
+  const tabs = [
+    {id:"fb",  label:"Full Body", color:"#32d74b", Icon:DumbbellIcon},
+    {id:"ten", label:"Tendon",    color:"#ff453a", Icon:BoltIcon},
+    {id:"str", label:"Stretch",   color:"#0a84ff", Icon:PersonIcon},
+  ];
+
   return (
-    <div style={{background:"#080808",minHeight:"100vh",color:"#fff",maxWidth:"430px",margin:"0 auto"}}>
-      <div style={{position:"sticky",top:0,zIndex:20,background:"#080808",borderBottom:"1px solid #1a1a1a",padding:"14px 12px 12px"}}>
-        <div style={{display:"flex",gap:"8px",marginBottom:"12px"}}>
-          {TABS.map(t=>{const a=tab===t.id;return <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"10px",borderRadius:"12px",border:a?`1.5px solid ${t.color}`:"1.5px solid #1e1e1e",background:a?t.color+"18":"transparent",color:a?t.color:"#444",fontSize:"13px",fontWeight:"800",cursor:"pointer",transition:"all 0.12s"}}>{t.label}</button>;})}
-        </div>
-        <div style={{paddingLeft:"2px"}}>
-          <div style={{fontSize:"19px",fontWeight:"700",lineHeight:"1.2"}}>{TT[tab]}</div>
-          <div style={{fontSize:"12px",color:"#555",marginTop:"2px"}}>{TS[tab]}</div>
-        </div>
+    <div style={{background:"#111",minHeight:"100dvh",color:"#fff",maxWidth:"430px",margin:"0 auto"}}>
+      <div style={{paddingBottom:"calc(60px + env(safe-area-inset-bottom))"}}>
+        {tab === "fb"  && <FBView     weights={weights} onSave={save}/>}
+        {tab === "ten" && <TendonView weights={weights} onSave={save}/>}
+        {tab === "str" && <StretchView/>}
       </div>
-      {tab==="fb"&&<FBView weights={weights} onSave={save}/>}
-      {tab==="ten"&&<TendonView weights={weights} onSave={save}/>}
-      {tab==="str"&&<StretchView/>}
+
+      <nav style={{
+        position:"fixed",bottom:0,left:0,right:0,
+        maxWidth:"430px",margin:"0 auto",
+        background:"rgba(28,28,30,0.96)",
+        borderTop:"0.5px solid rgba(255,255,255,0.14)",
+        backdropFilter:"blur(20px)",
+        WebkitBackdropFilter:"blur(20px)",
+        paddingBottom:"env(safe-area-inset-bottom)",
+        display:"flex",zIndex:30,
+      }}>
+        {tabs.map(({id, label, color, Icon}) => {
+          const active = tab === id;
+          return (
+            <button key={id} onClick={()=>setTab(id)} style={{
+              flex:1,display:"flex",flexDirection:"column",
+              alignItems:"center",gap:"4px",
+              padding:"10px 0 8px",
+              background:"none",cursor:"pointer",border:"none",
+              color: active ? color : "#636366",
+            }}>
+              <Icon size={22} color={active ? color : "#636366"}/>
+              <span style={{fontSize:"10px",fontWeight:active?"600":"400",letterSpacing:"0.01em"}}>
+                {label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
