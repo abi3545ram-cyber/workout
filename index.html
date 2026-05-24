@@ -367,6 +367,18 @@ const PersonIcon = ({size=22,color="#fff"}) => (
     <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
   </svg>
 );
+const HomeIcon = ({size=22,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" stroke={color} fill="none" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 11.5 12 4l9 7.5"/>
+    <path d="M5.5 10.5V20h13v-9.5"/>
+    <path d="M9.5 20v-6h5v6"/>
+  </svg>
+);
+const PlusIcon = ({size=22,color="#fff"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" stroke={color} fill="none" strokeWidth="2.2" strokeLinecap="round">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+);
 
 // ── Weight chip ───────────────────────────────────────────────────────────────
 function WeightChip({exKey, defaultWeight, color, weights, onSave}) {
@@ -555,6 +567,89 @@ function AddExBtn({color, onClick}) {
       <span style={{fontSize:"20px",lineHeight:1,color:"#8e8e93"}}>+</span>
       Add exercise
     </button>
+  );
+}
+
+function CountModal({title, label, color, onSave, onClose}) {
+  const [count, setCount] = useState("1");
+  const n = Math.max(1, Math.min(20, parseInt(count) || 1));
+  return (
+    <div className="modal-bg" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-body">
+        <div className="drag-bar"/>
+        <h2 style={{fontSize:"20px",fontWeight:"700",marginBottom:"18px"}}>{title}</h2>
+        <div className="row">
+          <span className="field-label">{label}</span>
+          <input className="field" type="number" min="1" max="20" value={count}
+            onChange={e=>setCount(e.target.value)}/>
+        </div>
+        <button onClick={()=>onSave(n)} style={{width:"100%",padding:"16px",borderRadius:"13px",
+          background:color,color:"#000",fontSize:"17px",fontWeight:"700",cursor:"pointer",marginBottom:"10px"}}>
+          Add {n}
+        </button>
+        <button onClick={onClose} style={{width:"100%",padding:"14px",borderRadius:"13px",
+          background:"rgba(255,255,255,0.07)",color:"#8e8e93",fontSize:"16px",cursor:"pointer"}}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BulkExerciseModal({color, onSave, onClose}) {
+  const [f, setF] = useState({
+    count:"1", base:"Exercise", equip:"", sets:"1", reps:"8-12", rest:"90s", weight:"", cue:"", hold:"", tempo:"",
+  });
+  const upd = (k, v) => setF(p => ({...p, [k]: v}));
+  const handleSave = () => {
+    const count = Math.max(1, Math.min(20, parseInt(f.count) || 1));
+    const base = f.base.trim() || "Exercise";
+    const items = Array.from({length:count}, (_,i) => ({
+      name: count === 1 ? base : `${base} ${i + 1}`,
+      equip:f.equip, sets:parseInt(f.sets) || 1, reps:f.reps, rest:f.rest,
+      weight:f.weight, defaultWeight:f.weight, cue:f.cue, hold:f.hold, tempo:f.tempo,
+    }));
+    onSave(items);
+  };
+
+  return (
+    <div className="modal-bg" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-body">
+        <div className="drag-bar"/>
+        <h2 style={{fontSize:"20px",fontWeight:"700",marginBottom:"4px"}}>Add exercises</h2>
+        <p style={{fontSize:"14px",color:"#636366",marginBottom:"24px"}}>Choose how many to add. You can rename each one from Options after.</p>
+        <div style={{display:"flex",gap:"12px",marginBottom:"18px"}}>
+          <div style={{flex:1}}><span className="field-label">How many</span>
+            <input className="field" type="number" min="1" max="20" value={f.count} onChange={e=>upd("count",e.target.value)}/></div>
+          <div style={{flex:2}}><span className="field-label">Base name</span>
+            <input className="field" value={f.base} onChange={e=>upd("base",e.target.value)} placeholder="Exercise"/></div>
+        </div>
+        <div className="row">
+          <span className="field-label">Equipment</span>
+          <input className="field" value={f.equip} onChange={e=>upd("equip",e.target.value)} placeholder="e.g. Cable, Machine, Dumbbell"/>
+        </div>
+        <div style={{display:"flex",gap:"12px",marginBottom:"18px"}}>
+          <div style={{flex:1}}><span className="field-label">Sets</span>
+            <input className="field" type="number" min="1" max="20" value={f.sets} onChange={e=>upd("sets",e.target.value)}/></div>
+          <div style={{flex:1}}><span className="field-label">Reps</span>
+            <input className="field" value={f.reps} onChange={e=>upd("reps",e.target.value)}/></div>
+          <div style={{flex:1}}><span className="field-label">Rest</span>
+            <input className="field" value={f.rest} onChange={e=>upd("rest",e.target.value)}/></div>
+        </div>
+        <div className="row">
+          <span className="field-label">Weight</span>
+          <input className="field" value={f.weight} onChange={e=>upd("weight",e.target.value)} placeholder="e.g. 60kg"/>
+        </div>
+        <button onClick={handleSave} style={{width:"100%",padding:"16px",borderRadius:"13px",
+          background:color,color:"#000",fontSize:"17px",fontWeight:"700",cursor:"pointer",marginBottom:"10px"}}>
+          Add exercises
+        </button>
+        <button onClick={onClose} style={{width:"100%",padding:"14px",borderRadius:"13px",
+          background:"rgba(255,255,255,0.07)",color:"#8e8e93",fontSize:"16px",cursor:"pointer"}}>
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -919,7 +1014,7 @@ function StretchTimer({phase, onExit}) {
 }
 
 // ── Full Body view ────────────────────────────────────────────────────────────
-function FBView({weights, onSave}) {
+function FBView({weights, onSave, onDelete}) {
   const color = "#32d74b";
   const [mode, setMode] = useState("list");
   const [editTarget, setEditTarget] = useState(null);
@@ -932,7 +1027,8 @@ function FBView({weights, onSave}) {
     setOverrides(o); store.set("fb-overrides", o);
   };
   const addCustom = (section, data) => {
-    const c = [...customs, {...data, id: uid(), section}];
+    const items = Array.isArray(data) ? data : [data];
+    const c = [...customs, ...items.map(x => ({...x, id: uid(), section}))];
     setCustoms(c); store.set("fb-customs", c);
   };
   const editCustom = (id, data) => {
@@ -963,10 +1059,18 @@ function FBView({weights, onSave}) {
           <h1 style={{fontSize:"22px",fontWeight:"700"}}>Full Body</h1>
           <p style={{fontSize:"14px",color:"#636366",marginTop:"3px"}}>0–2 RIR · 27 sets · ~75 min</p>
         </div>
-        <button onClick={()=>setMode("session")} style={{padding:"11px 22px",borderRadius:"12px",
-          background:color,color:"#000",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"none"}}>
-          Start
-        </button>
+        <div style={{display:"flex",gap:"8px"}}>
+          <button onClick={onDelete} style={{
+            background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
+            borderRadius:"10px",padding:"10px 12px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
+          }}>
+            Delete
+          </button>
+          <button onClick={()=>setMode("session")} style={{padding:"11px 18px",borderRadius:"12px",
+            background:color,color:"#000",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+            Start
+          </button>
+        </div>
       </div>
       <div style={{padding:"0 14px 20px"}}>
         {FB_SECTIONS.map(sec => (
@@ -1003,9 +1107,9 @@ function FBView({weights, onSave}) {
         />
       )}
       {addSection && (
-        <EditModal isNew ex={{name:"",equip:"",sets:1,reps:"10-12",rest:"90s",weight:"",cue:"",hold:"",tempo:""}}
-          onSave={data=>{ addCustom(addSection, data); setAddSection(null); }}
-          onDelete={null} onClose={()=>setAddSection(null)}
+        <BulkExerciseModal color={color}
+          onSave={items=>{ addCustom(addSection, items); setAddSection(null); }}
+          onClose={()=>setAddSection(null)}
         />
       )}
     </div>
@@ -1013,7 +1117,7 @@ function FBView({weights, onSave}) {
 }
 
 // ── Tendon view ───────────────────────────────────────────────────────────────
-function TendonView({weights, onSave}) {
+function TendonView({weights, onSave, onDelete}) {
   const [phaseKey, setPhaseKey] = useState("p1");
   const [sessionLetter, setSessionLetter] = useState("A");
   const [mode, setMode] = useState("list");
@@ -1027,7 +1131,11 @@ function TendonView({weights, onSave}) {
   const sd = pd.sessions.find(s => s.label === `Session ${sessionLetter}`) || pd.sessions[0];
 
   const saveOverride = (name, patch) => { const o={...overrides,[name]:patch}; setOverrides(o); store.set("ten-overrides",o); };
-  const addCustom = data => { const c=[...customs,{...data,id:uid(),phaseKey,sessionLetter}]; setCustoms(c); store.set("ten-customs",c); };
+  const addCustom = data => {
+    const items = Array.isArray(data) ? data : [data];
+    const c=[...customs,...items.map(x => ({...x,id:uid(),phaseKey,sessionLetter}))];
+    setCustoms(c); store.set("ten-customs",c);
+  };
   const editCustom = (id, data) => { const c=customs.map(x=>x.id===id?{...x,...data}:x); setCustoms(c); store.set("ten-customs",c); };
   const removeCustom = id => { const c=customs.filter(x=>x.id!==id); setCustoms(c); store.set("ten-customs",c); };
 
@@ -1080,12 +1188,20 @@ function TendonView({weights, onSave}) {
         <div style={{background:"#1c1c1e",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px"}}>
           <p style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6"}}>{pd.meta}</p>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
           <span style={{fontSize:"14px",color:"#636366"}}>{pd.name} · {pd.weeks}</span>
-          <button onClick={()=>setMode("session")} style={{padding:"10px 22px",borderRadius:"11px",
-            background:color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
-            Start
-          </button>
+          <div style={{display:"flex",gap:"8px"}}>
+            <button onClick={onDelete} style={{
+              background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
+              borderRadius:"10px",padding:"9px 11px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
+            }}>
+              Delete
+            </button>
+            <button onClick={()=>setMode("session")} style={{padding:"10px 18px",borderRadius:"11px",
+              background:color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+              Start
+            </button>
+          </div>
         </div>
       </div>
       <div style={{padding:"0 14px 20px"}}>
@@ -1105,9 +1221,9 @@ function TendonView({weights, onSave}) {
         />
       )}
       {adding && (
-        <EditModal isNew ex={{name:"",equip:"",sets:1,reps:"6",hold:"30s",rest:"90s",weight:"",cue:"",tempo:""}}
-          onSave={data=>{ addCustom(data); setAdding(false); }}
-          onDelete={null} onClose={()=>setAdding(false)}
+        <BulkExerciseModal color={color}
+          onSave={items=>{ addCustom(items); setAdding(false); }}
+          onClose={()=>setAdding(false)}
         />
       )}
     </div>
@@ -1160,7 +1276,7 @@ function StretchListCard({stretch, idx, phase, meta}) {
 }
 
 // ── Stretch view ──────────────────────────────────────────────────────────────
-function StretchView() {
+function StretchView({onDelete}) {
   const [phase, setPhase] = useState(1);
   const [mode, setMode] = useState("list");
   const meta = SPHASE[phase];
@@ -1191,12 +1307,20 @@ function StretchView() {
           <p style={{fontSize:"13px",fontWeight:"700",color:meta.color,marginBottom:"4px"}}>{meta.name} — {meta.months}</p>
           <p style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6"}}>{meta.desc}</p>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
           <p style={{fontSize:"14px",color:"#636366"}}>13 stretches · 20 minutes</p>
-          <button onClick={()=>setMode("timer")} style={{padding:"10px 22px",borderRadius:"11px",
-            background:meta.color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
-            Start
-          </button>
+          <div style={{display:"flex",gap:"8px"}}>
+            <button onClick={onDelete} style={{
+              background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
+              borderRadius:"10px",padding:"9px 11px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
+            }}>
+              Delete
+            </button>
+            <button onClick={()=>setMode("timer")} style={{padding:"10px 18px",borderRadius:"11px",
+              background:meta.color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+              Start
+            </button>
+          </div>
         </div>
       </div>
       <div style={{padding:"8px 14px 20px"}}>
@@ -1208,24 +1332,355 @@ function StretchView() {
   );
 }
 
+// ── Home / custom split builder ───────────────────────────────────────────────
+function SplitBuilder({onSave, onClose}) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState("#ff9f0a");
+  const [phaseCount, setPhaseCount] = useState("1");
+  const [sessionCount, setSessionCount] = useState("1");
+  const palette = ["#ff9f0a","#32d74b","#0a84ff","#bf5af2","#ff375f","#64d2ff"];
+
+  const makeSplit = () => {
+    const pCount = Math.max(1, Math.min(12, parseInt(phaseCount) || 1));
+    const sCount = Math.max(1, Math.min(12, parseInt(sessionCount) || 1));
+    const safePhases = Array.from({length:pCount}, (_,i) => `Phase ${i + 1}`);
+    const safeSessions = Array.from({length:sCount}, (_,i) => `Session ${i + 1}`);
+    onSave({
+      id: uid(),
+      label: name.trim() || "New Split",
+      color,
+      phases: safePhases.map((p, pi) => ({
+        id: uid(),
+        label: p,
+        name: p,
+        sessions: safeSessions.map((s, si) => ({
+          id: uid(),
+          label: s,
+          day: s,
+          exercises: [],
+        })),
+      })),
+    });
+  };
+
+  return (
+    <div className="modal-bg" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-body">
+        <div className="drag-bar"/>
+        <h2 style={{fontSize:"20px",fontWeight:"700",marginBottom:"4px"}}>Add split</h2>
+        <p style={{fontSize:"14px",color:"#636366",marginBottom:"24px"}}>Set up the shell now, then add exercises inside it.</p>
+
+        <div className="row">
+          <span className="field-label">Split name</span>
+          <input className="field" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Upper / Lower"/>
+        </div>
+        <div className="row">
+          <span className="field-label">Colour</span>
+          <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
+            {palette.map(c => (
+              <button key={c} onClick={()=>setColor(c)} style={{
+                width:"34px",height:"34px",borderRadius:"50%",background:c,cursor:"pointer",
+                border:color===c?"3px solid #fff":"3px solid rgba(255,255,255,0.12)",
+              }}/>
+            ))}
+          </div>
+        </div>
+        <div style={{display:"flex",gap:"12px",marginBottom:"18px"}}>
+          <div style={{flex:1}}>
+            <span className="field-label">Phases</span>
+            <input className="field" type="number" min="1" max="12" value={phaseCount} onChange={e=>setPhaseCount(e.target.value)}/>
+          </div>
+          <div style={{flex:1}}>
+            <span className="field-label">Sessions each</span>
+            <input className="field" type="number" min="1" max="12" value={sessionCount} onChange={e=>setSessionCount(e.target.value)}/>
+          </div>
+        </div>
+
+        <button onClick={makeSplit} style={{width:"100%",padding:"16px",borderRadius:"13px",
+          background:color,color:"#000",fontSize:"17px",fontWeight:"700",cursor:"pointer",marginBottom:"10px"}}>
+          Create split
+        </button>
+        <button onClick={onClose} style={{width:"100%",padding:"14px",borderRadius:"13px",
+          background:"rgba(255,255,255,0.07)",color:"#8e8e93",fontSize:"16px",cursor:"pointer"}}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HomeView({username, setUsername, tabs, customSplits, onOpen, onAddSplit, onDeleteSplit, canAddSplit, maxCustomSplits}) {
+  const [editingName, setEditingName] = useState(!username);
+  const [draftName, setDraftName] = useState(username);
+  useEffect(() => setDraftName(username), [username]);
+  const commitName = () => { setUsername(draftName.trim()); setEditingName(false); };
+
+  return (
+    <div>
+      <div style={{padding:"22px 18px 16px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        <p style={{fontSize:"13px",fontWeight:"700",color:"#8e8e93",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"8px"}}>
+          Workout
+        </p>
+        {editingName ? (
+          <input className="field" value={draftName} autoFocus
+            onChange={e=>setDraftName(e.target.value)}
+            onBlur={commitName}
+            onKeyDown={e=>{ if(e.key==="Enter") commitName(); if(e.key==="Escape") setEditingName(false); }}
+            placeholder="Enter your username"/>
+        ) : (
+          <button onClick={()=>setEditingName(true)} style={{
+            display:"block",background:"none",border:"none",padding:0,cursor:"pointer",
+            color:"#fff",textAlign:"left",
+          }}>
+            <h1 style={{fontSize:"28px",fontWeight:"800",lineHeight:"1.15"}}>
+              Hi{username ? `, ${username}` : ""}.
+            </h1>
+            <span style={{display:"block",fontSize:"13px",color:"#636366",marginTop:"6px"}}>Tap name to edit</span>
+          </button>
+        )}
+      </div>
+      <div style={{padding:"16px 14px 24px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+          {tabs.filter(t => t.id !== "home").map(({id,label,color,Icon}) => (
+            <button key={id} onClick={()=>onOpen(id)} style={{
+              minHeight:"116px",borderRadius:"14px",background:"#1c1c1e",
+              border:`1px solid ${color}45`,padding:"14px",textAlign:"left",cursor:"pointer",
+              color:"#fff",display:"flex",flexDirection:"column",justifyContent:"space-between",
+              position:"relative",
+            }}>
+              <span onClick={e=>{e.stopPropagation();onDeleteSplit(id);}} style={{
+                position:"absolute",top:"10px",right:"10px",width:"26px",height:"26px",
+                borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
+                color:"#ff453a",background:"rgba(255,69,58,0.12)",fontSize:"16px",fontWeight:"700",
+              }}>×</span>
+              <Icon size={24} color={color}/>
+              <span style={{fontSize:"17px",fontWeight:"700"}}>{label}</span>
+            </button>
+          ))}
+          {customSplits.map(s => (
+            <button key={s.id} onClick={()=>onOpen(s.id)} style={{
+              minHeight:"116px",borderRadius:"14px",background:"#1c1c1e",
+              border:`1px solid ${s.color}45`,padding:"14px",textAlign:"left",cursor:"pointer",
+              color:"#fff",display:"flex",flexDirection:"column",justifyContent:"space-between",
+              position:"relative",
+            }}>
+              <span onClick={e=>{e.stopPropagation();onDeleteSplit(s.id);}} style={{
+                position:"absolute",top:"10px",right:"10px",width:"26px",height:"26px",
+                borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
+                color:"#ff453a",background:"rgba(255,69,58,0.12)",fontSize:"16px",fontWeight:"700",
+              }}>×</span>
+              <DumbbellIcon size={24} color={s.color}/>
+              <span style={{fontSize:"17px",fontWeight:"700"}}>{s.label}</span>
+            </button>
+          ))}
+          <button onClick={onAddSplit} disabled={!canAddSplit} style={{
+            minHeight:"116px",borderRadius:"14px",background:"rgba(255,255,255,0.04)",
+            border:"1px dashed rgba(255,255,255,0.22)",padding:"14px",textAlign:"left",
+            color:canAddSplit?"#8e8e93":"#3a3a3c",cursor:canAddSplit?"pointer":"default",
+            display:"flex",flexDirection:"column",justifyContent:"space-between",
+          }}>
+            <PlusIcon size={24} color={canAddSplit ? "#8e8e93" : "#3a3a3c"}/>
+            <span style={{fontSize:"17px",fontWeight:"700"}}>{canAddSplit ? "Add split" : `Max ${maxCustomSplits} splits`}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CustomSplitView({split, onUpdate, onDelete, weights, onSave}) {
+  const [phaseId, setPhaseId] = useState(split.phases[0]?.id);
+  const phase = split.phases.find(p => p.id === phaseId) || split.phases[0];
+  const [sessionId, setSessionId] = useState(phase?.sessions[0]?.id);
+  const session = phase?.sessions.find(s => s.id === sessionId) || phase?.sessions[0];
+  const [mode, setMode] = useState("list");
+  const [editTarget, setEditTarget] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [countTarget, setCountTarget] = useState(null);
+
+  useEffect(() => {
+    const nextPhase = split.phases.find(p => p.id === phaseId) || split.phases[0];
+    if (nextPhase && !nextPhase.sessions.find(s => s.id === sessionId)) {
+      setSessionId(nextPhase.sessions[0]?.id);
+    }
+  }, [phaseId, split]);
+
+  if (!phase || !session) return null;
+  const color = split.color;
+  const updateSession = updater => {
+    const updated = {
+      ...split,
+      phases: split.phases.map(p => p.id !== phase.id ? p : {
+        ...p,
+        sessions: p.sessions.map(s => s.id !== session.id ? s : updater(s)),
+      }),
+    };
+    onUpdate(updated);
+  };
+  const addExercise = data => {
+    const items = Array.isArray(data) ? data : [data];
+    updateSession(s => ({...s, exercises:[...s.exercises,...items.map(x => ({...x,id:uid()}))]}));
+  };
+  const editExercise = (id, data) => updateSession(s => ({...s, exercises:s.exercises.map(e => e.id === id ? {...e,...data} : e)}));
+  const removeExercise = id => updateSession(s => ({...s, exercises:s.exercises.filter(e => e.id !== id)}));
+  const addPhase = count => {
+    const additions = Array.from({length:count}, (_,i) => {
+      const n = split.phases.length + i + 1;
+      return {id:uid(),label:`Phase ${n}`,name:`Phase ${n}`,
+        sessions:[{id:uid(),label:"Session 1",day:"Session 1",exercises:[]}]};
+    });
+    onUpdate({...split, phases:[...split.phases, ...additions]});
+    setPhaseId(additions[0].id); setSessionId(additions[0].sessions[0].id);
+  };
+  const addSession = count => {
+    const additions = Array.from({length:count}, (_,i) => {
+      const n = phase.sessions.length + i + 1;
+      return {id:uid(),label:`Session ${n}`,day:`Session ${n}`,exercises:[]};
+    });
+    onUpdate({...split, phases:split.phases.map(p => p.id === phase.id ? {...p, sessions:[...p.sessions, ...additions]} : p)});
+    setSessionId(additions[0].id);
+  };
+
+  if (mode === "session") return (
+    <Session exercises={session.exercises} color={color} weights={weights} onSave={onSave} onExit={()=>setMode("list")}/>
+  );
+
+  return (
+    <div>
+      <div style={{padding:"18px 18px 0",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",marginBottom:"12px"}}>
+          <h1 style={{fontSize:"22px",fontWeight:"700"}}>{split.label}</h1>
+          <button onClick={onDelete} style={{
+            background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
+            borderRadius:"9px",padding:"7px 10px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
+          }}>
+            Delete
+          </button>
+        </div>
+        <div style={{display:"flex",gap:"8px",marginBottom:"12px",overflowX:"auto"}}>
+          {split.phases.map(p => (
+            <button key={p.id} onClick={()=>setPhaseId(p.id)} style={{
+              minWidth:"92px",padding:"10px 8px",borderRadius:"12px",
+              border:phase.id===p.id?`1.5px solid ${color}`:"1px solid rgba(255,255,255,0.1)",
+              background:phase.id===p.id?`${color}18`:"#1c1c1e",
+              color:phase.id===p.id?color:"#636366",fontSize:"13px",fontWeight:"700",cursor:"pointer",
+            }}>{p.label}</button>
+          ))}
+          <button onClick={()=>setCountTarget("phase")} style={{minWidth:"44px",borderRadius:"12px",background:`${color}14`,
+            color:color,border:`1px solid ${color}55`,fontSize:"20px",fontWeight:"700",cursor:"pointer"}}>+</button>
+        </div>
+        <div style={{display:"flex",gap:"8px",marginBottom:"14px",overflowX:"auto"}}>
+          {phase.sessions.map(s => (
+            <button key={s.id} onClick={()=>setSessionId(s.id)} style={{
+              minWidth:"110px",padding:"11px 12px",borderRadius:"12px",textAlign:"left",
+              border:session.id===s.id?`1.5px solid ${color}`:"1px solid rgba(255,255,255,0.1)",
+              background:session.id===s.id?`${color}18`:"#1c1c1e",
+              color:session.id===s.id?color:"#8e8e93",fontSize:"14px",fontWeight:"700",cursor:"pointer",
+            }}>{s.label}</button>
+          ))}
+          <button onClick={()=>setCountTarget("session")} style={{minWidth:"44px",borderRadius:"12px",background:`${color}14`,
+            color:color,border:`1px solid ${color}55`,fontSize:"20px",fontWeight:"700",cursor:"pointer"}}>+</button>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+          <span style={{fontSize:"14px",color:"#636366"}}>{session.exercises.length} exercises</span>
+          <button onClick={()=>setMode("session")} disabled={!session.exercises.length} style={{padding:"10px 22px",borderRadius:"11px",
+            background:session.exercises.length?color:"#2c2c2e",color:session.exercises.length?"#000":"#636366",
+            fontSize:"14px",fontWeight:"700",cursor:session.exercises.length?"pointer":"default",border:"none"}}>
+            Start
+          </button>
+        </div>
+      </div>
+      <div style={{padding:"8px 14px 20px"}}>
+        {session.exercises.map((ex,i) => (
+          <ExCard key={ex.id} ex={ex} idx={i} color={color} weights={weights} onSave={onSave}
+            isCustom={true} onEdit={()=>setEditTarget(ex)}/>
+        ))}
+        <AddExBtn color={color} onClick={()=>setAdding(true)}/>
+      </div>
+      {editTarget && (
+        <EditModal ex={editTarget}
+          onSave={data=>{ editExercise(editTarget.id,data); setEditTarget(null); }}
+          onDelete={()=>{ removeExercise(editTarget.id); setEditTarget(null); }}
+          onClose={()=>setEditTarget(null)}
+        />
+      )}
+      {adding && (
+        <BulkExerciseModal color={color}
+          onSave={items=>{ addExercise(items); setAdding(false); }}
+          onClose={()=>setAdding(false)}
+        />
+      )}
+      {countTarget && (
+        <CountModal
+          title={countTarget === "phase" ? "Add phases" : "Add sessions"}
+          label={countTarget === "phase" ? "Number of phases" : "Number of sessions"}
+          color={color}
+          onSave={n=>{ countTarget === "phase" ? addPhase(n) : addSession(n); setCountTarget(null); }}
+          onClose={()=>setCountTarget(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
-  const [tab, setTab] = useState("fb");
+  const MAX_CUSTOM_SPLITS = 4;
+  const [tab, setTab] = useState("home");
   const [weights, setWeights] = useState(() => store.get("weights"));
+  const [username, setUsernameState] = useState(() => store.get("username", ""));
+  const [customSplits, setCustomSplits] = useState(() => store.get("custom-splits", []));
+  const [hiddenTabs, setHiddenTabs] = useState(() => store.get("hidden-tabs", []));
+  const [buildingSplit, setBuildingSplit] = useState(false);
   const save = (k, v) => { const u = {...weights, [k]: v}; setWeights(u); store.set("weights", u); };
+  const setUsername = v => { setUsernameState(v); store.set("username", v); };
+  const saveSplits = splits => { setCustomSplits(splits); store.set("custom-splits", splits); };
+  const saveHiddenTabs = ids => { setHiddenTabs(ids); store.set("hidden-tabs", ids); };
+  const addSplit = split => {
+    if (customSplits.length >= MAX_CUSTOM_SPLITS) { setBuildingSplit(false); return; }
+    const next = [...customSplits, split]; saveSplits(next); setBuildingSplit(false); setTab(split.id);
+  };
+  const updateSplit = split => saveSplits(customSplits.map(s => s.id === split.id ? split : s));
+  const deleteSplit = id => {
+    if (!window.confirm("Delete this split?")) return;
+    if (["fb","ten","str"].includes(id)) {
+      saveHiddenTabs([...new Set([...hiddenTabs, id])]);
+    } else {
+      saveSplits(customSplits.filter(s => s.id !== id));
+    }
+    if (tab === id) setTab("home");
+  };
 
   const tabs = [
+    {id:"home",label:"Home",      color:"#8e8e93", Icon:HomeIcon},
     {id:"fb",  label:"Full Body", color:"#32d74b", Icon:DumbbellIcon},
     {id:"ten", label:"Tendon",    color:"#ff453a", Icon:BoltIcon},
     {id:"str", label:"Stretch",   color:"#0a84ff", Icon:PersonIcon},
   ];
+  const visibleTabs = tabs.filter(t => t.id === "home" || !hiddenTabs.includes(t.id));
+  const allTabs = [
+    ...visibleTabs,
+    ...customSplits.map(s => ({id:s.id,label:s.label,color:s.color,Icon:DumbbellIcon})),
+  ];
+  const activeSplit = customSplits.find(s => s.id === tab);
+  const navCount = allTabs.length;
+  const navIconSize = navCount > 6 ? 18 : navCount > 4 ? 20 : 22;
+  const navFontSize = navCount > 6 ? "8px" : "10px";
+  const navMinWidth = navCount > 6 ? "48px" : "0";
 
   return (
     <div style={{background:"#111",minHeight:"100dvh",color:"#fff",maxWidth:"430px",margin:"0 auto"}}>
       <div style={{paddingBottom:"calc(60px + env(safe-area-inset-bottom))"}}>
-        {tab === "fb"  && <FBView     weights={weights} onSave={save}/>}
-        {tab === "ten" && <TendonView weights={weights} onSave={save}/>}
-        {tab === "str" && <StretchView/>}
+        {tab === "home" && <HomeView username={username} setUsername={setUsername}
+          tabs={visibleTabs} customSplits={customSplits} onOpen={setTab}
+          onAddSplit={()=>{ if (customSplits.length < MAX_CUSTOM_SPLITS) setBuildingSplit(true); }}
+          onDeleteSplit={deleteSplit} canAddSplit={customSplits.length < MAX_CUSTOM_SPLITS}
+          maxCustomSplits={MAX_CUSTOM_SPLITS}/>}
+        {tab === "fb"  && !hiddenTabs.includes("fb")  && <FBView     weights={weights} onSave={save} onDelete={()=>deleteSplit("fb")}/>}
+        {tab === "ten" && !hiddenTabs.includes("ten") && <TendonView weights={weights} onSave={save} onDelete={()=>deleteSplit("ten")}/>}
+        {tab === "str" && !hiddenTabs.includes("str") && <StretchView onDelete={()=>deleteSplit("str")}/>}
+        {activeSplit && <CustomSplitView split={activeSplit} onUpdate={updateSplit}
+          onDelete={()=>deleteSplit(activeSplit.id)} weights={weights} onSave={save}/>}
       </div>
 
       <nav style={{
@@ -1236,26 +1691,29 @@ function App() {
         backdropFilter:"blur(20px)",
         WebkitBackdropFilter:"blur(20px)",
         paddingBottom:"env(safe-area-inset-bottom)",
-        display:"flex",zIndex:30,
+        display:"flex",overflowX:"auto",zIndex:30,
       }}>
-        {tabs.map(({id, label, color, Icon}) => {
+        {allTabs.map(({id, label, color, Icon}) => {
           const active = tab === id;
           return (
             <button key={id} onClick={()=>setTab(id)} style={{
-              flex:1,display:"flex",flexDirection:"column",
+              flex:"1 1 0",minWidth:navMinWidth,
+              display:"flex",flexDirection:"column",
               alignItems:"center",gap:"4px",
-              padding:"10px 0 8px",
+              padding:navCount > 6 ? "8px 0 7px" : "10px 0 8px",
               background:"none",cursor:"pointer",border:"none",
               color: active ? color : "#636366",
             }}>
-              <Icon size={22} color={active ? color : "#636366"}/>
-              <span style={{fontSize:"10px",fontWeight:active?"600":"400",letterSpacing:"0.01em"}}>
+              <Icon size={navIconSize} color={active ? color : "#636366"}/>
+              <span style={{fontSize:navFontSize,fontWeight:active?"600":"400",letterSpacing:"0.01em",
+                maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                 {label}
               </span>
             </button>
           );
         })}
       </nav>
+      {buildingSplit && <SplitBuilder onSave={addSplit} onClose={()=>setBuildingSplit(false)}/>}
     </div>
   );
 }
