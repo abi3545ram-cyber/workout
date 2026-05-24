@@ -1014,7 +1014,7 @@ function StretchTimer({phase, onExit}) {
 }
 
 // ── Full Body view ────────────────────────────────────────────────────────────
-function FBView({weights, onSave, onDelete}) {
+function FBView({weights, onSave}) {
   const color = "#32d74b";
   const [mode, setMode] = useState("list");
   const [editTarget, setEditTarget] = useState(null);
@@ -1059,18 +1059,10 @@ function FBView({weights, onSave, onDelete}) {
           <h1 style={{fontSize:"22px",fontWeight:"700"}}>Full Body</h1>
           <p style={{fontSize:"14px",color:"#636366",marginTop:"3px"}}>0–2 RIR · 27 sets · ~75 min</p>
         </div>
-        <div style={{display:"flex",gap:"8px"}}>
-          <button onClick={onDelete} style={{
-            background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
-            borderRadius:"10px",padding:"10px 12px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
-          }}>
-            Delete
-          </button>
-          <button onClick={()=>setMode("session")} style={{padding:"11px 18px",borderRadius:"12px",
-            background:color,color:"#000",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"none"}}>
-            Start
-          </button>
-        </div>
+        <button onClick={()=>setMode("session")} style={{padding:"11px 22px",borderRadius:"12px",
+          background:color,color:"#000",fontSize:"15px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+          Start
+        </button>
       </div>
       <div style={{padding:"0 14px 20px"}}>
         {FB_SECTIONS.map(sec => (
@@ -1117,7 +1109,7 @@ function FBView({weights, onSave, onDelete}) {
 }
 
 // ── Tendon view ───────────────────────────────────────────────────────────────
-function TendonView({weights, onSave, onDelete}) {
+function TendonView({weights, onSave}) {
   const [phaseKey, setPhaseKey] = useState("p1");
   const [sessionLetter, setSessionLetter] = useState("A");
   const [mode, setMode] = useState("list");
@@ -1188,20 +1180,12 @@ function TendonView({weights, onSave, onDelete}) {
         <div style={{background:"#1c1c1e",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px"}}>
           <p style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6"}}>{pd.meta}</p>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
           <span style={{fontSize:"14px",color:"#636366"}}>{pd.name} · {pd.weeks}</span>
-          <div style={{display:"flex",gap:"8px"}}>
-            <button onClick={onDelete} style={{
-              background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
-              borderRadius:"10px",padding:"9px 11px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
-            }}>
-              Delete
-            </button>
-            <button onClick={()=>setMode("session")} style={{padding:"10px 18px",borderRadius:"11px",
-              background:color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
-              Start
-            </button>
-          </div>
+          <button onClick={()=>setMode("session")} style={{padding:"10px 22px",borderRadius:"11px",
+            background:color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+            Start
+          </button>
         </div>
       </div>
       <div style={{padding:"0 14px 20px"}}>
@@ -1276,7 +1260,7 @@ function StretchListCard({stretch, idx, phase, meta}) {
 }
 
 // ── Stretch view ──────────────────────────────────────────────────────────────
-function StretchView({onDelete}) {
+function StretchView() {
   const [phase, setPhase] = useState(1);
   const [mode, setMode] = useState("list");
   const meta = SPHASE[phase];
@@ -1307,20 +1291,12 @@ function StretchView({onDelete}) {
           <p style={{fontSize:"13px",fontWeight:"700",color:meta.color,marginBottom:"4px"}}>{meta.name} — {meta.months}</p>
           <p style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6"}}>{meta.desc}</p>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",marginBottom:"14px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
           <p style={{fontSize:"14px",color:"#636366"}}>13 stretches · 20 minutes</p>
-          <div style={{display:"flex",gap:"8px"}}>
-            <button onClick={onDelete} style={{
-              background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
-              borderRadius:"10px",padding:"9px 11px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
-            }}>
-              Delete
-            </button>
-            <button onClick={()=>setMode("timer")} style={{padding:"10px 18px",borderRadius:"11px",
-              background:meta.color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
-              Start
-            </button>
-          </div>
+          <button onClick={()=>setMode("timer")} style={{padding:"10px 22px",borderRadius:"11px",
+            background:meta.color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
+            Start
+          </button>
         </div>
       </div>
       <div style={{padding:"8px 14px 20px"}}>
@@ -1488,7 +1464,7 @@ function HomeView({username, setUsername, tabs, customSplits, onOpen, onAddSplit
   );
 }
 
-function CustomSplitView({split, onUpdate, onDelete, weights, onSave}) {
+function CustomSplitView({split, onUpdate, weights, onSave}) {
   const [phaseId, setPhaseId] = useState(split.phases[0]?.id);
   const phase = split.phases.find(p => p.id === phaseId) || split.phases[0];
   const [sessionId, setSessionId] = useState(phase?.sessions[0]?.id);
@@ -1548,15 +1524,7 @@ function CustomSplitView({split, onUpdate, onDelete, weights, onSave}) {
   return (
     <div>
       <div style={{padding:"18px 18px 0",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",marginBottom:"12px"}}>
-          <h1 style={{fontSize:"22px",fontWeight:"700"}}>{split.label}</h1>
-          <button onClick={onDelete} style={{
-            background:"rgba(255,69,58,0.12)",color:"#ff453a",border:"1px solid rgba(255,69,58,0.35)",
-            borderRadius:"9px",padding:"7px 10px",fontSize:"13px",fontWeight:"700",cursor:"pointer",
-          }}>
-            Delete
-          </button>
-        </div>
+        <h1 style={{fontSize:"22px",fontWeight:"700",marginBottom:"12px"}}>{split.label}</h1>
         <div style={{display:"flex",gap:"8px",marginBottom:"12px",overflowX:"auto"}}>
           {split.phases.map(p => (
             <button key={p.id} onClick={()=>setPhaseId(p.id)} style={{
@@ -1676,11 +1644,10 @@ function App() {
           onAddSplit={()=>{ if (customSplits.length < MAX_CUSTOM_SPLITS) setBuildingSplit(true); }}
           onDeleteSplit={deleteSplit} canAddSplit={customSplits.length < MAX_CUSTOM_SPLITS}
           maxCustomSplits={MAX_CUSTOM_SPLITS}/>}
-        {tab === "fb"  && !hiddenTabs.includes("fb")  && <FBView     weights={weights} onSave={save} onDelete={()=>deleteSplit("fb")}/>}
-        {tab === "ten" && !hiddenTabs.includes("ten") && <TendonView weights={weights} onSave={save} onDelete={()=>deleteSplit("ten")}/>}
-        {tab === "str" && !hiddenTabs.includes("str") && <StretchView onDelete={()=>deleteSplit("str")}/>}
-        {activeSplit && <CustomSplitView split={activeSplit} onUpdate={updateSplit}
-          onDelete={()=>deleteSplit(activeSplit.id)} weights={weights} onSave={save}/>}
+        {tab === "fb"  && !hiddenTabs.includes("fb")  && <FBView     weights={weights} onSave={save}/>}
+        {tab === "ten" && !hiddenTabs.includes("ten") && <TendonView weights={weights} onSave={save}/>}
+        {tab === "str" && !hiddenTabs.includes("str") && <StretchView/>}
+        {activeSplit && <CustomSplitView split={activeSplit} onUpdate={updateSplit} weights={weights} onSave={save}/>}
       </div>
 
       <nav style={{
