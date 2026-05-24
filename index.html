@@ -335,15 +335,121 @@ const STRETCHES = [
 
 const SPHASE = {
   1:{name:"Foundation",color:"#32ade6",months:"Months 1-3",
-     desc:"Static holds only, at least three times a week. Learn your body's cues. Hip flexors are your priority area."},
+     desc:"Static stretching, habit formation, and breath-assisted relaxation. Build automaticity before chasing depth."},
   2:{name:"PNF",color:"#bf5af2",months:"Months 4-6",
-     desc:"Add contract-relax PNF to key stretches. Contract for five seconds, exhale deeper. Three cycles per stretch. Daily if you can."},
+     desc:"Contract-relax and CRAC work. Sessions are longer because each priority stretch gets repeated cycles."},
   3:{name:"Active Flexibility",color:"#ff9f0a",months:"Months 7-9",
-     desc:"Hold stretch positions without passive support. Build end-range strength — critical for gymnastics and handstands."},
+     desc:"CARs, dynamic movement, active end-range control, and PAILs/RAILs to close the neurological gap."},
   4:{name:"Integration",color:"#ff375f",months:"Months 10-12",
-     desc:"Flow between positions. Combine techniques. Explore advanced variations. Use the mobility you've built."},
+     desc:"Integrated mobility: CARs, dynamic warm-up, focused PNF, loaded work, Jefferson curls, and goal-specific practice."},
   5:{name:"Maintenance",color:"#30d158",months:"Ongoing",
-     desc:"Three to four times a week. Focus on your weakest areas. The goal is to express this range in movement."},
+     desc:"Maintain what you built or keep progressing toward specific goals. The routine becomes self-directed."},
+};
+
+const stretchByName = name => STRETCHES.find(s => s.name === name);
+const phaseStretch = (name, totalSec, dur, how, extras = {}) => {
+  const base = stretchByName(name) || {};
+  return {
+    name,
+    totalSec,
+    sideLabels: extras.sideLabels || base.sideLabels || [],
+    muscles: extras.muscles || base.muscles || [],
+    priority: extras.priority !== undefined ? extras.priority : base.priority,
+    isNew: extras.isNew !== undefined ? extras.isNew : base.isNew,
+    isDynamic: extras.isDynamic !== undefined ? extras.isDynamic : base.isDynamic,
+    phases: {[extras.phase || 1]:{dur,how}},
+  };
+};
+const PHASE_STRETCHES = {
+  1: STRETCHES.map(s => ({...s, phases:{1:s.phases[1]}})),
+  2: [
+    phaseStretch("Seated Forward Fold",180,"3 CR cycles","Hinge from the hips. Press heels into the floor for 8-10s, completely relax, exhale, then ease deeper for 20-30s. Repeat 3 times. Add CRAC once natural by actively engaging the quads to pull further.",{phase:2,priority:true}),
+    phaseStretch("Low Lunge — Quad Focus",180,"3 CR cycles per side","Back knee down. Press the back knee into the floor for 8-10s, relax fully, exhale, and sink deeper for 20-30s. Keep hips square. This is one of the first PNF priorities.",{phase:2,priority:true}),
+    phaseStretch("Knee-to-Wall Ankle",120,"2 CR cycles per side","Drive knee over little toe with heel flat. At end range, push heel back into the floor/wall for 8-10s, relax, then move slightly further.",{phase:2,priority:true}),
+    phaseStretch("Figure-4 / 90-90",150,"2-3 CR cycles per side","Press knee/ankle into your hand or the floor for 8-10s, relax, exhale, then pull deeper. Use the least force that creates a clear contraction.",{phase:2}),
+    phaseStretch("Cobra Waves",90,"8-10 waves + CR","Progressively extend the range. At the highest comfortable point, press hips into the floor for 8-10s, relax, and lift into a slightly deeper cobra.",{phase:2,isDynamic:true}),
+    phaseStretch("Thread the Needle",120,"45-60s per side","Add a gentle press of the threaded arm into the floor at deepest rotation, then exhale and rotate deeper. Keep hips level.",{phase:2}),
+    phaseStretch("Butterfly Stretch",120,"3 CR cycles","Press knees upward into hands or elbows for 8-10s, relax, exhale, then let knees drop. Stay at strong tension, not pain.",{phase:2}),
+    phaseStretch("Overhead Lat Stretch",90,"45s per side","Passive hold only unless it feels easy. Push toward longer 60s holds on non-PNF stretches.",{phase:2}),
+  ],
+  3: [
+    phaseStretch("Hip CARs",180,"3-5 reps per side","Stand on one foot with full-body tension. Slowly circle the free leg through the largest possible arc. Each rep should take 30-60s. No momentum.",{phase:3,isDynamic:true,muscles:["Hips","Joint control"],priority:true,sideLabels:["right hip","left hip"]}),
+    phaseStretch("Shoulder CARs",120,"3-5 reps per arm","Arm at side, shoulder packed. Circle forward, overhead, behind, and back while keeping tension in the shoulder capsule.",{phase:3,isDynamic:true,muscles:["Shoulders","Joint control"],sideLabels:["right shoulder","left shoulder"]}),
+    phaseStretch("Spine CARs",90,"slow circles","Seated. Flex forward, side-bend, rotate, extend, then reverse. Move through the full spinal range deliberately.",{phase:3,isDynamic:true,muscles:["Spine","Thoracic control"]}),
+    phaseStretch("Wrist and Forearm",90,"CARs + holds","Slow wrist circles in both directions, then standard forearm stretching. Keyboard use lives in a small range; train the neglected ranges.",{phase:3,isDynamic:true}),
+    phaseStretch("World's Greatest Stretch",120,"dynamic flow","Deep lunge with rotation. Move smoothly side to side as a dynamic warm-up before the deeper work.",{phase:3,isDynamic:true,priority:true}),
+    phaseStretch("Leg Swings + Hip Circles",120,"10 each direction","Leg swings forward/back and side/side, then hip circles. Warm tissue while building active range.",{phase:3,isDynamic:true,muscles:["Hips","Hamstrings","Adductors"],sideLabels:["right leg","left leg"]}),
+    phaseStretch("Seated Forward Fold",150,"PNF / CRAC","Use CR first, then actively contract quads/hip flexors to pull deeper. Train the active range, not just the passive fold.",{phase:3,priority:true}),
+    phaseStretch("Low Lunge — Quad Focus",150,"PNF / CRAC per side","After the contraction, actively squeeze glute and hip flexor control to own the deeper range.",{phase:3,priority:true}),
+    phaseStretch("Hamstring PAILs/RAILs",120,"10-20s each","At end range, contract the stretched hamstrings hard as if closing the stretch, then contract hip flexors/quads to open further. Expect unfamiliar soreness.",{phase:3,muscles:["Hamstrings","End-range strength"],priority:true}),
+  ],
+  4: [
+    phaseStretch("Full-Body CARs",300,"5 min","Run hips, shoulders, spine, wrists, and ankles through controlled full-range circles. This is daily joint maintenance.",{phase:4,isDynamic:true,muscles:["Full body","Joint control"],priority:true}),
+    phaseStretch("Dynamic Warm-Up Flow",300,"5 min","Use leg swings, hip circles, walking lunges with torso rotation, arm circles, cross-body swings, and cat-cow. Prioritise the areas tied to your current goals.",{phase:4,isDynamic:true,muscles:["Full body","Warm-up"]}),
+    phaseStretch("Seated Forward Fold",150,"focused PNF","Use PNF only if hamstrings are one of the 3-4 areas limiting your current goal. Quality over covering every stretch.",{phase:4}),
+    phaseStretch("Overhead Lat Stretch",150,"focused PNF","Use lat PNF and overhead positioning if overhead mobility is a goal. Keep ribs down; avoid lumbar compensation.",{phase:4}),
+    phaseStretch("Knee-to-Wall Ankle",120,"goal work","For deep squat goals: drive dorsiflexion with heel flat, then test progressively further from the wall.",{phase:4,isDynamic:true}),
+    phaseStretch("Jefferson Curl",240,"3-5 reps","Stand on a box with 2-5kg to start. Tuck chin, roll down vertebra by vertebra, let the weight hang, hold 3-5s, then roll back up slowly. Increase load only when easy.",{phase:4,muscles:["Spine","Hamstrings","Posterior chain"],priority:true}),
+    phaseStretch("Goal-Specific Mobility",300,"10 min","Choose 1-2 goals: deep squat, overhead mobility, front split, side split, or Jefferson curl progression. Spend this block on the exercises that directly limit those goals.",{phase:4,muscles:["Goal work"],priority:true}),
+    phaseStretch("PAILs/RAILs Target Block",180,"2-3 areas","End-range isometrics for the tightest goal-related areas. Contract the stretched muscle, then the antagonist, and own the new range.",{phase:4,muscles:["End-range strength"]}),
+  ],
+  5: [
+    phaseStretch("Daily CARs",300,"5 min","Even on rest days and when travelling: hips, shoulders, spine, wrists, and ankles. Joint health drops faster than flexibility without this.",{phase:5,isDynamic:true,muscles:["Full body","Joint health"],priority:true}),
+    phaseStretch("Dynamic Warm-Up Flow",180,"3 min","Before any physical activity, move dynamically rather than doing static pre-activity holds. This should be automatic now.",{phase:5,isDynamic:true,muscles:["Full body","Warm-up"]}),
+    phaseStretch("Low Lunge — Quad Focus",120,"maintenance","Keep hip flexors from sliding backward. Use static, PNF, or active work depending on what feels restricted that week.",{phase:5,priority:true}),
+    phaseStretch("Seated Forward Fold",120,"maintenance","Hold or PNF enough to maintain posterior chain range. Increase frequency if forward fold is one of your current goals.",{phase:5}),
+    phaseStretch("Overhead Lat Stretch",90,"maintenance","Maintain overhead range for pressing, handstands, and general shoulder comfort.",{phase:5}),
+    phaseStretch("Figure-4 / 90-90",90,"maintenance","Keep hip rotation available. Spend longer here if sitting, lifting, or sport makes the hips feel restricted.",{phase:5}),
+    phaseStretch("Jefferson Curl",180,"weekly","Use a maintenance weight weekly. Loaded spinal flexion keeps the posterior chain and spine fluent.",{phase:5,muscles:["Spine","Hamstrings"],priority:true}),
+    phaseStretch("Personal Goal Block",300,"self-directed","Ask what you are maintaining or progressing this quarter: splits, overhead, squat, martial arts, gymnastics, lifting, dance, or a new sport. Spend the work where it matters.",{phase:5,muscles:["Goal work"]}),
+  ],
+};
+const getPhaseStretches = phase => PHASE_STRETCHES[phase] || PHASE_STRETCHES[1];
+const getPhaseTotalSec = phase => getPhaseStretches(phase).reduce((a,s)=>a+s.totalSec,0);
+const fmtMin = sec => `${Math.round(sec/60)} min`;
+const PHASE_INFO = {
+  1:[
+    {title:"Goal",body:["The goal is not flexibility yet — it is automaticity. Your nervous system is learning that stretching is safe, and most early gains come from neurological adaptation rather than tissue lengthening.","Do not rush out of this phase. Consistency in months 1-3 is the biggest predictor of long-term success."]},
+    {title:"Schedule progression",items:["Weeks 1-4: 3x per week on non-consecutive days, such as Mon/Wed/Fri.","Weeks 5-8: 4-5x per week. Add a weekend session first.","Weeks 9-12: daily if possible, ideally morning or after a shower."]},
+    {title:"How to stretch",items:["Breath-assisted relaxation: inhale to prepare, exhale slowly into the stretch.","Tension vs pain: stay at a pulling sensation you could hold for 60s; if it sharpens, ease back 10%.","Focused attention: keep your mind on the stretched area. Passive holding while mentally elsewhere is less effective."]},
+    {title:"What's happening",items:["Weeks 1-4: the muscle spindle reflex recalibrates and learns the stretch is not a threat.","Weeks 5-12: tissue remodelling begins in fascia, tendons, and muscle fibre. This is slower but more permanent."]},
+    {title:"Best time",items:["After a workout: warm tissue, best results.","After a hot shower: nearly as good.","After a brisk 5-minute walk: enough for a standalone session.","Morning: acceptable, but go gentler for the first 2 minutes."]},
+    {title:"Mistakes",items:["Do not bounce or pulse.","Do not skip the stretches you dislike.","Do not expect fast visible results in month 1.","Do not stop and restart; imperfect weekly consistency beats short bursts of perfection."]},
+    {title:"Ready for Phase 2?",items:["Full 20-minute routine no longer feels dreadful.","Noticeably more range in 3-4 areas.","Stretching usually feels like relief, not discomfort.","At least 3 sessions per week for 8+ consecutive weeks.","You know the stretches well enough to do them without instructions."]},
+  ],
+  2:[
+    {title:"What PNF does",body:["PNF uses contract-relax to take advantage of autogenic inhibition. Contracting a stretched muscle tells the nervous system to relax it briefly, creating a 3-10 second window where deeper range is available.","Research generally shows stronger ROM gains than static stretching alone."]},
+    {title:"Schedule",items:["Daily stretching is the target.","Sessions run 25-30 minutes because each contract-relax cycle takes longer.","Warm-up is required: after a workout, hot shower, or 5-minute walk. Do not PNF cold muscles."]},
+    {title:"Contract-relax steps",items:["Move into strong but comfortable tension.","Isometrically contract the stretched muscle against something immovable for 8-10 seconds.","Completely relax and exhale fully.","Ease gently deeper and hold 20-30 seconds. Repeat 2-3 cycles."]},
+    {title:"CRAC upgrade",body:["After the relax phase, actively contract the opposite muscle to pull further in. This adds reciprocal inhibition. Example: after contracting hamstrings in a forward fold, engage the quads to draw deeper."]},
+    {title:"Priorities",items:["Seated forward fold: hamstrings, easiest solo CR.","Low lunge: hip flexors, press knee into floor.","Calf stretch: press heel into wall/floor.","Figure-4: press knee into hand.","Cobra: press hips into floor.","Thread the needle: add when comfortable."]},
+    {title:"Warnings",items:["Start contractions at 50-60% effort in week 1.","Do not skip the relax breath.","Do not PNF every stretch from day one; add one or two first, then expand."]},
+    {title:"Ready for Phase 3?",items:["Contract-relax on at least 4 stretches per session.","Deeper hamstring and hip flexor range than Phase 1.","Tried CRAC on forward fold and felt the difference.","60s per side is comfortable in most passive stretches.","Daily or near-daily stretching for 6+ weeks."]},
+  ],
+  3:[
+    {title:"Core idea",body:["Phases 1-2 built passive range. Phase 3 builds active range: the range you can reach and control under your own muscle power.","The gap between passive and active range is the neurological gap. Closing it makes flexibility usable in movement, posture, and sport."]},
+    {title:"CARs",items:["Hip CARs: largest possible slow arc, 3-5 reps per side, 30-60s each.","Shoulder CARs: full arm circle with packed shoulder and capsule tension.","Spine CARs: flex, side-bend, rotate, extend, and isolate thoracic/lumbar when possible.","Wrist CARs: deliberate full-range circles, especially useful with keyboard work."]},
+    {title:"Dynamic warm-ups",items:["Replace static pre-activity holds with dynamic movement.","Use leg swings, hip circles, walking lunges with rotation, arm circles, cross-body swings, and cat-cow.","Static stretching before exercise can reduce power output, so save it for standalone or post-workout sessions."]},
+    {title:"PAILs and RAILs",items:["PAIL: at end range, contract the stretched muscle for 10-20s as if closing the stretch.","RAIL: immediately contract the antagonist to open further for 10-20s.","Start with hamstrings and hip flexors. Soreness in unfamiliar areas is normal."]},
+    {title:"Session structure",items:["5 min CARs.","5 min dynamic work.","15 min PNF / CRAC.","5 min PAILs / RAILs."]},
+    {title:"Ready for Phase 4?",items:["Hip, shoulder, and spine CARs feel smooth and controlled.","Dynamic warm-up is automatic before activity.","Active range is approaching passive range.","Tried PAILs/RAILs on hamstrings and noticed the soreness effect.","Attended or tried dedicated mobility/yoga-style sessions."]},
+  ],
+  4:[
+    {title:"Core idea",body:["Mobility is flexibility plus strength and control through the range. Phase 4 integrates passive range, active access, load, and goal-specific work."]},
+    {title:"Integrated session",items:["5 min CARs for hips, shoulders, spine, wrists, ankles.","5 min dynamic warm-up, biased toward your goals.","10 min PNF / CRAC for 3-4 limiting areas.","10 min loaded work: Jefferson curl plus goal exercises.","5 min PAILs/RAILs for 2-3 target areas."]},
+    {title:"Jefferson curl",items:["Stand on a box or step holding 2-5kg to start.","Tuck chin, roll down vertebra by vertebra, and let the weight hang.","Hold 3-5s at the bottom, then roll back up slowly.","Do 3-5 reps. Increase 1-2kg every 2-3 weeks only when easy.","Start lighter than necessary; loaded spinal end range rewards patience."]},
+    {title:"Choose 1-2 goals",items:["Deep squat: ankle dorsiflexion, hip flexor length, thoracic extension.","Overhead mobility: lats, thoracic extension, shoulder CARs.","Front split: rear-leg hip flexor and front-leg hamstring.","Middle split: adductor length and strength.","Jefferson curl progression: long-term loaded flexibility benchmark."]},
+    {title:"Reassess",body:["Month 10 is a good time to repeat the Phase 0 baseline tests. Compare hip flexors, forward fold, and shoulder range for visible progress."]},
+    {title:"Milestones",items:["Jefferson curl comfortable at 10kg+ with clear spinal articulation.","Active ROM within 15-20 degrees of passive ROM.","Chosen 1-2 goals and working them directly.","35-minute integrated sessions feel routine.","Flexibility is visible in daily life.","Baseline tests have been repeated and recorded."]},
+  ],
+  5:[
+    {title:"Core idea",body:["There is no endpoint. After month 12, you have the base and technique library to self-direct. The question becomes what you want to do with the mobility and how you keep it."]},
+    {title:"Maintain vs progress",items:["Maintain: 3-4 sessions per week. A 20-minute session 3x/week can hold most gains.","Progress: daily work. Advanced goals like full splits, deep overhead, or heavy Jefferson curls require consistent daily practice."]},
+    {title:"Minimums",items:["CARs daily, even on rest days or while travelling.","Full stretch session 3x per week using static, PNF, or active work.","Jefferson curl weekly at maintenance weight.","Dynamic warm-up before physical activity."]},
+    {title:"Where it can take you",items:["Yoga: Ashtanga, Iyengar, Vinyasa.","Gymnastics: handstands, L-sits, ring work.","Weightlifting: overhead squat, snatch, clean technique.","Martial arts: high kicks, grappling, guard passing, throwing mechanics.","Dance: hip mobility and hamstring flexibility."]},
+    {title:"How the routine evolves",body:["By Phase 5, the fixed routine can become a personal selection. Spend more time on what your body needs this week, less on what is already good. Add or remove movements based on sport, injury, goal, or daily restriction."]},
+    {title:"Every 3 months",items:["Have I re-tested my baseline?","Are my 1-2 goals still right?","Do I have a new activity with new mobility demands?","Am I maintaining consistently or coasting?","What is the one area that still feels restricted day to day?"]},
+  ],
 };
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -847,6 +953,7 @@ function Session({exercises, color, weights, onSave, onExit}) {
 // ── Stretch timer ─────────────────────────────────────────────────────────────
 function StretchTimer({phase, onExit}) {
   const meta = SPHASE[phase];
+  const plan = getPhaseStretches(phase);
   const [idx, setIdx] = useState(0);
   const [sec, setSec] = useState(0);
   const [sideIdx, setSideIdx] = useState(0);
@@ -858,7 +965,7 @@ function StretchTimer({phase, onExit}) {
   const secsPerSide = s => Math.round(s.totalSec / numSides(s));
   const cumulativeStarts = [];
   let cum = 0;
-  STRETCHES.forEach(s => { cumulativeStarts.push(cum); cum += s.totalSec; });
+  plan.forEach(s => { cumulativeStarts.push(cum); cum += s.totalSec; });
 
   const clearTimer = () => { if (timer.current) { clearInterval(timer.current); timer.current = null; } };
 
@@ -866,13 +973,13 @@ function StretchTimer({phase, onExit}) {
     if (!running) return;
     timer.current = setInterval(() => {
       setSec(prev => {
-        const stretch = STRETCHES[idx];
+        const stretch = plan[idx];
         const next = prev + 1;
         const newSide = Math.min(Math.floor(next / secsPerSide(stretch)), numSides(stretch) - 1);
         if (newSide !== sideIdx) setSideIdx(newSide);
         if (next >= stretch.totalSec) {
           clearTimer(); setRunning(false);
-          if (idx < STRETCHES.length - 1) {
+          if (idx < plan.length - 1) {
             setTimeout(() => { setIdx(i => i + 1); setSec(0); setSideIdx(0); setRunning(true); }, 700);
           } else {
             setDone(true);
@@ -887,7 +994,7 @@ function StretchTimer({phase, onExit}) {
 
   useEffect(() => () => clearTimer(), []);
 
-  const next = () => { clearTimer(); setRunning(false); if (idx < STRETCHES.length-1) { setIdx(i=>i+1); setSec(0); setSideIdx(0); } };
+  const next = () => { clearTimer(); setRunning(false); if (idx < plan.length-1) { setIdx(i=>i+1); setSec(0); setSideIdx(0); } };
   const prev = () => { clearTimer(); setRunning(false); if (idx > 0) { setIdx(i=>i-1); setSec(0); setSideIdx(0); } };
   const reset = () => { clearTimer(); setRunning(false); setIdx(0); setSec(0); setSideIdx(0); setDone(false); };
 
@@ -901,7 +1008,7 @@ function StretchTimer({phase, onExit}) {
         </svg>
       </div>
       <h2 style={{fontSize:"26px",fontWeight:"700",marginBottom:"8px"}}>All done</h2>
-      <p style={{fontSize:"15px",color:"#8e8e93",marginBottom:"40px"}}>20 minutes · 13 stretches</p>
+      <p style={{fontSize:"15px",color:"#8e8e93",marginBottom:"40px"}}>{fmtMin(cum)} · {plan.length} movements</p>
       <div style={{display:"flex",gap:"12px"}}>
         <button onClick={reset} style={{padding:"15px 28px",borderRadius:"13px",
           background:"#2c2c2e",color:"#8e8e93",fontSize:"15px",fontWeight:"600",cursor:"pointer",border:"none"}}>
@@ -915,7 +1022,7 @@ function StretchTimer({phase, onExit}) {
     </div>
   );
 
-  const stretch = STRETCHES[idx];
+  const stretch = plan[idx];
   const sps = secsPerSide(stretch);
   const sideElapsed = sec - sideIdx * sps;
   const frac = Math.min(sideElapsed / sps, 1);
@@ -930,13 +1037,13 @@ function StretchTimer({phase, onExit}) {
     <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
       <div style={{padding:"12px 18px 0",display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
         <div style={{display:"flex",gap:"4px",flex:1,flexWrap:"wrap"}}>
-          {STRETCHES.map((_,i) => (
+          {plan.map((_,i) => (
             <div key={i} style={{width:"8px",height:"8px",borderRadius:"50%",
               background:i<idx?meta.color:i===idx?"#fff":"rgba(255,255,255,0.15)",
               transition:"background 0.3s"}}/>
           ))}
         </div>
-        <span style={{fontSize:"13px",color:"#636366"}}>{idx+1} / 13</span>
+        <span style={{fontSize:"13px",color:"#636366"}}>{idx+1} / {plan.length}</span>
         <button onClick={onExit} style={{background:"none",color:"#636366",fontSize:"14px",
           cursor:"pointer",border:"none",padding:"0 0 0 12px",fontWeight:"500"}}>
           Exit
@@ -1217,7 +1324,7 @@ function TendonView({weights, onSave}) {
 // ── Stretch list card (separate component to keep hooks legal) ────────────────
 function StretchListCard({stretch, idx, phase, meta}) {
   const [open, setOpen] = useState(false);
-  const pd = stretch.phases[phase];
+  const pd = stretch.phases[phase] || stretch.phases[1];
   return (
     <div style={{
       background:"#1c1c1e",borderRadius:"14px",marginBottom:"8px",overflow:"hidden",
@@ -1259,11 +1366,55 @@ function StretchListCard({stretch, idx, phase, meta}) {
   );
 }
 
+function PhaseInfoModal({phase, onClose}) {
+  const meta = SPHASE[phase];
+  const sections = PHASE_INFO[phase] || [];
+  return (
+    <div className="modal-bg" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-body">
+        <div className="drag-bar"/>
+        <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}>
+          <div style={{width:"34px",height:"34px",borderRadius:"50%",background:`${meta.color}22`,
+            color:meta.color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"800"}}>
+            {phase}
+          </div>
+          <div>
+            <h2 style={{fontSize:"20px",fontWeight:"700"}}>{meta.name}</h2>
+            <p style={{fontSize:"13px",color:"#636366",marginTop:"2px"}}>{meta.months}</p>
+          </div>
+        </div>
+        {sections.map(sec => (
+          <div key={sec.title} style={{background:"#111",border:"1px solid rgba(255,255,255,0.07)",
+            borderRadius:"12px",padding:"13px 14px",marginBottom:"10px"}}>
+            <h3 style={{fontSize:"14px",fontWeight:"700",color:meta.color,marginBottom:"8px"}}>{sec.title}</h3>
+            {sec.body && sec.body.map((p,i) => (
+              <p key={i} style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6",marginBottom:i===sec.body.length-1?"0":"7px"}}>
+                {p}
+              </p>
+            ))}
+            {sec.items && sec.items.map((item,i) => (
+              <div key={i} style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.55",marginTop:i===0?"0":"6px"}}>
+                <span style={{color:meta.color,fontWeight:"700"}}>· </span>{item}
+              </div>
+            ))}
+          </div>
+        ))}
+        <button onClick={onClose} style={{width:"100%",padding:"14px",borderRadius:"13px",
+          background:meta.color,color:"#000",fontSize:"16px",fontWeight:"700",cursor:"pointer",marginTop:"4px"}}>
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Stretch view ──────────────────────────────────────────────────────────────
 function StretchView() {
   const [phase, setPhase] = useState(1);
   const [mode, setMode] = useState("list");
+  const [infoOpen, setInfoOpen] = useState(false);
   const meta = SPHASE[phase];
+  const plan = getPhaseStretches(phase);
 
   if (mode === "timer") return <StretchTimer phase={phase} onExit={()=>setMode("list")}/>;
 
@@ -1288,11 +1439,18 @@ function StretchView() {
           })}
         </div>
         <div style={{background:"#1c1c1e",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px"}}>
-          <p style={{fontSize:"13px",fontWeight:"700",color:meta.color,marginBottom:"4px"}}>{meta.name} — {meta.months}</p>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"4px"}}>
+            <p style={{fontSize:"13px",fontWeight:"700",color:meta.color}}>{meta.name} — {meta.months}</p>
+            <button onClick={()=>setInfoOpen(true)} style={{width:"28px",height:"28px",borderRadius:"50%",
+              background:`${meta.color}18`,border:`1px solid ${meta.color}55`,color:meta.color,
+              fontSize:"15px",fontWeight:"800",cursor:"pointer"}}>
+              ?
+            </button>
+          </div>
           <p style={{fontSize:"13px",color:"#8e8e93",lineHeight:"1.6"}}>{meta.desc}</p>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-          <p style={{fontSize:"14px",color:"#636366"}}>13 stretches · 20 minutes</p>
+          <p style={{fontSize:"14px",color:"#636366"}}>{plan.length} movements · {fmtMin(getPhaseTotalSec(phase))}</p>
           <button onClick={()=>setMode("timer")} style={{padding:"10px 22px",borderRadius:"11px",
             background:meta.color,color:"#000",fontSize:"14px",fontWeight:"700",cursor:"pointer",border:"none"}}>
             Start
@@ -1300,10 +1458,11 @@ function StretchView() {
         </div>
       </div>
       <div style={{padding:"8px 14px 20px"}}>
-        {STRETCHES.map((s,i) => (
+        {plan.map((s,i) => (
           <StretchListCard key={s.name} stretch={s} idx={i} phase={phase} meta={meta}/>
         ))}
       </div>
+      {infoOpen && <PhaseInfoModal phase={phase} onClose={()=>setInfoOpen(false)}/>}
     </div>
   );
 }
