@@ -439,8 +439,16 @@
       const [exIdx,setExIdx]=useState(0);
       const [setIdx,setSetIdx]=useState(0);
       const [mode,setMode]=useState("work");
+      const [setLogs,setSetLogs]=useState({});
       const activeEx=exercises[exIdx];
       const nextEx=exIdx+1<exercises.length?exercises[exIdx+1]:null;
+      const setKey=`${exIdx}-${setIdx}`;
+      const currentLog=setLogs[setKey]||{};
+      const totalSets=exercises.reduce((a,e)=>a+(parseInt(e.sets)||1),0);
+      const loggedSets=Object.values(setLogs).filter(l=>l.logged).length;
+      const actualReps=currentLog.reps!==undefined?currentLog.reps:(activeEx.reps||"");
+      const actualWeight=currentLog.weight!==undefined?currentLog.weight:(activeEx.weight||"");
+      const actualSeconds=currentLog.seconds!==undefined?currentLog.seconds:(activeEx.hold?String(parseInt(activeEx.hold.replace(/[^\d]/g,''))||30):(activeEx.totalSec?String(activeEx.totalSec):""));
       const sideLabels=activeEx.sideLabels||[];
       const hasSides=sideLabels.length>0;
       const [currentSideIdx,setCurrentSideIdx]=useState(0);
@@ -487,7 +495,7 @@
         const m=modeRef.current;
         if(m==="work"){
           if(hasSides&&currentSideIdx+1<sideLabels.length){triggerSound('beep-high');setMode("split_transition");}
-          else{triggerSound('chime');onLogSet(activeEx,activeEx.weight||"");if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext();}
+          else{triggerSound('chime');}
         } else if(m==="rest"){triggerSound('rest-chime');moveToNext();}
         else if(m==="split_transition"){setCurrentSideIdx(currentSideIdx+1);setMode("work");}
       };
@@ -529,13 +537,21 @@
         setIsRunning(false);
         if(mode==="work"){
           if(hasSides&&currentSideIdx+1<sideLabels.length){setCurrentSideIdx(currentSideIdx+1);}
-          else{onLogSet(activeEx,activeEx.weight||"");if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext();}
+          else{if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext();}
         } else moveToNext();
       };
-      const moveToNext=()=>{setCurrentSideIdx(0);const maxSets=activeEx.sets||1;if(setIdx+1<maxSets){setSetIdx(setIdx+1);setMode("work");}else{if(exIdx+1<exercises.length){setExIdx(exIdx+1);setSetIdx(0);setMode("work");}else{onLogSession(exercises.length,exercises.length,false);onFinish();}}};
-      const finishEarly=()=>{if(confirm("Finish early? Progress logged as partial.")){onLogSession(exercises.length,exIdx,true);onFinish();}};
-      const onLogSet=(ex,weight)=>{const p=store.get("workout_progression",[]);p.push({id:uid(),date:new Date().toISOString().split('T')[0],exercise:ex.name,weight:weight||"0",hold:ex.hold||"0"});store.set("workout_progression",p);};
-      const onLogSession=(total,completed,isPartial)=>{const logs=store.get("workout_logs",[]);logs.push({id:uid(),date:new Date().toISOString().split('T')[0],routine:routineName,total,completed,isPartial});store.set("workout_logs",logs);const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});if(routineName.includes("Stretch"))c.stretches+=1;else if(routineName.includes("Tendon"))c.tendons+=1;else c.workouts+=1;store.set("workout_completed_counts",c);};
+      const updateSetLog=patch=>setSetLogs(p=>({...p,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,...p[setKey],...patch}}));
+      const logCurrentSet=()=>{
+        const nextLogs={...setLogs,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,logged:true}};
+        setSetLogs(nextLogs);
+        onLogSet(activeEx,{reps:actualReps,weight:actualWeight,seconds:actualSeconds});
+        if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext(nextLogs);
+      };
+      const moveToNext=(logsOverride=setLogs)=>{setCurrentSideIdx(0);const maxSets=activeEx.sets||1;if(setIdx+1<maxSets){setSetIdx(setIdx+1);setMode("work");}else{if(exIdx+1<exercises.length){setExIdx(exIdx+1);setSetIdx(0);setMode("work");}else{const completed=Object.values(logsOverride).filter(l=>l.logged).length;onLogSession(totalSets,completed,completed<totalSets);onFinish();}}};
+      const finishEarly=()=>{if(confirm("Finish and save logged sets?")){const completed=Object.values(setLogs).filter(l=>l.logged).length;onLogSession(totalSets,completed,completed<totalSets);onFinish();}};
+      const finishWithoutSaving=()=>{if(confirm("Finish without saving this session?"))onCancel();};
+      const onLogSet=(ex,data)=>{const p=store.get("workout_progression",[]);p.push({id:uid(),date:new Date().toISOString().split('T')[0],exercise:ex.name,weight:data.weight||"0",reps:data.reps||"",hold:data.seconds||ex.hold||"0"});store.set("workout_progression",p);};
+      const onLogSession=(total,completed,isPartial)=>{const logs=store.get("workout_logs",[]);logs.push({id:uid(),date:new Date().toISOString().split('T')[0],routine:routineName,total,completed,isPartial});store.set("workout_logs",logs);const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});if(completed>0){if(routineName.includes("Stretch"))c.stretches+=1;else if(routineName.includes("Tendon"))c.tendons+=1;else c.workouts+=1;}store.set("workout_completed_counts",c);};
 
       const progressPercent=targetSeconds>0?((targetSeconds-remaining)/targetSeconds)*100:0;
       const strokeDashoffset=628-(628*progressPercent)/100;
@@ -545,9 +561,12 @@
           <div className="flex-between" style={{width:"100%",marginBottom:"10px"}}>
             <div>
               <span className="badge" style={{marginLeft:"0"}}>{routineName}</span>
-              <p className="text-small" style={{marginTop:"4px"}}>Exercise {exIdx+1} of {exercises.length} — Set {setIdx+1} of {activeEx.sets||1}</p>
+              <p className="text-small" style={{marginTop:"4px"}}>Exercise {exIdx+1} of {exercises.length} — Set {setIdx+1} of {activeEx.sets||1} — Logged {loggedSets}/{totalSets}</p>
             </div>
-            <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 12px",fontSize:"12px",fontWeight:"700"}} onClick={finishEarly}>Finish Early</button>
+            <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
+              <button style={{border:"1.5px solid var(--card-border)",color:"var(--text-secondary)",background:"transparent",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}} onClick={finishWithoutSaving}>Finish No Save</button>
+              <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}} onClick={finishEarly}>Finish</button>
+            </div>
           </div>
 
           <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center"}}>
@@ -572,6 +591,15 @@
               </div>
             )}
             {mode==="work"&&<div className="exercise-cue-box" style={{width:"100%",maxHeight:"110px",overflowY:"auto"}}><strong>Cue:</strong> {activeEx.cue}</div>}
+            {mode==="work"&&(
+              <div className="card" style={{width:"100%",padding:"12px",marginBottom:"0"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px"}}>
+                  <div><label className="field-label">Reps</label><input className="field" value={actualReps} onChange={e=>updateSetLog({reps:e.target.value})}/></div>
+                  <div><label className="field-label">Weight</label><input className="field" value={actualWeight} onChange={e=>updateSetLog({weight:e.target.value})}/></div>
+                  <div><label className="field-label">Seconds</label><input className="field" value={actualSeconds} onChange={e=>updateSetLog({seconds:e.target.value})}/></div>
+                </div>
+              </div>
+            )}
             {mode==="rest"&&nextEx&&(
               <div className="card" style={{width:"100%",background:"var(--input-bg)"}}>
                 <p className="text-small font-bold" style={{textTransform:"uppercase",color:"var(--accent)"}}>Up Next</p>
@@ -589,8 +617,10 @@
                 <div style={{width:"52px"}}/>
               </div>
             )}
-            {mode==="work"&&targetSeconds===0&&<button className="button-primary" style={{padding:"16px 20px",fontSize:"18px"}} onClick={handleTimerComplete}>Set Completed</button>}
-            <button className="skip-btn-large" onClick={skipTimer}>Skip {mode==="work"?"Hold":"Rest"} →</button>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",width:"100%"}}>
+              <button className="button-secondary" onClick={skipTimer}>{mode==="rest"?"Skip Rest":"Next No Log"}</button>
+              {mode==="work"&&<button className="button-primary" onClick={logCurrentSet}>Log & Next</button>}
+            </div>
           </div>
         </div>
       );
@@ -599,7 +629,17 @@
     // ── WorkoutsTab ────────────────────────────────────────────────────────────
     function WorkoutsTab({workouts,setWorkouts,weights,saveWeight,counts,setActiveRoutine,setModalContent}) {
       const [activeSection,setActiveSection]=useState(null);
+      const [editMode,setEditMode]=useState(false);
+      const workoutSections=workouts.filter(s=>!(s.description||s.phases));
       const triggerEdit=(ex,secName)=>setModalContent({type:"edit_exercise",data:{ex,secName}});
+      const updateExercise=(secName,idx,patch)=>{
+        const u=workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u);
+      };
+      const deleteExercise=(secName,exName)=>{
+        const u=workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.filter(e=>e.name!==exName)}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u);
+      };
       const handleAddExercise=secName=>{
         const nm=prompt("New exercise name:");
         if(!nm) return;
@@ -613,19 +653,22 @@
         <div>
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><h2 className="font-bold" style={{fontSize:"20px"}}>Strength & Hypertrophy</h2><p className="text-small">Progressive overload tracking</p></div>
-            <span className="badge" style={{background:"var(--success-muted)",color:"var(--success)",borderColor:"var(--success)"}}>{counts.workouts} Done</span>
+            <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+              <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
+              <span className="badge" style={{background:"var(--success-muted)",color:"var(--success)",borderColor:"var(--success)"}}>{counts.workouts} Done</span>
+            </div>
           </div>
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderColor:"var(--accent)",borderWidth:"1.5px"}}>
             <div>
               <p className="font-bold" style={{fontSize:"16px"}}>Full Body</p>
-              <p className="text-small">{workouts.reduce((a,s)=>a+s.exercises.length,0)} exercises — all sections</p>
+              <p className="text-small">{workoutSections.reduce((a,s)=>a+s.exercises.length,0)} exercises — all sections</p>
             </div>
             <button className="button-primary" style={{width:"auto",padding:"10px 20px",fontSize:"14px"}}
-              onClick={()=>setActiveRoutine({name:"Full Body Workout",exercises:workouts.flatMap(s=>s.exercises.map(e=>({...e,section:s.section,weight:weights[e.name]||e.weight||""})))})}>
+              onClick={()=>setActiveRoutine({name:"Full Body Workout",exercises:workoutSections.flatMap(s=>s.exercises.map(e=>({...e,section:s.section,weight:weights[e.name]||e.weight||""})))})}>
               Start
             </button>
           </div>
-          {workouts.map((sec,si)=>{
+          {workoutSections.map((sec,si)=>{
             const isOpen=activeSection===sec.section;
             return (
               <div key={si} className="card" style={{padding:"12px 16px"}}>
@@ -638,14 +681,22 @@
                     <button className="button-primary" style={{marginBottom:"16px",padding:"10px 14px",fontSize:"14px"}} onClick={()=>launchSectionSession(sec)}>Start Session</button>
                     {sec.exercises.map((ex,ei)=>(
                       <div key={ei} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none"}}>
-                        <div style={{maxWidth:"60%",cursor:"pointer"}} onClick={()=>triggerEdit(ex,sec.section)}>
-                          <p className="font-bold" style={{fontSize:"14px",textDecoration:"underline"}}>{ex.name}</p>
-                          <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets — {ex.reps}</p>
-                        </div>
-                        <WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
+                        {editMode?(
+                          <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                            <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}/>
+                            <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(sec.section,ei,{sets:parseInt(e.target.value)||1})}/>
+                            <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||""} onChange={e=>updateExercise(sec.section,ei,{reps:e.target.value})}/>
+                          </div>
+                        ):(
+                          <div style={{maxWidth:"60%"}}>
+                            <p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p>
+                            <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets — {ex.reps}</p>
+                          </div>
+                        )}
+                        {editMode?<button onClick={()=>deleteExercise(sec.section,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:<WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>}
                       </div>
                     ))}
-                    <button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>
+                    {editMode&&<button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>}
                   </div>
                 )}
               </div>
@@ -658,23 +709,54 @@
     // ── TendonsTab ─────────────────────────────────────────────────────────────
     function TendonsTab({weights,saveWeight,counts,setActiveRoutine}) {
       const [selectedPhase,setSelectedPhase]=useState("p1");
-      const pd=TENDON[selectedPhase];
+      const [editMode,setEditMode]=useState(false);
+      const [tendonData,setTendonData]=useState(()=>store.get("tendon_custom",TENDON));
+      const pd=tendonData[selectedPhase];
+      const saveTendon=u=>{setTendonData(u);store.set("tendon_custom",u);};
+      const updatePhaseField=(field,value)=>saveTendon({...tendonData,[selectedPhase]:{...pd,[field]:value}});
+      const updateTendonEx=(sessLabel,idx,patch)=>{
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s)}};
+        saveTendon(u);
+      };
+      const deleteTendonEx=(sessLabel,exName)=>{
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.filter(e=>e.name!==exName)}:s)}};
+        saveTendon(u);
+      };
+      const addTendonEx=sessLabel=>{
+        const nm=prompt("New tendon exercise name:");
+        if(!nm)return;
+        const ex={name:nm,equip:"Bodyweight",sets:1,reps:"6",hold:"30s",weight:"",rest:"90s",cue:""};
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:[...s.exercises,ex]}:s)}};
+        saveTendon(u);
+      };
       const launchTendonSession=sess=>{
         setActiveRoutine({name:`Tendon - ${pd.label} (${sess.label})`,exercises:sess.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
       };
       return (
         <div>
           <div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
-            {Object.keys(TENDON).map(k=>(
-              <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?TENDON[k].color:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>
-                {TENDON[k].label}
+            {Object.keys(tendonData).map(k=>(
+              <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?tendonData[k].color:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>
+                {tendonData[k].label}
               </button>
             ))}
           </div>
           <div className="card">
             <div className="flex-between">
-              <div><h2 className="font-bold" style={{fontSize:"20px",color:pd.color}}>{pd.name}</h2><p className="text-small">{pd.weeks}</p></div>
-              <span className="badge" style={{background:`${pd.color}20`,color:pd.color,borderColor:pd.color}}>{counts.tendons} Done</span>
+              <div style={{flex:1}}>
+                {editMode?(
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginRight:"8px"}}>
+                    <input className="field" style={{marginBottom:0}} value={pd.name} onChange={e=>updatePhaseField("name",e.target.value)}/>
+                    <input className="field" style={{marginBottom:0}} value={pd.weeks} onChange={e=>updatePhaseField("weeks",e.target.value)}/>
+                  </div>
+                ):(
+                  <><h2 className="font-bold" style={{fontSize:"20px",color:pd.color}}>{pd.name}</h2><p className="text-small">{pd.weeks}</p></>
+                )}
+              </div>
+              <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+                <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?pd.color:"var(--card-border)",color:editMode?pd.color:"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
+                <span className="badge" style={{background:`${pd.color}20`,color:pd.color,borderColor:pd.color}}>{counts.tendons} Done</span>
+              </div>
             </div>
             <p className="exercise-cue-box" style={{borderLeftColor:pd.color,marginTop:"14px"}}>{pd.meta}</p>
           </div>
@@ -687,10 +769,19 @@
               <div style={{borderTop:"1.5px solid var(--card-border)",paddingTop:"8px"}}>
                 {sess.exercises.map((ex,ei)=>(
                   <div key={ei} className="flex-between" style={{padding:"8px 0",borderBottom:ei+1<sess.exercises.length?"0.5px solid var(--card-border)":"none"}}>
-                    <div style={{maxWidth:"60%"}}><p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p><p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}</p></div>
-                    <WeightChip exKey={ex.name} defaultWeight={ex.weight} color={pd.color} weights={weights} onSave={saveWeight}/>
+                    {editMode?(
+                      <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateTendonEx(sess.label,ei,{name:e.target.value})}/>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateTendonEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateTendonEx(sess.label,ei,{reps:e.target.value,hold:e.target.value})}/>
+                      </div>
+                    ):(
+                      <div style={{maxWidth:"60%"}}><p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p><p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}</p></div>
+                    )}
+                    {editMode?<button onClick={()=>deleteTendonEx(sess.label,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:<WeightChip exKey={ex.name} defaultWeight={ex.weight} color={pd.color} weights={weights} onSave={saveWeight}/>}
                   </div>
                 ))}
+                {editMode&&<button className="button-secondary" style={{marginTop:"10px",padding:"8px",fontSize:"13px"}} onClick={()=>addTendonEx(sess.label)}>+ Add Exercise</button>}
               </div>
             </div>
           ))}
@@ -701,8 +792,34 @@
     // ── StretchesTab ───────────────────────────────────────────────────────────
     function StretchesTab({counts,setActiveRoutine}) {
       const [selectedPhase,setSelectedPhase]=useState(1);
+      const [editMode,setEditMode]=useState(false);
+      const [customStretches,setCustomStretches]=useState(()=>store.get("stretch_custom",{}));
+      const [hiddenStretches,setHiddenStretches]=useState(()=>store.get("stretch_hidden",{}));
       const phaseData=SPHASE[selectedPhase];
-      const stretchList=getPhaseStretches(selectedPhase);
+      const baseList=getPhaseStretches(selectedPhase).filter(s=>!(hiddenStretches[selectedPhase]||[]).includes(s.name));
+      const stretchList=[...baseList,...(customStretches[selectedPhase]||[])];
+      const saveCustom=u=>{setCustomStretches(u);store.set("stretch_custom",u);};
+      const saveHidden=u=>{setHiddenStretches(u);store.set("stretch_hidden",u);};
+      const [phaseEdits,setPhaseEdits]=useState(()=>store.get("stretch_phase_edits",{}));
+      const displayPhase={...phaseData,...(phaseEdits[selectedPhase]||{})};
+      const savePhaseEdit=patch=>{const u={...phaseEdits,[selectedPhase]:{...(phaseEdits[selectedPhase]||{}),...patch}};setPhaseEdits(u);store.set("stretch_phase_edits",u);};
+      const updateStretch=(idx,patch)=>{
+        const baseLen=baseList.length;
+        if(idx<baseLen){
+          saveHidden({...hiddenStretches,[selectedPhase]:[...(hiddenStretches[selectedPhase]||[]),baseList[idx].name]});
+          saveCustom({...customStretches,[selectedPhase]:[...(customStretches[selectedPhase]||[]),{...baseList[idx],...patch}]});
+        }else{
+          const ci=idx-baseLen;
+          saveCustom({...customStretches,[selectedPhase]:(customStretches[selectedPhase]||[]).map((s,i)=>i===ci?{...s,...patch}:s)});
+        }
+      };
+      const deleteStretch=name=>saveHidden({...hiddenStretches,[selectedPhase]:[...(hiddenStretches[selectedPhase]||[]),name]});
+      const addStretch=()=>{
+        const nm=prompt("New stretch name:");
+        if(!nm)return;
+        const item={name:nm,totalSec:60,sideLabels:[],muscles:["Custom"],phases:{[selectedPhase]:{dur:"60s",how:"Custom movement. Edit this file later for more detail."}}};
+        saveCustom({...customStretches,[selectedPhase]:[...(customStretches[selectedPhase]||[]),item]});
+      };
       const launchStretchSession=()=>{
         setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s"}))});
       };
@@ -711,16 +828,28 @@
           <div className="card" style={{padding:"8px",display:"flex",gap:"4px",marginBottom:"14px",overflowX:"auto"}}>
             {Object.keys(SPHASE).map(k=>{const a=selectedPhase===parseInt(k);return(
               <button key={k} onClick={()=>setSelectedPhase(parseInt(k))} style={{flex:"1 0 auto",padding:"8px 12px",borderRadius:"10px",background:a?SPHASE[k].color:"transparent",color:a?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"12px"}}>
-                Phase {k}
+                {phaseEdits[k]?.name||`Phase ${k}`}
               </button>
             );})}
           </div>
           <div className="card">
             <div className="flex-between">
-              <div><h2 className="font-bold" style={{fontSize:"20px",color:phaseData.color}}>{phaseData.name}</h2><p className="text-small">{phaseData.months}</p></div>
-              <span className="badge" style={{background:`${phaseData.color}20`,color:phaseData.color,borderColor:phaseData.color}}>{counts.stretches} Done</span>
+              <div style={{flex:1}}>
+                {editMode?(
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginRight:"8px"}}>
+                    <input className="field" style={{marginBottom:0}} value={displayPhase.name} onChange={e=>savePhaseEdit({name:e.target.value})}/>
+                    <input className="field" style={{marginBottom:0}} value={displayPhase.months} onChange={e=>savePhaseEdit({months:e.target.value})}/>
+                  </div>
+                ):(
+                  <><h2 className="font-bold" style={{fontSize:"20px",color:phaseData.color}}>{displayPhase.name}</h2><p className="text-small">{displayPhase.months}</p></>
+                )}
+              </div>
+              <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+                <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?phaseData.color:"var(--card-border)",color:editMode?phaseData.color:"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
+                <span className="badge" style={{background:`${phaseData.color}20`,color:phaseData.color,borderColor:phaseData.color}}>{counts.stretches} Done</span>
+              </div>
             </div>
-            <p className="text-small" style={{marginTop:"8px"}}>{phaseData.desc}</p>
+            <p className="text-small" style={{marginTop:"8px"}}>{displayPhase.desc}</p>
             <button className="button-primary" style={{marginTop:"16px",background:phaseData.color,borderColor:phaseData.color}} onClick={launchStretchSession}>
               Start — {fmtMin(getPhaseTotalSec(selectedPhase))}
             </button>
@@ -730,12 +859,17 @@
             {stretchList.map((st,i)=>(
               <div key={i} style={{padding:"10px 0",borderBottom:i+1<stretchList.length?"0.5px solid var(--card-border)":"none"}}>
                 <div className="flex-between">
-                  <p className="font-bold">{st.name}{st.isNew&&<span className="badge" style={{fontSize:"9px"}}>NEW</span>}</p>
-                  <span className="text-small font-bold" style={{color:phaseData.color}}>{st.totalSec}s</span>
+                  {editMode?<div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 72px 72px",gap:"8px",alignItems:"center"}}>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={st.name} onChange={e=>updateStretch(i,{name:e.target.value})}/>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={st.sets||1} onChange={e=>updateStretch(i,{sets:parseInt(e.target.value)||1})}/>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={st.reps||st.hold||`${st.totalSec}s`} onChange={e=>updateStretch(i,{reps:e.target.value,hold:e.target.value})}/>
+                  </div>:<p className="font-bold">{st.name}{st.isNew&&<span className="badge" style={{fontSize:"9px"}}>NEW</span>}</p>}
+                  {editMode?<button onClick={()=>deleteStretch(st.name)} style={{width:"32px",height:"32px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"18px",fontWeight:"900"}}>×</button>:<span className="text-small font-bold" style={{color:phaseData.color}}>{st.totalSec}s</span>}
                 </div>
                 <p className="text-small" style={{fontSize:"12px",marginTop:"4px"}}>{st.phases[selectedPhase]?.how||st.phases[1]?.how}</p>
               </div>
             ))}
+            {editMode&&<button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={addStretch}>+ Add Movement</button>}
           </div>
         </div>
       );
@@ -768,7 +902,7 @@
                 {[...filtered].reverse().map((l,i)=>(
                   <div key={i} className="progression-item">
                     <span>{l.date}</span>
-                    <span className="font-bold text-accent">{l.weight||"BW"}</span>
+                    <span className="font-bold text-accent">{l.weight||"BW"}{l.reps?` · ${l.reps} reps`:""}{l.hold&&l.hold!=="0"?` · ${l.hold}`:""}</span>
                   </div>
                 ))}
               </div>
@@ -783,21 +917,138 @@
       );
     }
 
+    function SplitBuilderModal({onSave,onClose}) {
+      const [phaseCount,setPhaseCount]=useState("1");
+      const [exerciseCount,setExerciseCount]=useState("3");
+      const n=Math.max(1,Math.min(20,parseInt(exerciseCount)||1));
+      const save=()=>{
+        const pCount=Math.max(1,Math.min(8,parseInt(phaseCount)||1));
+        const phases=Array.from({length:pCount},(_,i)=>`Phase ${i+1}`);
+        const exercises=Array.from({length:n},(_,i)=>({
+          name:`Exercise ${i+1}`,
+          equip:"Bodyweight",
+          sets:1,
+          reps:"8-12",
+          hold:"",
+          rest:"90s",
+          weight:"",
+          cue:"",
+        }));
+        onSave({id:uid(),section:"New Split",description:"",phases,exercises});
+      };
+      return (
+        <TapModal isOpen onClose={onClose}>
+          <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Create Split</h2>
+          <p className="text-small" style={{marginBottom:"16px"}}>Choose the structure first. Add names, sets, reps, and phase labels in the new tab's Edit mode.</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+            <div><label className="field-label">Phases</label><input className="field" type="number" min="1" max="8" value={phaseCount} onChange={e=>setPhaseCount(e.target.value)}/></div>
+            <div><label className="field-label">Exercises</label><input className="field" type="number" min="1" max="20" value={exerciseCount} onChange={e=>setExerciseCount(e.target.value)}/></div>
+          </div>
+          <button className="button-primary" onClick={save}>Create Split</button>
+          <button className="button-secondary" style={{marginTop:"10px"}} onClick={onClose}>Cancel</button>
+        </TapModal>
+      );
+    }
+
+    function CustomSplitTab({split,setWorkouts,weights,saveWeight,setActiveRoutine}) {
+      const [editMode,setEditMode]=useState(false);
+      const [phaseIdx,setPhaseIdx]=useState(0);
+      const phases=split.phases&&split.phases.length?split.phases:["Phase 1"];
+      const splitKey=split.id||split.section;
+      const saveSplit=patch=>{
+        setWorkouts(prev=>{
+          const u=prev.map(s=>(s.id||s.section)===splitKey?{...s,...patch}:s);
+          store.set("workout_sections_custom",u);
+          return u;
+        });
+      };
+      const updateExercise=(idx,patch)=>saveSplit({exercises:split.exercises.map((e,i)=>i===idx?{...e,...patch}:e)});
+      const deleteExercise=idx=>saveSplit({exercises:split.exercises.filter((_,i)=>i!==idx)});
+      const addExercise=()=>saveSplit({exercises:[...split.exercises,{name:`Exercise ${split.exercises.length+1}`,equip:"Bodyweight",sets:1,reps:"8-12",rest:"90s",weight:"",cue:""}]});
+      const updatePhase=(idx,value)=>saveSplit({phases:phases.map((p,i)=>i===idx?value:p)});
+      const addPhase=()=>saveSplit({phases:[...phases,`Phase ${phases.length+1}`]});
+      const deletePhase=idx=>saveSplit({phases:phases.filter((_,i)=>i!==idx)});
+      const launch=()=>setActiveRoutine({name:`${split.section} Workout`,exercises:split.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
+      return (
+        <div>
+          <div className="card">
+            <div className="flex-between">
+              <div style={{flex:1}}>
+                {editMode?(
+                  <input className="field" style={{marginBottom:"8px"}} value={split.section} onChange={e=>saveSplit({section:e.target.value})}/>
+                ):(
+                  <h2 className="font-bold" style={{fontSize:"22px"}}>{split.section}</h2>
+                )}
+                {editMode?(
+                  <textarea className="field" rows="2" value={split.description||""} onChange={e=>saveSplit({description:e.target.value})} placeholder="Optional description"/>
+                ):(
+                  <p className="text-small">{split.description||`${split.exercises.length} exercises`}</p>
+                )}
+              </div>
+              <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
+            </div>
+            <button className="button-primary" style={{marginTop:"14px"}} onClick={launch}>Start</button>
+          </div>
+          <div className="card" style={{padding:"10px",display:"flex",gap:"8px",overflowX:"auto"}}>
+            {phases.map((p,i)=>editMode?(
+              <div key={i} style={{display:"flex",gap:"6px",alignItems:"center",minWidth:"130px"}}>
+                <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"8px"}} value={p} onChange={e=>updatePhase(i,e.target.value)}/>
+                <button onClick={()=>deletePhase(i)} style={{color:"var(--danger)",fontWeight:"900"}}>×</button>
+              </div>
+            ):(
+              <button key={i} onClick={()=>setPhaseIdx(i)} style={{flex:"1 0 auto",padding:"9px 12px",borderRadius:"10px",background:phaseIdx===i?"var(--accent)":"transparent",color:phaseIdx===i?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700"}}>{p}</button>
+            ))}
+            {editMode&&<button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"13px"}} onClick={addPhase}>+ Phase</button>}
+          </div>
+          <div className="card">
+            <h3 className="font-bold" style={{fontSize:"16px",marginBottom:"10px"}}>Exercises</h3>
+            {split.exercises.map((ex,i)=>(
+              <div key={i} className="flex-between" style={{padding:"10px 0",borderBottom:i+1<split.exercises.length?"0.5px solid var(--card-border)":"none"}}>
+                {editMode?(
+                  <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(i,{name:e.target.value})}/>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(i,{sets:parseInt(e.target.value)||1})}/>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateExercise(i,{reps:e.target.value})}/>
+                  </div>
+                ):(
+                  <div><p className="font-bold">{ex.name}</p><p className="text-small">{ex.sets} sets — {ex.reps||ex.hold}</p></div>
+                )}
+                {editMode?<button onClick={()=>deleteExercise(i)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:<WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>}
+              </div>
+            ))}
+            {editMode&&<button className="button-secondary" style={{marginTop:"12px"}} onClick={addExercise}>+ Add Exercise</button>}
+          </div>
+        </div>
+      );
+    }
+
     // ── App ────────────────────────────────────────────────────────────────────
     function App() {
       const [activeTab,setActiveTab]=useState("home");
       const [theme,setTheme]=useState(()=>store.get("workout_theme","dark"));
+      const [username,setUsername]=useState(()=>store.get("workout_username","Abiram"));
+      const [editingName,setEditingName]=useState(false);
+      const [hiddenTabs,setHiddenTabs]=useState(()=>store.get("workout_hidden_tabs",[]));
       const [weights,setWeights]=useState(()=>store.get("workout_weights",{}));
       const [workouts,setWorkouts]=useState(()=>store.get("workout_sections_custom",FB_SECTIONS));
       const [logs,setLogs]=useState(()=>store.get("workout_logs",[]));
       const [counts,setCounts]=useState(()=>store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));
       const [activeRoutine,setActiveRoutine]=useState(null);
       const [modalContent,setModalContent]=useState(null);
+      const customSplits=workouts.filter(s=>s.description||s.phases);
+      const activeCustomSplit=customSplits.find(s=>`split-${s.id||s.section}`===activeTab);
 
       useEffect(()=>{document.documentElement.setAttribute('data-theme',theme);store.set("workout_theme",theme);},[theme]);
       const reloadLogs=()=>{setLogs(store.get("workout_logs",[]));setCounts(store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));};
       const saveWeight=(k,v)=>{const u={...weights,[k]:v};setWeights(u);store.set("workout_weights",u);};
       const cycleTheme=()=>{const t=["dark","light","anti-red"];setTheme(t[(t.indexOf(theme)+1)%t.length]);};
+      const saveHiddenTabs=ids=>{setHiddenTabs(ids);store.set("workout_hidden_tabs",ids);};
+      const addSplit=split=>{const u=[...workouts,split];setWorkouts(u);store.set("workout_sections_custom",u);setModalContent(null);setActiveTab(`split-${split.id}`);};
+      const deleteHomeSplit=id=>{
+        if(!confirm("Delete this split?")) return;
+        if(["workouts","tendons","stretches"].includes(id)){saveHiddenTabs([...new Set([...hiddenTabs,id])]);if(activeTab===id)setActiveTab("home");return;}
+        const u=workouts.filter(s=>(s.id||s.section)!==id);setWorkouts(u);store.set("workout_sections_custom",u);if(activeTab===`split-${id}`)setActiveTab("home");
+      };
 
       const handleEditSave=updatedEx=>{
         if(!modalContent?.data) return;
@@ -823,8 +1074,38 @@
           last30.push({date:ds,dayNum:d.getDate(),status,logs:dl});
         }
         const showDay=day=>{if(day.logs.length>0) setModalContent({type:"day_details",data:day});};
+        const homeTiles=[
+          !hiddenTabs.includes("workouts")&&{id:"workouts",label:"Workouts",Icon:Icons.Dumbbell,color:"var(--success)"},
+          !hiddenTabs.includes("tendons")&&{id:"tendons",label:"Tendon",Icon:Icons.Tendon,color:"var(--danger)"},
+          !hiddenTabs.includes("stretches")&&{id:"stretches",label:"Stretch",Icon:Icons.Stretch,color:"#0a84ff"},
+          ...workouts.filter(s=>s.description||s.phases).map(s=>({id:s.id||s.section,label:s.section,Icon:Icons.Dumbbell,color:"var(--accent)",custom:true})),
+        ].filter(Boolean);
         return (
           <div>
+            <div style={{padding:"18px 0 22px",borderBottom:"1px solid var(--card-border)",marginBottom:"18px"}}>
+              <p style={{fontSize:"13px",fontWeight:"800",color:"var(--text-secondary)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"14px"}}>Workout</p>
+              {editingName?(
+                <input className="field" autoFocus value={username} onChange={e=>{setUsername(e.target.value);store.set("workout_username",e.target.value);}} onBlur={()=>setEditingName(false)} onKeyDown={e=>{if(e.key==="Enter")setEditingName(false)}}/>
+              ):(
+                <button onClick={()=>setEditingName(true)} style={{textAlign:"left",display:"block"}}>
+                  <h1 style={{fontSize:"40px",lineHeight:"1.05",fontWeight:"900"}}>Hi, {username||"Abiram"}.</h1>
+                  <p className="text-small" style={{fontSize:"17px",marginTop:"8px"}}>Tap name to edit</p>
+                </button>
+              )}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:"20px"}}>
+              {homeTiles.map(tile=>(
+                <button key={tile.id} onClick={()=>tile.custom?setActiveTab(`split-${tile.id}`):setActiveTab(tile.id)} style={{minHeight:"150px",borderRadius:"20px",background:"var(--card-bg)",border:`1.5px solid ${tile.color}`,padding:"22px",textAlign:"left",position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                  <span onClick={e=>{e.stopPropagation();deleteHomeSplit(tile.id);}} style={{position:"absolute",top:"20px",right:"20px",width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",fontWeight:"900"}}>×</span>
+                  <span style={{color:tile.color}}><tile.Icon/></span>
+                  <span style={{fontSize:"23px",fontWeight:"900"}}>{tile.label}</span>
+                </button>
+              ))}
+              <button onClick={()=>setModalContent({type:"split_builder"})} style={{minHeight:"150px",borderRadius:"20px",background:"var(--card-bg)",border:"1.5px dashed var(--text-secondary)",padding:"22px",textAlign:"left",display:"flex",flexDirection:"column",justifyContent:"space-between",color:"var(--text-secondary)"}}>
+                <span style={{fontSize:"42px",lineHeight:"1"}}>+</span>
+                <span style={{fontSize:"23px",fontWeight:"900"}}>Add split</span>
+              </button>
+            </div>
             <div className="card">
               <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Training Log</h2>
               <p className="text-small">Strength, tendon, and mobility tracking</p>
@@ -880,6 +1161,9 @@
             </TapModal>
           );
         }
+        if(modalContent.type==="split_builder"){
+          return <SplitBuilderModal onSave={addSplit} onClose={()=>setModalContent(null)}/>;
+        }
         return null;
       };
 
@@ -904,13 +1188,14 @@
             {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine}/>}
             {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine}/>}
             {activeTab==="progression"&&<ProgressionTab reloadLogs={reloadLogs}/>}
+            {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine}/>}
           </div>
 
           {renderModal()}
 
           <div className="tab-bar">
-            {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:"Workouts",Icon:Icons.Dumbbell},{id:"tendons",label:"Tendons",Icon:Icons.Tendon},{id:"stretches",label:"Stretch",Icon:Icons.Stretch},{id:"progression",label:"Progress",Icon:Icons.Chart}].map(({id,label,Icon})=>(
-              <button key={id} className={`tab-btn ${activeTab===id?"active":""}`} onClick={()=>setActiveTab(id)}>
+            {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:"Workouts",Icon:Icons.Dumbbell},{id:"tendons",label:"Tendons",Icon:Icons.Tendon},{id:"stretches",label:"Stretch",Icon:Icons.Stretch},{id:"progression",label:"Progress",Icon:Icons.Chart},...customSplits.map(s=>({id:`split-${s.id||s.section}`,label:s.section,Icon:Icons.Dumbbell}))].filter(t=>t.id==="home"||t.id==="progression"||t.id.startsWith("split-")||!hiddenTabs.includes(t.id)).map(({id,label,Icon})=>(
+              <button key={id} className={`tab-btn ${activeTab===id?"active":""}`} style={{width:"auto",flex:"1 1 0",minWidth:"48px"}} onClick={()=>setActiveTab(id)}>
                 <Icon/><span>{label}</span>
               </button>
             ))}
