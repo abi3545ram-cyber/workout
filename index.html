@@ -8,529 +8,101 @@
   <meta name="apple-mobile-web-app-title" content="Workout Flow">
   <meta name="theme-color" content="#121214">
   <title>Workout & Mobility Flow</title>
-  
-  <!-- Single-File React & Babel UMD for zero-dependency execution -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-
   <style>
-    /* CSS Custom Properties for Theme Engine */
     :root[data-theme="dark"] {
-      --bg: #121214;
-      --card-bg: #1c1c1e;
-      --card-border: rgba(255, 255, 255, 0.07);
-      --text: #ffffff;
-      --text-secondary: #8e8e93;
-      --accent: #bf5af2;
-      --accent-muted: rgba(191, 90, 242, 0.15);
-      --accent-rgb: 191, 90, 242;
-      --success: #30d158;
-      --success-muted: rgba(48, 209, 88, 0.15);
-      --warning: #ff9f0a;
-      --warning-muted: rgba(255, 159, 10, 0.15);
-      --danger: #ff453a;
-      --danger-muted: rgba(255, 69, 58, 0.15);
-      --header-bg: #1c1c1e;
-      --btn-text: #ffffff;
-      --input-bg: rgba(255, 255, 255, 0.05);
-      --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-      --border-thickness: 1px;
+      --bg:#121214;--card-bg:#1c1c1e;--card-border:rgba(255,255,255,0.07);--text:#fff;
+      --text-secondary:#8e8e93;--accent:#bf5af2;--accent-muted:rgba(191,90,242,0.15);
+      --accent-rgb:191,90,242;--success:#30d158;--success-muted:rgba(48,209,88,0.15);
+      --warning:#ff9f0a;--warning-muted:rgba(255,159,10,0.15);--danger:#ff453a;
+      --danger-muted:rgba(255,69,58,0.15);--header-bg:#1c1c1e;--btn-text:#fff;
+      --input-bg:rgba(255,255,255,0.05);--shadow:0 8px 24px rgba(0,0,0,0.3);--border-thickness:1px;
     }
-
     :root[data-theme="light"] {
-      --bg: #f5f5f7;
-      --card-bg: #ffffff;
-      --card-border: rgba(0, 0, 0, 0.06);
-      --text: #1c1c1e;
-      --text-secondary: #8e8e93;
-      --accent: #af52de;
-      --accent-muted: rgba(175, 82, 222, 0.1);
-      --accent-rgb: 175, 82, 222;
-      --success: #34c759;
-      --success-muted: rgba(52, 199, 89, 0.1);
-      --warning: #ff9500;
-      --warning-muted: rgba(255, 149, 0, 0.1);
-      --danger: #ff3b30;
-      --danger-muted: rgba(255, 59, 48, 0.1);
-      --header-bg: #ffffff;
-      --btn-text: #ffffff;
-      --input-bg: rgba(0, 0, 0, 0.03);
-      --shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-      --border-thickness: 1px;
+      --bg:#f5f5f7;--card-bg:#fff;--card-border:rgba(0,0,0,0.06);--text:#1c1c1e;
+      --text-secondary:#8e8e93;--accent:#af52de;--accent-muted:rgba(175,82,222,0.1);
+      --accent-rgb:175,82,222;--success:#34c759;--success-muted:rgba(52,199,89,0.1);
+      --warning:#ff9500;--warning-muted:rgba(255,149,0,0.1);--danger:#ff3b30;
+      --danger-muted:rgba(255,59,48,0.1);--header-bg:#fff;--btn-text:#fff;
+      --input-bg:rgba(0,0,0,0.03);--shadow:0 8px 24px rgba(0,0,0,0.05);--border-thickness:1px;
     }
-
-    /* Nocturnal Anti-Red High-Contrast Theme (Perfect for heavy red-tinted night overlays) */
     :root[data-theme="anti-red"] {
-      --bg: #000000;
-      --card-bg: #0c0c0c;
-      --card-border: #ffd700;
-      --text: #ffd700;
-      --text-secondary: #e5c158;
-      --accent: #ffd700;
-      --accent-muted: rgba(255, 215, 0, 0.15);
-      --accent-rgb: 255, 215, 0;
-      --success: #ffd700;
-      --success-muted: rgba(255, 215, 0, 0.1);
-      --warning: #ffd700;
-      --warning-muted: rgba(255, 215, 0, 0.1);
-      --danger: #ffd700;
-      --danger-muted: rgba(255, 215, 0, 0.1);
-      --header-bg: #0c0c0c;
-      --btn-text: #000000;
-      --input-bg: rgba(255, 215, 0, 0.05);
-      --shadow: none;
-      --border-thickness: 1.5px;
+      --bg:#000;--card-bg:#0c0c0c;--card-border:#ffd700;--text:#ffd700;
+      --text-secondary:#e5c158;--accent:#ffd700;--accent-muted:rgba(255,215,0,0.15);
+      --accent-rgb:255,215,0;--success:#ffd700;--success-muted:rgba(255,215,0,0.1);
+      --warning:#ffd700;--warning-muted:rgba(255,215,0,0.1);--danger:#ffd700;
+      --danger-muted:rgba(255,215,0,0.1);--header-bg:#0c0c0c;--btn-text:#000;
+      --input-bg:rgba(255,215,0,0.05);--shadow:none;--border-thickness:1.5px;
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      -webkit-text-size-adjust: 100%;
-      transition: background 0.25s, color 0.25s;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-      overscroll-behavior: none;
-      padding-bottom: calc(85px + env(safe-area-inset-bottom)); /* Dynamic bottom bar spacing */
-    }
-
-    /* Scrollbars hiding */
-    ::-webkit-scrollbar { display: none; }
-    * { scrollbar-width: none; }
-
-    button {
-      font-family: inherit;
-      border: none;
-      outline: none;
-      background: none;
-      cursor: pointer;
-      color: inherit;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    button:active {
-      opacity: 0.7;
-      transform: scale(0.98);
-    }
-
-    /* Global Layout & Containers */
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: var(--border-thickness) solid var(--card-border);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow);
-      transition: all 0.2s ease;
-    }
-
-    /* Modal Layouts */
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      background: rgba(0, 0, 0, 0.75);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      backdrop-filter: blur(8px);
-      animation: fadeIn 0.2s ease-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .modal-body {
-      background: var(--card-bg);
-      border-top: var(--border-thickness) solid var(--card-border);
-      border-radius: 24px 24px 0 0;
-      width: 100%;
-      max-width: 480px;
-      max-height: 92vh;
-      overflow-y: auto;
-      padding: 12px 24px calc(40px + env(safe-area-inset-bottom));
-      box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
-      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-
-    .drag-bar {
-      width: 40px;
-      height: 5px;
-      background: var(--card-border);
-      border-radius: 3px;
-      margin: 4px auto 16px;
-    }
-
-    /* Form Fields */
-    .field {
-      display: block;
-      width: 100%;
-      background: var(--input-bg);
-      border: var(--border-thickness) solid var(--card-border);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 16px;
-      padding: 12px 14px;
-      margin-bottom: 12px;
-      transition: border-color 0.15s;
-    }
-    .field:focus {
-      border-color: var(--accent);
-    }
-    .field-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-    }
-
-    /* Navigation & Headers */
-    header {
-      background: var(--header-bg);
-      border-bottom: var(--border-thickness) solid var(--card-border);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      padding: 16px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .app-title {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    /* Bottom Navigation Tab Bar */
-    .tab-bar {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: var(--header-bg);
-      border-top: var(--border-thickness) solid var(--card-border);
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
-      z-index: 90;
-      box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
-    }
-    .tab-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      width: 68px;
-    }
-    .tab-btn.active {
-      color: var(--accent);
-    }
-    .tab-btn svg {
-      margin-bottom: 4px;
-    }
-
-    /* Badges & Chips */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 3px 8px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-left: 6px;
-      background: var(--accent-muted);
-      color: var(--accent);
-      border: 0.5px solid var(--accent);
-    }
-    .exercise-count-badge {
-      font-size: 10px;
-      background: var(--input-bg);
-      border: var(--border-thickness) solid var(--card-border);
-      color: var(--text-secondary);
-      border-radius: 6px;
-      padding: 2px 6px;
-      font-weight: 600;
-    }
-
-    /* Timers & Interactive Overlays */
-    .timer-overlay {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 120;
-      display: flex;
-      flex-direction: column;
-      padding: 20px 20px calc(30px + env(safe-area-inset-bottom));
-      animation: fadeIn 0.25s ease-out;
-      overflow-y: auto;
-    }
-    .timer-circle-container {
-      position: relative;
-      width: 230px;
-      height: 230px;
-      margin: 40px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .timer-circle-svg {
-      transform: rotate(-90deg);
-      width: 100%;
-      height: 100%;
-    }
-    .timer-circle-bg {
-      fill: none;
-      stroke: var(--card-border);
-      stroke-width: 10;
-    }
-    .timer-circle-progress {
-      fill: none;
-      stroke: var(--accent);
-      stroke-width: 10;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 0.1s linear;
-    }
-    .timer-display {
-      position: absolute;
-      font-size: 48px;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .timer-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-secondary);
-      margin-top: 4px;
-      font-weight: 700;
-    }
-
-    /* Circular progress indicator for general holds */
-    .button-primary {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      background: var(--accent);
-      color: var(--btn-text);
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border: var(--border-thickness) solid var(--accent);
-    }
-    .button-primary:hover {
-      opacity: 0.9;
-    }
-    .button-secondary {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      background: var(--input-bg);
-      border: var(--border-thickness) solid var(--card-border);
-      color: var(--text);
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    /* Skip & Pause specific designs */
-    .skip-btn-large {
-      padding: 16px 24px;
-      border-radius: 14px;
-      background: var(--danger-muted);
-      color: var(--text);
-      border: 1.5px solid var(--danger);
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      box-shadow: 0 4px 12px rgba(255, 69, 58, 0.15);
-      min-width: 130px;
-    }
-    
-    .restart-btn {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: var(--input-bg);
-      border: var(--border-thickness) solid var(--card-border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .play-pause-btn {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: var(--btn-text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Contribution Grid & Monthly Calendar */
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      margin-top: 14px;
-    }
-    .calendar-header-day {
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      padding-bottom: 4px;
-    }
-    .calendar-day-box {
-      aspect-ratio: 1;
-      border-radius: 8px;
-      border: var(--border-thickness) solid var(--card-border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.1s;
-    }
-    .calendar-day-box:active {
-      transform: scale(0.9);
-    }
-    .calendar-day-box.empty {
-      background: transparent;
-      opacity: 0.3;
-    }
-    .calendar-day-box.today {
-      border: 2px solid var(--accent);
-      font-weight: 800;
-    }
-    .calendar-day-box.completed {
-      background: var(--success);
-      color: var(--btn-text);
-      border-color: var(--success);
-    }
-    .calendar-day-box.partial {
-      background: var(--warning-muted);
-      border: 1.5px dashed var(--warning);
-      color: var(--text);
-    }
-
-    /* Custom Progression Chart Styling */
-    .chart-container {
-      position: relative;
-      width: 100%;
-      height: 180px;
-      background: var(--input-bg);
-      border: var(--border-thickness) solid var(--card-border);
-      border-radius: 12px;
-      margin-top: 10px;
-      overflow: hidden;
-      padding: 8px;
-    }
-    .chart-svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Utility helpers */
-    .text-success { color: var(--success) !important; }
-    .text-warning { color: var(--warning) !important; }
-    .text-danger { color: var(--danger) !important; }
-    .text-accent { color: var(--accent) !important; }
-    .text-small { font-size: 13px; color: var(--text-secondary); }
-    .font-bold { font-weight: 700; }
-    .flex-row { display: flex; align-items: center; gap: 8px; }
-    .flex-between { display: flex; align-items: center; justify-content: space-between; }
-    
-    .exercise-cue-box {
-      background: var(--input-bg);
-      border-left: 3px solid var(--accent);
-      padding: 10px 14px;
-      border-radius: 0 8px 8px 0;
-      font-size: 13px;
-      line-height: 1.4;
-      color: var(--text-secondary);
-      margin: 8px 0 14px;
-    }
-
-    .badge-bar {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-    .session-badge {
-      background: var(--input-bg);
-      border: var(--border-thickness) solid var(--card-border);
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .progression-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 0.5px solid var(--card-border);
-      font-size: 14px;
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;transition:background 0.25s,color 0.25s}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;padding-bottom:calc(85px + env(safe-area-inset-bottom))}
+    ::-webkit-scrollbar{display:none}
+    *{scrollbar-width:none}
+    button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;color:inherit;transition:opacity 0.15s,transform 0.1s}
+    button:active{opacity:0.7;transform:scale(0.98)}
+    .container{max-width:480px;margin:0 auto;padding:20px}
+    .card{background:var(--card-bg);border:var(--border-thickness) solid var(--card-border);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow);transition:all 0.2s ease}
+    .modal-bg{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(8px);animation:fadeIn 0.2s ease-out}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .modal-body{background:var(--card-bg);border-top:var(--border-thickness) solid var(--card-border);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:12px 24px calc(40px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(0,0,0,0.5);animation:slideUp 0.25s cubic-bezier(0.16,1,0.3,1)}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .drag-bar{width:40px;height:5px;background:var(--card-border);border-radius:3px;margin:4px auto 16px}
+    .field{display:block;width:100%;background:var(--input-bg);border:var(--border-thickness) solid var(--card-border);border-radius:10px;color:var(--text);font-size:16px;padding:12px 14px;margin-bottom:12px;transition:border-color 0.15s}
+    .field:focus{border-color:var(--accent)}
+    .field-label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+    header{background:var(--header-bg);border-bottom:var(--border-thickness) solid var(--card-border);position:sticky;top:0;z-index:50;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+    .app-title{font-size:20px;font-weight:800;letter-spacing:-0.02em}
+    .tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--header-bg);border-top:var(--border-thickness) solid var(--card-border);display:flex;justify-content:space-around;padding:10px 10px calc(12px + env(safe-area-inset-bottom));z-index:90;box-shadow:0 -4px 16px rgba(0,0,0,0.15)}
+    .tab-btn{display:flex;flex-direction:column;align-items:center;font-size:10px;font-weight:600;color:var(--text-secondary);width:68px}
+    .tab-btn.active{color:var(--accent)}
+    .tab-btn svg{margin-bottom:4px}
+    .badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:6px;background:var(--accent-muted);color:var(--accent);border:0.5px solid var(--accent)}
+    .exercise-count-badge{font-size:10px;background:var(--input-bg);border:var(--border-thickness) solid var(--card-border);color:var(--text-secondary);border-radius:6px;padding:2px 6px;font-weight:600}
+    .timer-overlay{position:fixed;inset:0;background:var(--bg);z-index:120;display:flex;flex-direction:column;padding:20px 20px calc(30px + env(safe-area-inset-bottom));animation:fadeIn 0.25s ease-out;overflow-y:auto}
+    .timer-circle-container{position:relative;width:230px;height:230px;margin:40px auto;display:flex;align-items:center;justify-content:center}
+    .timer-circle-svg{transform:rotate(-90deg);width:100%;height:100%}
+    .timer-circle-bg{fill:none;stroke:var(--card-border);stroke-width:10}
+    .timer-circle-progress{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 0.1s linear}
+    .timer-display{position:absolute;font-size:48px;font-weight:800;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .timer-label{font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary);margin-top:4px;font-weight:700}
+    .button-primary{width:100%;padding:14px;border-radius:12px;background:var(--accent);color:var(--btn-text);font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;border:var(--border-thickness) solid var(--accent)}
+    .button-secondary{width:100%;padding:14px;border-radius:12px;background:var(--input-bg);border:var(--border-thickness) solid var(--card-border);color:var(--text);font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
+    .skip-btn-large{padding:16px 24px;border-radius:14px;background:var(--danger-muted);color:var(--text);border:1.5px solid var(--danger);font-size:15px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;min-width:130px}
+    .restart-btn{width:52px;height:52px;border-radius:50%;background:var(--input-bg);border:var(--border-thickness) solid var(--card-border);display:flex;align-items:center;justify-content:center}
+    .play-pause-btn{width:64px;height:64px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}
+    .calendar-header-day{text-align:center;font-size:11px;font-weight:700;color:var(--text-secondary);padding-bottom:4px}
+    .calendar-day-box{aspect-ratio:1;border-radius:8px;border:var(--border-thickness) solid var(--card-border);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;position:relative;transition:transform 0.1s}
+    .calendar-day-box:active{transform:scale(0.9)}
+    .calendar-day-box.empty{background:transparent;opacity:0.3}
+    .calendar-day-box.today{border:2px solid var(--accent);font-weight:800}
+    .calendar-day-box.completed{background:var(--success);color:var(--btn-text);border-color:var(--success)}
+    .calendar-day-box.partial{background:var(--warning-muted);border:1.5px dashed var(--warning);color:var(--text)}
+    .chart-container{position:relative;width:100%;height:180px;background:var(--input-bg);border:var(--border-thickness) solid var(--card-border);border-radius:12px;margin-top:10px;overflow:hidden;padding:8px}
+    .chart-svg{width:100%;height:100%}
+    .text-success{color:var(--success)!important}
+    .text-warning{color:var(--warning)!important}
+    .text-danger{color:var(--danger)!important}
+    .text-accent{color:var(--accent)!important}
+    .text-small{font-size:13px;color:var(--text-secondary)}
+    .font-bold{font-weight:700}
+    .flex-row{display:flex;align-items:center;gap:8px}
+    .flex-between{display:flex;align-items:center;justify-content:space-between}
+    .exercise-cue-box{background:var(--input-bg);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.4;color:var(--text-secondary);margin:8px 0 14px}
+    .badge-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+    .session-badge{background:var(--input-bg);border:var(--border-thickness) solid var(--card-border);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px}
+    .progression-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--card-border);font-size:14px}
   </style>
 </head>
 <body>
   <div id="root"></div>
-
-  <!-- React Code Implementation inside Babel -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // Helper utilities
+    // ── Utilities ──────────────────────────────────────────────────────────────
     const parseRestSec = r => {
       if (!r) return 90;
       const m = r.match(/(\d+(?:\.\d+)?)\s*min/);
@@ -540,1858 +112,814 @@
       return 90;
     };
     const fmtTime = s => s <= 0 ? "0:00" : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-    const uid = () => Math.random().toString(36).slice(2, 9);
-    
+    // FIX 1: fmtMin was called in StretchesTab but never defined
+    const fmtMin = s => { const m = Math.floor(s/60); const rem = s%60; return rem > 0 ? `${m}m ${rem}s` : `${m} min`; };
+    const uid = () => Math.random().toString(36).slice(2,9);
     const store = {
-      get: (k, d = {}) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-      set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+      get:(k,d)=>{try{const v=localStorage.getItem(k);if(!v)return d;const p=JSON.parse(v);if(Array.isArray(d)&&!Array.isArray(p))return d;if(d&&typeof d==='object'&&!Array.isArray(d)){if(typeof p!=='object'||p===null||Array.isArray(p))return d;return{...d,...p};}return p;}catch{return d;}},
+      set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
     };
 
-    // Native Synth Alarms using Web Audio API (No files, works offline, highly customisable)
-    const playSynthTone = (freqs, duration, type = 'sine', volume = 0.1) => {
+    // ── Audio ──────────────────────────────────────────────────────────────────
+    const playSynthTone = (freqs, duration, type='sine', volume=0.1) => {
       try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-        
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
         freqs.forEach((freq, idx) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, ctx.currentTime);
-          
-          // Exponential decay for clean chime sounds
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
           gain.gain.setValueAtTime(volume, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-          
-          osc.start(ctx.currentTime + (idx * 0.1)); // slight delay to form a sequential chord chime
-          osc.stop(ctx.currentTime + duration + (idx * 0.1));
+          osc.start(ctx.currentTime + idx*0.1);
+          osc.stop(ctx.currentTime + duration + idx*0.1);
         });
-      } catch (e) {
-        console.warn("Web Audio Context not loaded or restricted.", e);
-      }
+      } catch {}
+    };
+    const triggerSound = type => {
+      if (type==='tick')        playSynthTone([440],0.05,'triangle',0.15);
+      else if (type==='chime')  playSynthTone([523.25,659.25,783.99],0.6,'sine',0.2);
+      else if (type==='rest-chime') playSynthTone([392,523.25],0.4,'sine',0.15);
+      else if (type==='beep-high')  playSynthTone([880],0.12,'sine',0.2);
     };
 
-    const triggerSound = (type) => {
-      if (type === 'tick') {
-        // Simple low frequency woodblock-like click
-        playSynthTone([440], 0.05, 'triangle', 0.15);
-      } else if (type === 'chime') {
-        // High frequency pleasant major triad chord chord (C5 - E5 - G5)
-        playSynthTone([523.25, 659.25, 783.99], 0.6, 'sine', 0.2);
-      } else if (type === 'rest-chime') {
-        // Rising upbeat sound (G4 -> C5)
-        playSynthTone([392.00, 523.25], 0.4, 'sine', 0.15);
-      } else if (type === 'beep-high') {
-        playSynthTone([880], 0.12, 'sine', 0.2);
-      }
-    };
-
-    // Sound Test Settings Controller
     function SoundConfigCard() {
       return (
         <div className="card">
-          <div className="flex-between" style={{marginBottom: "12px"}}>
+          <div className="flex-between" style={{marginBottom:"12px"}}>
             <div>
               <p className="font-bold">Sound Synthesizer</p>
-              <p className="text-small">Built-in synthetic audio alerts (100% Offline)</p>
+              <p className="text-small">Built-in audio alerts — works offline</p>
             </div>
-            <div style={{display: "flex", gap: "6px"}}>
-              <button className="button-secondary" style={{padding: "6px 12px", fontSize: "12px", width: "auto"}} onClick={() => triggerSound('tick')}>Tick</button>
-              <button className="button-secondary" style={{padding: "6px 12px", fontSize: "12px", width: "auto"}} onClick={() => triggerSound('rest-chime')}>Rest</button>
-              <button className="button-secondary" style={{padding: "6px 12px", fontSize: "12px", width: "auto"}} onClick={() => triggerSound('chime')}>Alarm</button>
+            <div style={{display:"flex",gap:"6px"}}>
+              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('tick')}>Tick</button>
+              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('rest-chime')}>Rest</button>
+              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('chime')}>Alarm</button>
             </div>
           </div>
         </div>
       );
     }
 
-    // Wake Lock Controller (Prevents screen sleep during holds/stretches)
     function WakeLockToggle() {
       const [locked, setLocked] = useState(false);
-      const wakeLockRef = useRef(null);
-
+      const wlRef = useRef(null);
       const requestLock = async () => {
         try {
           if ('wakeLock' in navigator) {
-            wakeLockRef.current = await navigator.wakeLock.request('screen');
+            wlRef.current = await navigator.wakeLock.request('screen');
             setLocked(true);
-            wakeLockRef.current.addEventListener('release', () => setLocked(false));
-          } else {
-            alert("Wake Lock is not supported on this browser.");
+            wlRef.current.addEventListener('release', ()=>setLocked(false));
           }
-        } catch (e) {
-          console.warn("Screen Wake Lock request failed.", e);
-        }
+        } catch {}
       };
-
       const releaseLock = async () => {
-        if (wakeLockRef.current) {
-          await wakeLockRef.current.release();
-          wakeLockRef.current = null;
-          setLocked(false);
-        }
+        if (wlRef.current) { await wlRef.current.release(); wlRef.current=null; setLocked(false); }
       };
-
-      useEffect(() => {
-        return () => { if (wakeLockRef.current) wakeLockRef.current.release(); };
-      }, []);
-
+      useEffect(()=>()=>{if(wlRef.current)wlRef.current.release();},[]);
       return (
         <div className="card">
           <div className="flex-between">
             <div>
               <p className="font-bold">Screen Wake Lock</p>
-              <p className="text-small">Keep screen alive during hold and stretch timers</p>
+              <p className="text-small">Keep screen on during timers</p>
             </div>
-            <button 
-              onClick={locked ? releaseLock : requestLock}
-              style={{
-                background: locked ? "var(--success-muted)" : "var(--input-bg)",
-                border: locked ? "1.5px solid var(--success)" : "var(--border-thickness) solid var(--card-border)",
-                borderRadius: "20px", padding: "6px 16px", fontSize: "13px", fontWeight: "700",
-                color: locked ? "var(--success)" : "var(--text)"
-              }}
-            >
-              {locked ? "🔒 Active" : "🔓 Off"}
+            <button onClick={locked?releaseLock:requestLock} style={{background:locked?"var(--success-muted)":"var(--input-bg)",border:locked?"1.5px solid var(--success)":"var(--border-thickness) solid var(--card-border)",borderRadius:"20px",padding:"6px 16px",fontSize:"13px",fontWeight:"700",color:locked?"var(--success)":"var(--text)"}}>
+              {locked?"Active":"Off"}
             </button>
           </div>
         </div>
       );
     }
 
-    // Comprehensive Datasets
+    // ── Data ───────────────────────────────────────────────────────────────────
     const FB_SECTIONS = [
       {section:"Arms",exercises:[
-        {name:"Overhead Triceps Extension",equip:"Cable",sets:1,reps:"5-8",weight:"",rest:"2 min",
+        {name:"Overhead Triceps Extension",equip:"Cable",sets:2,reps:"8-12",weight:"",rest:"2 min",hero:true,
          cue:"Do this completely fresh. Both hands on rope, elbows above head. Lower behind head to full long-head stretch. Press to lockout. Max effort."},
-        {name:"Tricep Pushdown",equip:"Cable Single",sets:1,reps:"5-8",weight:"",rest:"90s",
-         cue:"Elbows pinned to sides throughout. Full extension at bottom. Controlled return."},
-        {name:"Bicep Curl",equip:"Cable Single",sets:1,reps:"5-8",weight:"",rest:"90s",
-         cue:"Full extension at bottom — cable keeps tension here unlike a dumbbell. Curl to peak, slow negative."},
-        {name:"Reverse Preacher Curl",equip:"EZ Bar",sets:1,reps:"5-8",weight:"",rest:"75s",
-         cue:"Full extension at bottom — don't cheat this. Overhand grip. Hits brachialis and brachioradialis. Slow controlled reps."},
+        {name:"Tricep Pushdown",equip:"Cable Single",sets:1,reps:"10-12",weight:"",rest:"90s",
+         cue:"Elbows pinned to sides. Full extension at bottom. Controlled return."},
+        {name:"Bicep Curl",equip:"Cable Single",sets:1,reps:"10-12",weight:"",rest:"90s",
+         cue:"Full extension at bottom — cable keeps tension here. Curl to peak, slow negative."},
+        {name:"Reverse Preacher Curl",equip:"EZ Bar",sets:1,reps:"10-12",weight:"",rest:"75s",
+         cue:"Full extension at bottom. Overhand grip. Hits brachialis and brachioradialis. Slow."},
       ]},
       {section:"Push",exercises:[
-        {name:"Chest Press",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"2 min",
-         cue:"One second pause at full stretch at the bottom. Drive to lockout. Don't bounce off the stretch."},
-        {name:"Shoulder Press",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"90s",
+        {name:"Chest Press",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"2 min",
+         cue:"One second pause at full stretch at the bottom. Drive to lockout. Don't bounce."},
+        {name:"Shoulder Press",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"90s",
          cue:"Full overhead lockout every rep. Don't cut the range at the top."},
-        {name:"One Arm Lateral Raise",equip:"Cable Single",sets:1,reps:"5-8",weight:"",rest:"75s",
-         cue:"Cable from low position. Arm starts across body — bottom position is max stretch. Raise to shoulder height. No swinging."},
-        {name:"Front Raise",equip:"Dumbbell",sets:1,reps:"5-8",weight:"",rest:"60s",
-         cue:"Control the eccentric on the way down. Raise to eye level. No momentum."},
+        {name:"One Arm Lateral Raise",equip:"Cable Single",sets:1,reps:"12-15",weight:"",rest:"75s",
+         cue:"Cable from low position. Arm across body at start — bottom is max stretch. No swinging."},
+        {name:"Front Raise",equip:"Dumbbell",sets:1,reps:"10-15",weight:"",rest:"60s",
+         cue:"Control the eccentric. Raise to eye level. No momentum."},
       ]},
       {section:"Pull",exercises:[
-        {name:"Lat Pulldown",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"2 min",
+        {name:"Lat Pulldown",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"2 min",
          cue:"Arms fully extended at top before every pull. Pull to upper chest, elbows drive down and back."},
-        {name:"Back Row",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"2 min",
+        {name:"Back Row",equip:"Machine",sets:1,reps:"8-12",weight:"",rest:"2 min",
          cue:"Full arm extension before every rep. Drive elbows past your torso. Squeeze at peak."},
-        {name:"Low Row",equip:"Cable Single",sets:1,reps:"5-8",weight:"",rest:"90s",
+        {name:"Low Row",equip:"Cable Single",sets:1,reps:"10-12",weight:"",rest:"90s",
          cue:"Full stretch at start. Single arm — drive elbow back past hip."},
-        {name:"Reverse Fly",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"75s",
+        {name:"Reverse Fly",equip:"Machine",sets:1,reps:"12-15",weight:"",rest:"75s",
          cue:"Full stretch at start. Keep shoulders down. Squeeze at peak."},
-        {name:"Shoulder Shrug",equip:"Dumbbell",sets:1,reps:"5-8",weight:"",rest:"60s",
+        {name:"Shoulder Shrug",equip:"Dumbbell",sets:1,reps:"10-15",weight:"",rest:"60s",
          cue:"Full shoulder depression before every rep. Straight up — no rolling."},
       ]},
       {section:"Legs",exercises:[
-        {name:"Hip Thrust",equip:"Barbell",sets:1,reps:"5-8",weight:"120kg",rest:"2 min",
-         cue:"Upper back on bench. One second pause at full bottom stretch. Drive to full hip extension — hard glute squeeze at top. Chin tucked."},
-        {name:"Pendulum Squat",equip:"Machine",sets:1,reps:"5-8",weight:"25kg",rest:"2 min",
-         cue:"Control descent to full depth. Drive through heels to lockout. Don't rush the eccentric."},
-        {name:"Leg Extensions",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"90s",
-         cue:"Three second eccentric on the way down. Full extension at top."},
-        {name:"Seated Leg Curl",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"90s",
-         cue:"Full extension before every rep — the stretched position is where the signal is. Curl fully, control the negative."},
-        {name:"Calf Raises",equip:"Machine",sets:1,reps:"5-8",weight:"140kg",rest:"75s",
+        {name:"Hip Thrust",equip:"Barbell",sets:1,reps:"6",weight:"120kg",rest:"2 min",
+         cue:"Upper back on bench. One second pause at bottom. Drive to full hip extension — hard glute squeeze. Chin tucked."},
+        {name:"Pendulum Squat",equip:"Machine",sets:1,reps:"5",weight:"25kg",rest:"2 min",
+         cue:"Control descent to full depth. Drive through heels to lockout."},
+        {name:"Leg Extensions",equip:"Machine",sets:1,reps:"10-12",weight:"",rest:"90s",
+         cue:"Three second eccentric. Full extension at top."},
+        {name:"Seated Leg Curl",equip:"Machine",sets:1,reps:"10-12",weight:"",rest:"90s",
+         cue:"Full extension before every rep. Curl fully, control the negative."},
+        {name:"Calf Raises",equip:"Machine",sets:1,reps:"7",weight:"140kg",rest:"75s",
          cue:"Deep stretch at the bottom of every rep. Non-negotiable. Full plantarflexion at top."},
-        {name:"Inner Thigh Machine",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"60s",
-         cue:"Full abduction before squeezing in. Don't let the pads bounce."},
-        {name:"Outer Thigh Machine",equip:"Machine",sets:1,reps:"5-8",weight:"79kg",rest:"60s",
+        {name:"Inner Thigh Machine",equip:"Machine",sets:1,reps:"10-12",weight:"",rest:"60s",
+         cue:"Full abduction before squeezing in."},
+        {name:"Outer Thigh Machine",equip:"Machine",sets:1,reps:"6",weight:"79kg",rest:"60s",
          cue:"Start legs together. Full ROM outward. Control the return."},
       ]},
       {section:"Core + Prehab",exercises:[
-        {name:"Core Twist",equip:"Band",sets:1,reps:"5-8",weight:"",rest:"60s",
-         cue:"Controlled rotation only. Resist the momentum on the return — that's where the work is."},
-        {name:"Ab Crunch Machine",equip:"Machine",sets:1,reps:"5-8",weight:"",rest:"60s",
+        {name:"Core Twist",equip:"Band",sets:1,reps:"12 each",weight:"",rest:"60s",
+         cue:"Controlled rotation. Resist the momentum on the return."},
+        {name:"Ab Crunch Machine",equip:"Machine",sets:1,reps:"12-15",weight:"",rest:"60s",
          cue:"Ribs to hips — not neck. Slow return."},
-        {name:"Back Extension",equip:"Bodyweight",sets:1,reps:"5-8",weight:"",rest:"60s",
-         cue:"Hinge at hip to deep hamstring stretch. Drive to parallel — don't hyperextend at top."},
-        {name:"Internal Shoulder Rotation",equip:"Cable Single",sets:1,reps:"5-8",weight:"",rest:"45s",
-         cue:"Elbow at 90 degrees at side. Rotate inward across body. Light weight, full range."},
-        {name:"External Shoulder Rotation",equip:"Cable Single",sets:1,reps:"5-8",weight:"",rest:"45s",
-         cue:"Elbow at 90 degrees at side. Rotate outward. Keep upper arm completely still."},
-        {name:"Wrist Curl",equip:"Band",sets:1,reps:"5-8",weight:"",rest:"45s",
-         cue:"Forearm fully supported on a surface. Wrist only moves. Slow and full range."},
-        {name:"Reverse Wrist Curl",equip:"Band",sets:1,reps:"5-8",weight:"",rest:"45s",
+        {name:"Back Extension",equip:"Bodyweight",sets:1,reps:"12-15",weight:"",rest:"60s",
+         cue:"Hinge at hip to deep hamstring stretch. Drive to parallel — don't hyperextend."},
+        {name:"Internal Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",weight:"",rest:"45s",
+         cue:"Elbow at 90 degrees at side. Rotate inward. Light weight, full range."},
+        {name:"External Shoulder Rotation",equip:"Cable Single",sets:1,reps:"12-15",weight:"",rest:"45s",
+         cue:"Elbow at 90 degrees at side. Rotate outward. Keep upper arm still."},
+        {name:"Wrist Curl",equip:"Band",sets:1,reps:"15-20",weight:"",rest:"45s",
+         cue:"Forearm fully supported. Wrist only. Slow and full range."},
+        {name:"Reverse Wrist Curl",equip:"Band",sets:1,reps:"15-20",weight:"",rest:"45s",
          cue:"Overhand grip. Wrist only. Full range. Slow eccentric."},
       ]},
     ];
 
     const TENDON = {
       p1:{label:"Phase 1",weeks:"Weeks 1-4",name:"Isometric",color:"#ff453a",
-        meta:"Hold positions at about 2/10 effort — sustained tension, not maximal force. Take 15g collagen with vitamin C 30-60 min before. No caffeine with it.",
+        meta:"Hold at about 2/10 effort — sustained tension, not force. Take 15g collagen + vit C 30-60 min before. No caffeine.",
         sessions:[
           {label:"Session A",day:"Achilles + Patellar",exercises:[
-            {name:"Calf Raise Iso — Mid Range",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20-25kg DB",rest:"90s",
-             cue:"Stand on one leg at mid-calf position. Hold completely still. The stimulus is the sustained tension — no movement."},
-            {name:"Wall Sit",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",
-             cue:"Back flat against wall, thighs parallel, knees at 90 degrees. Hold. Patellar tendon stimulus."},
-            {name:"Calf Hold — Bottom Stretch",equip:"Single leg + DB",sets:2,reps:"6",hold:"20s",weight:"+15kg DB",rest:"60s",
-             cue:"Heel dropped off a step as low as possible. Hold at the deepest Achilles stretch. This position is where the tendon adaptation happens."},
-            {name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",weight:"Bodyweight",rest:"60s",
-             cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through the front of the rear hip. Hold still."},
-            {name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",
-             cue:"Press wrist into band resistance and hold without moving. Three positions separately — neutral, flexion, extension."},
+            {name:"Calf Raise Iso — Mid Range",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20-25kg DB",rest:"90s",cue:"Stand on one leg at mid-calf position. Hold completely still. The stimulus is sustained tension — no movement."},
+            {name:"Wall Sit",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",cue:"Back flat against wall, thighs parallel, knees at 90 degrees. Hold. Patellar tendon stimulus."},
+            {name:"Calf Hold — Bottom Stretch",equip:"Single leg + DB",sets:2,reps:"6",hold:"20s",weight:"+15kg DB",rest:"60s",cue:"Heel dropped off a step as low as possible. Hold at the deepest Achilles stretch."},
+            {name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",weight:"Bodyweight",rest:"60s",cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through front of rear hip. Hold still."},
+            {name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",cue:"Press wrist into band and hold without moving. Three positions: neutral, flexion, extension."},
           ]},
           {label:"Session B",day:"Combat + Glute/Ham",exercises:[
-            {name:"Wall Sit — Progressed",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",
-             cue:"Same as Session A. Add a slight heel raise at the bottom to load calves simultaneously."},
-            {name:"Calf Raise Iso — Peak",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20kg DB",rest:"90s",
-             cue:"Rise onto toes and hold at the very top of contraction. Different loading zone from Session A's mid-range."},
-            {name:"Wrist Iso — Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",
-             cue:"Forearm resting on a surface. Resist band pulling wrist into extension. Hold completely still."},
-            {name:"Wrist Iso — Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",
-             cue:"Same position. Resist band pulling wrist into flexion. Separate set from extension."},
-            {name:"Glute Bridge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"30s",weight:"Bodyweight",rest:"60s",
-             cue:"Hips fully extended, shoulders on floor. Hold at top. Hamstring and glute tendon stimulus."},
+            {name:"Wall Sit — Progressed",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",cue:"Same as Session A, but add a slight heel raise at the bottom to load calves simultaneously."},
+            {name:"Calf Raise Iso — Peak",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20kg DB",rest:"90s",cue:"Rise onto toes and hold at the very top. Different loading zone from Session A mid-range."},
+            {name:"Wrist Iso — Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",cue:"Forearm on a surface. Resist band pulling wrist into extension. Hold completely still."},
+            {name:"Wrist Iso — Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",cue:"Same position. Resist band pulling wrist into flexion. Separate set from extension."},
+            {name:"Glute Bridge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"30s",weight:"Bodyweight",rest:"60s",cue:"Hips fully extended, shoulders on floor. Hold at top. Hamstring and glute tendon stimulus."},
           ]},
         ]},
       p2:{label:"Phase 2",weeks:"Weeks 5-8",name:"Heavy Slow",color:"#ff9f0a",
-        meta:"Every rep: 4 seconds down, 1 second pause, 3 seconds up. The tempo is the stimulus — rushing defeats the entire purpose.",
+        meta:"Every rep: 4 seconds down, 1 second pause, 3 seconds up. The tempo is the stimulus — rushing defeats the purpose.",
         sessions:[
           {label:"Session A",day:"Calf, Quad, Hamstring",exercises:[
-            {name:"Single Leg Calf Raise",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",
-             cue:"One leg only. Four seconds up, one second hold at top, three seconds down to full stretch. Full range every rep. Use a rack for balance."},
-            {name:"Slow Sissy Squat",equip:"Light added weight",sets:3,reps:"8",tempo:"4-1-3",weight:"BW +5kg",rest:"2 min",
-             cue:"Hold something for balance. Lean back — knees travel far forward. Four seconds to max stretch, one pause, three up. True sissy pattern, not pendulum."},
-            {name:"Nordic Curl",equip:"Bodyweight",sets:3,reps:"6",tempo:"5s down",weight:"Bodyweight",rest:"2 min",
-             cue:"Knees on padded surface, feet anchored. Lower as slowly as possible — five seconds or more. Catch with hands at the bottom."},
-            {name:"Single Leg RDL",equip:"Dumbbell",sets:2,reps:"10",tempo:"3-1-3",weight:"50-55kg",rest:"90s",
-             cue:"Balance on one leg, hinge at hip, weight in the opposite hand. Three seconds down to deep hamstring stretch."},
+            {name:"Single Leg Calf Raise",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",cue:"One leg only. Four seconds up, one second hold, three seconds down to full stretch. Full range. Use a rack for balance."},
+            {name:"Slow Sissy Squat",equip:"Light added weight",sets:3,reps:"8",tempo:"4-1-3",weight:"BW +5kg",rest:"2 min",cue:"Hold something for balance. Lean back — knees travel far forward. Four seconds to max stretch, one pause, three up. True sissy pattern."},
+            {name:"Nordic Curl",equip:"Bodyweight",sets:3,reps:"6",tempo:"5s down",weight:"Bodyweight",rest:"2 min",cue:"Knees on padded surface, feet anchored. Lower as slowly as possible — five seconds or more. Catch with hands."},
+            {name:"Single Leg RDL",equip:"Dumbbell",sets:2,reps:"10",tempo:"3-1-3",weight:"50-55kg",rest:"90s",cue:"Balance on one leg, hinge at hip, weight in opposite hand. Three seconds down to deep hamstring stretch."},
           ]},
           {label:"Session B",day:"Calf + Wrist",exercises:[
-            {name:"Single Leg Calf Raise B",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",
-             cue:"Same as Session A. Emphasise extra time at the bottom stretch — pause a beat before driving up."},
-            {name:"Weighted Wall Sit",equip:"Weight plate",sets:3,reps:"6",hold:"30s",weight:"+10kg plate",rest:"2 min",
-             cue:"Phase 1 wall sit with a plate resting across your thighs. Hold 90 degrees."},
-            {name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"7.5kg",rest:"60s",
-             cue:"Forearm fully supported, palm up. Wrist only. Three seconds down, one second pause at stretch, three seconds up."},
-            {name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"5kg",rest:"60s",
-             cue:"Overhand grip. Same tempo. Wrist extensor tendon — critical for combat wrist stability."},
+            {name:"Single Leg Calf Raise B",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",cue:"Same as Session A. Emphasise extra time at the bottom stretch — pause a beat before driving up."},
+            {name:"Weighted Wall Sit",equip:"Weight plate",sets:3,reps:"6",hold:"30s",weight:"+10kg plate",rest:"2 min",cue:"Phase 1 wall sit with a plate resting across your thighs. Hold 90 degrees."},
+            {name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"7.5kg",rest:"60s",cue:"Forearm fully supported, palm up. Wrist only. Three seconds down, one second pause, three seconds up."},
+            {name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"5kg",rest:"60s",cue:"Overhand grip. Same tempo. Wrist extensor tendon — critical for combat wrist stability."},
           ]},
         ]},
       p3:{label:"Phase 3",weeks:"Weeks 9-12",name:"Plyometric",color:"#bf5af2",
         meta:"Ground contact time matters more than height. Target under 150ms per contact. All bodyweight. Quick, quiet landings.",
         sessions:[
           {label:"Session A",day:"Vertical + Reactive",exercises:[
-            {name:"Ankle Hops",equip:"Bodyweight",sets:4,reps:"25",weight:"Bodyweight",rest:"90s",
-             cue:"Minimal knee bend. Stiff ankles. Think the floor is hot — quick, quiet contacts. Balls of feet throughout."},
-            {name:"Pogo Jumps",equip:"Bodyweight",sets:4,reps:"20",weight:"Bodyweight",rest:"90s",
-             cue:"Slightly higher than ankle hops. Stiff through ankle and knee. Spring-like — no collapse on landing."},
-            {name:"Depth Drop to Freeze",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",
-             cue:"Step off the box — don't jump. Land on both feet and hold for two seconds. Build the landing before adding the jump."},
-            {name:"Depth Drop to Jump",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",
-             cue:"Step off, land, immediately explode up. Minimal ground contact. Stay stiff — don't sink into the landing."},
-            {name:"Broad Jump",equip:"Bodyweight",sets:4,reps:"6",weight:"Bodyweight",rest:"2 min",
-             cue:"Maximal horizontal jump. Drive arms aggressively. Land softly. Walk back between reps — quality work, not conditioning."},
+            {name:"Ankle Hops",equip:"Bodyweight",sets:4,reps:"25",weight:"Bodyweight",rest:"90s",cue:"Minimal knee bend. Stiff ankles. Think the floor is hot — quick, quiet contacts. Balls of feet throughout."},
+            {name:"Pogo Jumps",equip:"Bodyweight",sets:4,reps:"20",weight:"Bodyweight",rest:"90s",cue:"Slightly higher than ankle hops. Stiff through ankle and knee. Spring-like — no collapse on landing."},
+            {name:"Depth Drop to Freeze",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",cue:"Step off the box — don't jump. Land and hold for two seconds. Build the landing before adding the jump."},
+            {name:"Depth Drop to Jump",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",cue:"Step off, land, immediately explode up. Minimal ground contact. Stay stiff."},
+            {name:"Broad Jump",equip:"Bodyweight",sets:4,reps:"6",weight:"Bodyweight",rest:"2 min",cue:"Maximal horizontal jump. Drive arms. Land softly. Walk back between reps."},
           ]},
           {label:"Session B",day:"Horizontal + Combat",exercises:[
-            {name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",weight:"Bodyweight",rest:"90s",
-             cue:"Progress from the double-leg work. If unstable, return to double-leg. Stiff ankle, quick contacts."},
-            {name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",weight:"Bodyweight",rest:"90s",
-             cue:"Push laterally off one leg, land on the other, immediately bound back. Explosive push-off, reactive landing."},
-            {name:"Continuous Broad Jump",equip:"Bodyweight",sets:3,reps:"5 in a row",weight:"Bodyweight",rest:"2 min",
-             cue:"Land from one broad jump and immediately jump again — five consecutive jumps. Reactive horizontal power."},
-            {name:"Rotational Med Ball Slam",equip:"Med ball",sets:3,reps:"8",weight:"5-8kg ball",rest:"90s",
-             cue:"Full hip rotation — drive from the hips, not the arms. Wrist snap at release. Combat rotational power."},
+            {name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",weight:"Bodyweight",rest:"90s",cue:"Progress from double-leg. If unstable, return to double first. Stiff ankle, quick contacts."},
+            {name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",weight:"Bodyweight",rest:"90s",cue:"Push laterally off one leg, land on the other, immediately bound back. Reactive landing."},
+            {name:"Continuous Broad Jump",equip:"Bodyweight",sets:3,reps:"5 in a row",weight:"Bodyweight",rest:"2 min",cue:"Land and immediately jump again — five consecutive jumps."},
+            {name:"Rotational Med Ball Slam",equip:"Med ball",sets:3,reps:"8",weight:"5-8kg ball",rest:"90s",cue:"Full hip rotation — drive from the hips, not the arms. Wrist snap at release."},
           ]},
         ]},
     };
 
     const STRETCHES = [
-      {name:"Cat-Cow",totalSec:60,sideLabels:[],muscles:["Spine","Core"],isDynamic:true,
-       phases:{
-         1:{dur:"60s",how:"On all-fours. Inhale and arch down (cow), exhale and round up (cat). Eight to ten slow rhythmic cycles. Keep moving — don't hold at either end."},
-         2:{dur:"90s",how:"Same movement, but add a three-second hold at each end range before transitioning."},
-         3:{dur:"60s",how:"Try to articulate one vertebra at a time through the spine. Active spinal segmentation."},
-         4:{dur:"90s",how:"Add lateral flexion and gentle rotation. Explore the full three-dimensional movement of the spine."},
-         5:{dur:"60s",how:"Daily movement prep. Move however feels right. This is maintenance and a body check-in."},
-       }},
-      {name:"World's Greatest Stretch",totalSec:120,sideLabels:["right side","left side"],muscles:["Hip flexors","Thoracic spine","Hips","Shoulders"],priority:true,
-       phases:{
-         1:{dur:"60s per side",how:"Deep lunge, same-side hand inside the front foot on the floor. Rotate your top arm up to the ceiling and let the eyes follow. Keep the back knee lifted. Every exhale, drive the rear hip crease toward the floor."},
-         2:{dur:"45s per side",how:"Same position. Add a deliberate three-second hold at the top of each rotation."},
-         3:{dur:"45s per side",how:"At peak rotation, remove the hand from the floor and hold the balance. Active thoracic control."},
-         4:{dur:"60s",how:"Flow continuously through the full sequence without stopping. One movement."},
-         5:{dur:"30s per side",how:"Movement prep. Use this before any session."},
-       }},
-      {name:"Low Lunge — Quad Focus",totalSec:120,sideLabels:["right side","left side"],muscles:["Quads","Hip flexors"],priority:true,
-       phases:{
-         1:{dur:"60s per side",how:"Back knee on floor. Reach back and grab the rear ankle, drawing the heel toward your glute. Keep hips square. Feel the stretch in the front of the rear thigh."},
-         2:{dur:"60s per side",how:"At end range, press your back knee into the floor for five seconds (isometric). Exhale, relax, sink deeper. Three cycles per side."},
-         3:{dur:"45s per side",how:"Lift the back foot toward your glute and hold it there actively — no hands. Quad and hip flexor strength at end range."},
-         4:{dur:"60s",how:"Add a thoracic rotation: rotate toward the front leg and open the arm to the ceiling."},
-         5:{dur:"45s per side",how:"Maintenance. Your hip flexors are historically tight — never skip this one."},
-       }},
-      {name:"Butterfly Stretch",totalSec:90,sideLabels:[],muscles:["Adductors","Groin","Inner thighs"],
-       phases:{
-         1:{dur:"90s",how:"Soles of feet together, knees fall wide. Hold your feet and sit tall. Gently press knees toward the floor with your elbows."},
-         2:{dur:"60s + PNF",how:"Press knees up against your hands for five seconds. Exhale, let knees drop further. Three cycles."},
-         3:{dur:"45s",how:"Without using your hands, lower knees through active hip external rotation. Hold the lowest actively achievable position."},
-         4:{dur:"60s",how:"Bring feet closer to your groin progressively. Explore the full range."},
-         5:{dur:"45s",how:"Maintenance. Good for adductor health given your hip thrust and inner thigh training volume."},
-       }},
-      {name:"Figure-4 / 90-90",totalSec:90,sideLabels:["right hip","left hip"],muscles:["Glutes","Piriformis","Hip rotators"],
-       phases:{
-         1:{dur:"45s per side",how:"Figure-4: lie on your back, cross ankle over thigh, draw legs toward chest. Or 90-90: sit with both hips at 90 degrees, lean forward over the front shin."},
-         2:{dur:"45s per side",how:"Press the ankle into the knee for five seconds (isometric). Exhale, pull legs closer. Three cycles per side."},
-         3:{dur:"45s per side",how:"Progress to the 90-90 seated position. Rotate torso forward over the front shin actively."},
-         4:{dur:"60s",how:"Flow from lying figure-4 to seated 90-90 to a forward lean. One exploration of the hip rotation chain."},
-         5:{dur:"45s per side",how:"Maintenance. Important given your hip thrust volume."},
-       }},
-      {name:"Seated Forward Fold",totalSec:90,sideLabels:[],muscles:["Hamstrings","Lower back","Calves"],
-       phases:{
-         1:{dur:"90s",how:"Legs straight, hinge from the hips — not the mid-back. Reach toward your feet with a slight knee bend if needed. Long neutral spine first, depth second."},
-         2:{dur:"60s + PNF",how:"Dig your heels into the floor (isometric) for five seconds. Exhale, fold deeper. Three cycles."},
-         3:{dur:"45s",how:"At end range, actively pull your chest closer to your legs using your hip flexors — not gravity."},
-         4:{dur:"60s",how:"Explore narrow stance, wide stance, and single leg variations. Find the tightest angle."},
-         5:{dur:"45s",how:"Maintenance — your hamstring baseline is already strong."},
-       }},
-      {name:"Cobra Waves",totalSec:60,sideLabels:[],muscles:["Spine","Abs","Chest"],isDynamic:true,
-       phases:{
-         1:{dur:"60s / 5-7 waves",how:"Face down, hands under shoulders. Press slowly up into cobra, hold two to three seconds, lower, pause, rise again. Three to five waves. Use the back muscles to lift, not just arm press."},
-         2:{dur:"60s / 8-10 waves",how:"Progressively extend the range each wave. Aim for upward dog by the last few if comfortable."},
-         3:{dur:"45s",how:"Hands hovering off the floor — use spinal extensors only. Active back extension without arm assistance."},
-         4:{dur:"60s",how:"Full upward dog to downward dog flow. Extension and flexion in one continuous wave."},
-         5:{dur:"45s",how:"Maintenance. Keep it flowing, never held."},
-       }},
-      {name:"Thread the Needle",totalSec:120,sideLabels:["right arm under","left arm under"],muscles:["Thoracic spine","Posterior shoulder","Chest"],
-       phases:{
-         1:{dur:"60s per side",how:"On all-fours, slide one arm under your body until the shoulder and cheek rest on the ground. Press the opposite hand into the floor for deeper rotation. Hips level."},
-         2:{dur:"45s per side",how:"Add a gentle press of the extended arm into the floor at the deepest point to increase rotation incrementally."},
-         3:{dur:"30s per side",how:"Use the threading arm to actively drive deeper rotation — engage the rhomboids and serratus rather than relying on gravity."},
-         4:{dur:"45s",how:"Add small arm circles from the threaded position. Explore the full range."},
-         5:{dur:"30s per side",how:"Maintenance. Important for overhead pressing and gymnastics shoulder health."},
-       }},
-      {name:"Overhead Lat Stretch",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Lats","Long head triceps","Overhead shoulder flexion"],isNew:true,
-       phases:{
-         1:{dur:"45s per side",how:"Raise one arm overhead, bend the elbow so your hand drops behind your head. Use the opposite hand to push the elbow back and slightly across. Lean torso slightly away for lat emphasis. Keep ribs down."},
-         2:{dur:"45s per side",how:"Add a deliberate side bend away from the stretch arm to emphasise the lat. Feel the stretch run from hip to armpit."},
-         3:{dur:"30s per side",how:"Press your hand into the palm overhead — create resistance and hold the position actively without the other arm pulling."},
-         4:{dur:"45s per side",how:"From a lunge, reach into the overhead lat stretch on the same side. Full anterior chain."},
-         5:{dur:"30s per side",how:"Maintenance. Directly supports handstand range and lat flexibility for pulling movements."},
-       }},
-      {name:"Cross-Body Shoulder",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Rear deltoid","Rhomboids","Mid-back"],
-       phases:{
-         1:{dur:"45s per side",how:"Arm across body at shoulder height. Hook the opposite arm underneath and draw it toward your chest. Shoulder actively pressed down — don't let it shrug."},
-         2:{dur:"45s per side",how:"Try different heights — higher hits the posterior capsule, lower hits the rear delt more. Spend time at the tightest angle."},
-         3:{dur:"30s per side",how:"Slightly resist the pull with the stretched arm. Eccentric hold in the posterior shoulder."},
-         4:{dur:"45s",how:"Combine with thoracic rotation — as you pull the arm across, rotate head and thorax in the opposite direction."},
-         5:{dur:"30s per side",how:"Maintenance. Important given your lateral raise and reverse fly training volume."},
-       }},
-      {name:"Knee-to-Wall Ankle",totalSec:90,sideLabels:["right ankle","left ankle"],muscles:["Ankle dorsiflexion","Achilles","Soleus"],isNew:true,isDynamic:true,
-       phases:{
-         1:{dur:"45s per side",how:"Stand facing a wall, foot about three inches away. Drive your knee over your little toe keeping the heel flat. Touch wall, return, repeat slowly."},
-         2:{dur:"45s per side",how:"Add a two-second hold at end range. Gradually move the foot further from the wall as range improves."},
-         3:{dur:"10 reps + 10s holds",how:"At end range, hold for ten seconds. Dorsiflexion strength at end range — transfers directly to jumping and landing."},
-         4:{dur:"10 reps per side",how:"Progress to a slight step or incline. Test from further away from the wall."},
-         5:{dur:"10 reps per side",how:"Maintenance. Keep this running alongside the Phase 3 plyometrics."},
-       }},
-      {name:"Wrist and Forearm",totalSec:90,sideLabels:["right — palm up","right — palm down","left — palm up","left — palm down"],muscles:["Wrist flexors","Wrist extensors","Forearms"],
-       phases:{
-         1:{dur:"90s total",how:"Arm extended at shoulder height. Palm up: pull fingers gently downward. Palm down: press the back of the hand toward you. About 22 seconds per position."},
-         2:{dur:"90s + holds",how:"Add ten-second holds in the most uncomfortable position — usually fingers pointing backwards."},
-         3:{dur:"60s + holds",how:"Progress to wrist push-ups on your knuckles, then finger pads. Gymnastic wrist conditioning."},
-         4:{dur:"90s",how:"Full sequence: standard, knuckles, fingers, reverse, side-to-side, and active circles under load."},
-         5:{dur:"60s",how:"Maintenance. Supports handstand loading and wrist health alongside keyboard work. Never skip."},
-       }},
-      {name:"Neck Release",totalSec:90,sideLabels:["right side","left side"],muscles:["Neck","Upper traps"],
-       phases:{
-         1:{dur:"45s per side",how:"Sit tall. Gently tilt your ear toward your shoulder until you feel a pull along the side of the neck. Very light hand assist — do not crank."},
-         2:{dur:"30s per side",how:"Add slow circles through the full cervical range. Find the stiffest angles and breathe through them."},
-         3:{dur:"20s per side",how:"No hand assistance. Hold the tilted position using only the neck muscles on the opposite side."},
-         4:{dur:"30s",how:"Combine tilt and gentle rotation simultaneously."},
-         5:{dur:"20s per side",how:"Maintenance. Upper trap tension from desk and screen use accumulates fast — never skip."},
-       }},
+      {name:"Cat-Cow",totalSec:60,sideLabels:[],muscles:["Spine","Core"],isDynamic:true,phases:{1:{dur:"60s",how:"On all-fours. Inhale and arch down (cow), exhale and round up (cat). Eight to ten slow rhythmic cycles. Keep moving."},2:{dur:"90s",how:"Same movement. Add a three-second hold at each end range before transitioning."},3:{dur:"60s",how:"Articulate one vertebra at a time through the spine. Active spinal segmentation."},4:{dur:"90s",how:"Add lateral flexion and gentle rotation. Explore the full three-dimensional movement of the spine."},5:{dur:"60s",how:"Daily movement prep. Move however feels right."}}},
+      {name:"World's Greatest Stretch",totalSec:120,sideLabels:["right side","left side"],muscles:["Hip flexors","Thoracic spine","Hips","Shoulders"],priority:true,phases:{1:{dur:"60s per side",how:"Deep lunge, same-side hand inside the front foot. Rotate top arm to ceiling and let eyes follow. Every exhale, drive the rear hip crease down."},2:{dur:"45s per side",how:"Same position. Add a three-second hold at the top of each rotation."},3:{dur:"45s per side",how:"At peak rotation, remove hand from floor and hold balance. Active thoracic control."},4:{dur:"60s",how:"Flow continuously through the full sequence. One movement."},5:{dur:"30s per side",how:"Movement prep. Use before any session."}}},
+      {name:"Low Lunge — Quad Focus",totalSec:120,sideLabels:["right side","left side"],muscles:["Quads","Hip flexors"],priority:true,phases:{1:{dur:"60s per side",how:"Back knee on floor. Grab the rear ankle, heel toward glute. Keep hips square. Feel it in the front of the rear thigh."},2:{dur:"60s per side",how:"At end range, press back knee into floor for five seconds (isometric). Exhale, relax, sink deeper. Three cycles per side."},3:{dur:"45s per side",how:"Lift the back foot toward your glute and hold there actively — no hands. End-range strength."},4:{dur:"60s",how:"Add thoracic rotation: rotate toward the front leg and open arm to ceiling."},5:{dur:"45s per side",how:"Maintenance. Hip flexors are historically tight — never skip this one."}}},
+      {name:"Butterfly Stretch",totalSec:90,sideLabels:[],muscles:["Adductors","Groin","Inner thighs"],phases:{1:{dur:"90s",how:"Soles of feet together, knees wide. Hold feet, sit tall. Gently press knees toward floor with elbows."},2:{dur:"60s + PNF",how:"Press knees up against hands for five seconds. Exhale, let knees drop further. Three cycles."},3:{dur:"45s",how:"Without hands, lower knees through active hip external rotation. Hold lowest active position."},4:{dur:"60s",how:"Bring feet closer to groin progressively."},5:{dur:"45s",how:"Maintenance. Good for adductor health given your hip thrust volume."}}},
+      {name:"Figure-4 / 90-90",totalSec:90,sideLabels:["right hip","left hip"],muscles:["Glutes","Piriformis","Hip rotators"],phases:{1:{dur:"45s per side",how:"Figure-4: lie on back, cross ankle over thigh, draw legs toward chest. Or 90-90: sit with both hips at 90 degrees, lean forward over front shin."},2:{dur:"45s per side",how:"Press ankle into knee for five seconds (isometric). Exhale, pull closer. Three cycles per side."},3:{dur:"45s per side",how:"Progress to 90-90 seated. Rotate torso forward over front shin actively."},4:{dur:"60s",how:"Flow from figure-4 to 90-90 to forward lean. One exploration."},5:{dur:"45s per side",how:"Maintenance. Important given your hip thrust volume."}}},
+      {name:"Seated Forward Fold",totalSec:90,sideLabels:[],muscles:["Hamstrings","Lower back","Calves"],phases:{1:{dur:"90s",how:"Legs straight, hinge from hips — not mid-back. Long neutral spine first, depth second."},2:{dur:"60s + PNF",how:"Dig heels into floor (isometric) for five seconds. Exhale, fold deeper. Three cycles."},3:{dur:"45s",how:"At end range, actively pull chest closer using hip flexors — not gravity."},4:{dur:"60s",how:"Explore narrow, wide, and single leg variations. Find the tightest angle."},5:{dur:"45s",how:"Maintenance — hamstring baseline is already strong."}}},
+      {name:"Cobra Waves",totalSec:60,sideLabels:[],muscles:["Spine","Abs","Chest"],isDynamic:true,phases:{1:{dur:"60s / 5-7 waves",how:"Face down, hands under shoulders. Press slowly up into cobra, hold two to three seconds, lower, pause, rise again."},2:{dur:"60s / 8-10 waves",how:"Progressively extend range each wave. Aim for upward dog by the last few."},3:{dur:"45s",how:"Hands hovering off floor — spinal extensors only. Active back extension."},4:{dur:"60s",how:"Full upward dog to downward dog flow."},5:{dur:"45s",how:"Maintenance. Keep it flowing, never held."}}},
+      {name:"Thread the Needle",totalSec:120,sideLabels:["right arm under","left arm under"],muscles:["Thoracic spine","Posterior shoulder","Chest"],phases:{1:{dur:"60s per side",how:"On all-fours, slide one arm under your body until shoulder and cheek rest on ground. Press opposite hand into floor. Hips level."},2:{dur:"45s per side",how:"Add a press of the extended arm into floor at deepest point."},3:{dur:"30s per side",how:"Use threading arm to actively drive deeper — engage rhomboids and serratus."},4:{dur:"45s",how:"Add small arm circles from the threaded position."},5:{dur:"30s per side",how:"Maintenance. Important for overhead pressing and gymnastics shoulder health."}}},
+      {name:"Overhead Lat Stretch",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Lats","Long head triceps","Overhead shoulder flexion"],isNew:true,phases:{1:{dur:"45s per side",how:"Raise one arm overhead, bend elbow so hand drops behind head. Push elbow back and slightly across with opposite hand. Lean away for lat emphasis. Ribs down."},2:{dur:"45s per side",how:"Add a deliberate side bend away from the stretch arm. Feel stretch from hip to armpit."},3:{dur:"30s per side",how:"Press hand into palm overhead — create resistance and hold actively."},4:{dur:"45s per side",how:"From a lunge, reach into the overhead lat stretch on the same side."},5:{dur:"30s per side",how:"Maintenance. Supports handstand range and lat flexibility."}}},
+      {name:"Cross-Body Shoulder",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Rear deltoid","Rhomboids","Mid-back"],phases:{1:{dur:"45s per side",how:"Arm across body at shoulder height. Hook opposite arm underneath, draw toward chest. Shoulder pressed down."},2:{dur:"45s per side",how:"Try different heights. Spend time at the tightest angle."},3:{dur:"30s per side",how:"Slightly resist the pull with the stretched arm. Eccentric hold."},4:{dur:"45s",how:"Combine with thoracic rotation."},5:{dur:"30s per side",how:"Maintenance. Important given your lateral raise and reverse fly volume."}}},
+      {name:"Knee-to-Wall Ankle",totalSec:90,sideLabels:["right ankle","left ankle"],muscles:["Ankle dorsiflexion","Achilles","Soleus"],isNew:true,isDynamic:true,phases:{1:{dur:"45s per side",how:"Stand facing wall, foot three inches away. Drive knee over little toe keeping heel flat. Touch wall, return, repeat slowly."},2:{dur:"45s per side",how:"Add a two-second hold at end range. Move foot further from wall as range improves."},3:{dur:"10 reps + 10s holds",how:"At end range, hold for ten seconds. Dorsiflexion strength at end range."},4:{dur:"10 reps per side",how:"Progress to a slight step or incline."},5:{dur:"10 reps per side",how:"Maintenance. Keep this alongside Phase 3 plyometrics."}}},
+      {name:"Wrist and Forearm",totalSec:90,sideLabels:["right — palm up","right — palm down","left — palm up","left — palm down"],muscles:["Wrist flexors","Wrist extensors","Forearms"],phases:{1:{dur:"90s total",how:"Arm at shoulder height. Palm up: pull fingers down. Palm down: press back of hand toward you. About 22 seconds per position."},2:{dur:"90s + holds",how:"Add ten-second holds in the most uncomfortable position."},3:{dur:"60s + holds",how:"Progress to wrist push-ups on knuckles, then finger pads."},4:{dur:"90s",how:"Full sequence: standard, knuckles, fingers, reverse, side-to-side, active circles."},5:{dur:"60s",how:"Maintenance. Supports handstand loading and wrist health."}}},
+      {name:"Neck Release",totalSec:90,sideLabels:["right side","left side"],muscles:["Neck","Upper traps"],phases:{1:{dur:"45s per side",how:"Sit tall. Gently tilt ear toward shoulder. Very light hand assist — do not crank."},2:{dur:"30s per side",how:"Add slow circles through full cervical range. Find stiffest angles."},3:{dur:"20s per side",how:"No hand assistance. Hold tilted position using only neck muscles on opposite side."},4:{dur:"30s",how:"Combine tilt and gentle rotation simultaneously."},5:{dur:"20s per side",how:"Maintenance. Upper trap tension from desk use accumulates fast."}}},
     ];
 
     const SPHASE = {
-      1:{name:"Foundation",color:"#32ade6",months:"Months 1-3",
-         desc:"Static stretching, habit formation, and breath-assisted relaxation. Build automaticity before chasing depth."},
-      2:{name:"PNF",color:"#bf5af2",months:"Months 4-6",
-         desc:"Contract-relax and CRAC work. Sessions are longer because each priority stretch gets repeated cycles."},
-      3:{name:"Active Flexibility",color:"#ff9f0a",months:"Months 7-9",
-         desc:"CARs, dynamic movement, active end-range control, and PAILs/RAILs to close the neurological gap."},
-      4:{name:"Integration",color:"#ff375f",months:"Months 10-12",
-         desc:"Integrated mobility: CARs, dynamic warm-up, focused PNF, loaded work, Jefferson curls, and goal-specific practice."},
-      5:{name:"Maintenance",color:"#30d158",months:"Ongoing",
-         desc:"Maintain what you built or keep progressing toward specific goals. The routine becomes self-directed."},
+      1:{name:"Foundation",color:"#32ade6",months:"Months 1-3",desc:"Static stretching, habit formation, and breath-assisted relaxation. Build automaticity before chasing depth."},
+      2:{name:"PNF",color:"#bf5af2",months:"Months 4-6",desc:"Contract-relax and CRAC work. Each priority stretch gets repeated cycles."},
+      3:{name:"Active Flexibility",color:"#ff9f0a",months:"Months 7-9",desc:"CARs, dynamic movement, active end-range control, and PAILs/RAILs to close the neurological gap."},
+      4:{name:"Integration",color:"#ff375f",months:"Months 10-12",desc:"Integrated mobility: CARs, dynamic warm-up, focused PNF, loaded work, Jefferson curls, and goal-specific practice."},
+      5:{name:"Maintenance",color:"#30d158",months:"Ongoing",desc:"Maintain what you built or keep progressing. The routine becomes self-directed."},
     };
 
-    const stretchByName = name => STRETCHES.find(s => s.name === name);
-    const phaseStretch = (name, totalSec, dur, how, extras = {}) => {
-      const base = stretchByName(name) || {};
-      return {
-        name,
-        totalSec,
-        sideLabels: extras.sideLabels || base.sideLabels || [],
-        muscles: extras.muscles || base.muscles || [],
-        priority: extras.priority !== undefined ? extras.priority : base.priority,
-        isNew: extras.isNew !== undefined ? extras.isNew : base.isNew,
-        isDynamic: extras.isDynamic !== undefined ? extras.isDynamic : base.isDynamic,
-        phases: {[extras.phase || 1]:{dur,how}},
-      };
-    };
+    const getPhaseStretches = phase => STRETCHES;
+    const getPhaseTotalSec = phase => STRETCHES.reduce((a,s)=>a+s.totalSec,0);
 
-    const PHASE_STRETCHES = {
-      1: STRETCHES.map(s => ({...s, phases:{1:s.phases[1]}})),
-      2: [
-        phaseStretch("Seated Forward Fold",180,"3 CR cycles","Hinge from the hips. Press heels into the floor for 8-10s, completely relax, exhale, then ease deeper for 20-30s. Repeat 3 times. Add CRAC once natural by actively engaging the quads to pull further.",{phase:2,priority:true}),
-        phaseStretch("Low Lunge — Quad Focus",180,"3 CR cycles per side","Back knee down. Press the back knee into the floor for 8-10s, relax fully, exhale, and sink deeper for 20-30s. Keep hips square. This is one of the first PNF priorities.",{phase:2,priority:true}),
-        phaseStretch("Knee-to-Wall Ankle",120,"2 CR cycles per side","Drive knee over little toe with heel flat. At end range, push heel back into the floor/wall for 8-10s, relax, then move slightly further.",{phase:2,priority:true}),
-        phaseStretch("Figure-4 / 90-90",150,"2-3 CR cycles per side","Press knee/ankle into your hand or the floor for 8-10s, relax, exhale, then pull deeper. Use the least force that creates a clear contraction.",{phase:2}),
-        phaseStretch("Cobra Waves",90,"8-10 waves + CR","Progressively extend the range. At the highest comfortable point, press hips into the floor for 8-10s, relax, and lift into a slightly deeper cobra.",{phase:2,isDynamic:true}),
-        phaseStretch("Thread the Needle",120,"45-60s per side","Add a gentle press of the threaded arm into the floor at deepest rotation, then exhale and rotate deeper. Keep hips level.",{phase:2}),
-        phaseStretch("Butterfly Stretch",120,"3 CR cycles","Press knees upward into hands or elbows for 8-10s, relax, exhale, then let knees drop. Stay at strong tension, not pain.",{phase:2}),
-        phaseStretch("Overhead Lat Stretch",90,"45s per side","Passive hold only unless it feels easy. Push toward longer 60s holds on non-PNF stretches.",{phase:2}),
-      ],
-      3: [
-        phaseStretch("Hip CARs",180,"3-5 reps per side","Stand on one foot with full-body tension. Slowly circle the free leg through the largest possible arc. Each rep should take 30-60s. No momentum.",{phase:3,isDynamic:true,muscles:["Hips","Joint control"],priority:true,sideLabels:["right hip","left hip"]}),
-        phaseStretch("Shoulder CARs",120,"3-5 reps per arm","Arm at side, shoulder packed. Circle forward, overhead, behind, and back while keeping tension in the shoulder capsule.",{phase:3,isDynamic:true,muscles:["Shoulders","Joint control"],sideLabels:["right shoulder","left shoulder"]}),
-        phaseStretch("Spine CARs",90,"slow circles","Seated. Flex forward, side-bend, rotate, extend, then reverse. Move through the full spinal range deliberately.",{phase:3,isDynamic:true,muscles:["Spine","Thoracic control"]}),
-        phaseStretch("Wrist and Forearm",90,"CARs + holds","Slow wrist circles in both directions, then standard forearm stretching. Keyboard use lives in a small range; train the neglected ranges.",{phase:3,isDynamic:true}),
-        phaseStretch("World's Greatest Stretch",120,"dynamic flow","Deep lunge with rotation. Move smoothly side to side as a dynamic warm-up before the deeper work.",{phase:3,isDynamic:true,priority:true}),
-        phaseStretch("Leg Swings + Hip Circles",120,"10 each direction","Leg swings forward/back and side/side, then hip circles. Warm tissue while building active range.",{phase:3,isDynamic:true,muscles:["Hips","Hamstrings","Adductors"],sideLabels:["right leg","left leg"]}),
-        phaseStretch("Seated Forward Fold",150,"PNF / CRAC","Use CR first, then actively contract quads/hip flexors to pull deeper. Train the active range, not just the passive fold.",{phase:3,priority:true}),
-        phaseStretch("Low Lunge — Quad Focus",150,"PNF / CRAC per side","After the contraction, actively squeeze glute and hip flexor control to own the deeper range.",{phase:3,priority:true}),
-        phaseStretch("Hamstring PAILs/RAILs",120,"10-20s each","At end range, contract the stretched hamstrings hard as if closing the stretch, then contract hip flexors/quads to open further. Expect unfamiliar soreness.",{phase:3,muscles:["Hamstrings","End-range strength"],priority:true}),
-      ],
-      4: [
-        phaseStretch("Full-Body CARs",300,"5 min","Run hips, shoulders, spine, wrists, and ankles through controlled full-range circles. This is daily joint maintenance.",{phase:4,isDynamic:true,muscles:["Full body","Joint control"],priority:true}),
-        phaseStretch("Dynamic Warm-Up Flow",300,"5 min","Use leg swings, hip circles, walking lunges with torso rotation, arm circles, cross-body swings, and cat-cow. Prioritise the areas tied to your current goals.",{phase:4,isDynamic:true,muscles:["Full body","Warm-up"]}),
-        phaseStretch("Seated Forward Fold",150,"focused PNF","Use PNF only if hamstrings are one of the 3-4 areas limiting your current goal. Quality over covering every stretch.",{phase:4}),
-        phaseStretch("Overhead Lat Stretch",150,"focused PNF","Use lat PNF and overhead positioning if overhead mobility is a goal. Keep ribs down; avoid lumbar compensation.",{phase:4}),
-        phaseStretch("Knee-to-Wall Ankle",120,"goal work","For deep squat goals: drive dorsiflexion with heel flat, then test progressively further from the wall.",{phase:4,isDynamic:true}),
-        phaseStretch("Jefferson Curl",240,"3-5 reps","Stand on a box with 2-5kg to start. Tuck chin, roll down vertebra by vertebra, let the weight hang, hold 3-5s, then roll back up slowly. Increase load only when easy.",{phase:4,muscles:["Spine","Hamstrings","Posterior chain"],priority:true}),
-        phaseStretch("Goal-Specific Mobility",300,"10 min","Choose 1-2 goals: deep squat, overhead mobility, front split, side split, or Jefferson curl progression. Spend this block on the exercises that directly limit those goals.",{phase:4,muscles:["Goal work"],priority:true}),
-        phaseStretch("PAILs/RAILs Target Block",180,"2-3 areas","End-range isometrics for the tightest goal-related areas. Contract the stretched muscle, then the antagonist, and own the new range.",{phase:4,muscles:["End-range strength"]}),
-      ],
-      5: [
-        phaseStretch("Daily CARs",300,"5 min","Even on rest days and when travelling: hips, shoulders, spine, wrists, and ankles. Joint health drops faster than flexibility without this.",{phase:5,isDynamic:true,muscles:["Full body","Joint health"],priority:true}),
-        phaseStretch("Dynamic Warm-Up Flow",180,"3 min","Before any physical activity, move dynamically rather than doing static pre-activity holds. This should be automatic now.",{phase:5,isDynamic:true,muscles:["Full body","Warm-up"]}),
-        phaseStretch("Low Lunge — Quad Focus",120,"maintenance","Keep hip flexors from sliding backward. Use static, PNF, or active work depending on what feels restricted that week.",{phase:5,priority:true}),
-        phaseStretch("Seated Forward Fold",120,"maintenance","Hold or PNF enough to maintain posterior chain range. Increase frequency if forward fold is one of your current goals.",{phase:5}),
-        phaseStretch("Overhead Lat Stretch",90,"maintenance","Maintain overhead range for pressing, handstands, and general shoulder comfort.",{phase:5}),
-        phaseStretch("Figure-4 / 90-90",90,"maintenance","Keep hip rotation available. Spend longer here if sitting, lifting, or sport makes the hips feel restricted.",{phase:5}),
-        phaseStretch("Jefferson Curl",180,"weekly","Use a maintenance weight weekly. Loaded spinal flexion keeps the posterior chain and spine fluent.",{phase:5,muscles:["Spine","Hamstrings"],priority:true}),
-        phaseStretch("Personal Goal Block",300,"self-directed","Ask what you are maintaining or progressing this quarter: splits, overhead, squat, martial arts, gymnastics, lifting, dance, or a new sport. Spend the work where it matters.",{phase:5,muscles:["Goal work"]}),
-      ],
-    };
-
-    const getPhaseStretches = phase => PHASE_STRETCHES[phase] || PHASE_STRETCHES[1];
-    const getPhaseTotalSec = phase => getPhaseStretches(phase).reduce((a,s)=>a+s.totalSec,0);
-
-    const PHASE_INFO = {
-      1:[
-        {title:"Goal",body:["The goal is not flexibility yet — it is automaticity. Your nervous system is learning that stretching is safe, and most early gains come from neurological adaptation rather than tissue lengthening.","Do not rush out of this phase. Consistency in months 1-3 is the biggest predictor of long-term success."]},
-        {title:"Schedule progression",items:["Weeks 1-4: 3x per week on non-consecutive days, such as Mon/Wed/Fri.","Weeks 5-8: 4-5x per week. Add a weekend session first.","Weeks 9-12: daily if possible, ideally morning or after a shower."]},
-        {title:"How to stretch",items:["Breath-assisted relaxation: inhale to prepare, exhale slowly into the stretch.","Tension vs pain: stay at a pulling sensation you could hold for 60s; if it sharpens, ease back 10%.","Focused attention: keep your mind on the stretched area. Passive holding while mentally elsewhere is less effective."]}
-      ],
-      2:[
-        {title:"What PNF does",body:["PNF uses contract-relax to take advantage of autogenic inhibition. Contracting a stretched muscle tells the nervous system to relax it briefly, creating a 3-10 second window where deeper range is available.","Research generally shows stronger ROM gains than static stretching alone."]},
-        {title:"Contract-relax steps",items:["Move into strong but comfortable tension.","Isometrically contract the stretched muscle against something immovable for 8-10 seconds.","Completely relax and exhale fully.","Ease gently deeper and hold 20-30 seconds. Repeat 2-3 cycles."]},
-        {title:"CRAC upgrade",body:["After the relax phase, actively contract the opposite muscle to pull further in. This adds reciprocal inhibition. Example: after contracting hamstrings in a forward fold, engage the quads to draw deeper."]}
-      ],
-      3:[
-        {title:"Core idea",body:["Phases 1-2 built passive range. Phase 3 builds active range: the range you can reach and control under your own muscle power.","The gap between passive and active range is the neurological gap. Closing it makes flexibility usable in movement, posture, and sport."]},
-        {title:"CARs (Controlled Articular Rotations)",items:["Hip CARs: largest possible slow arc, 3-5 reps per side, 30-60s each.","Shoulder CARs: full arm circle with packed shoulder and capsule tension.","Spine CARs: flex, side-bend, rotate, extend, and isolate thoracic/lumbar when possible."]},
-        {title:"PAILs and RAILs",items:["PAIL: at end range, contract the stretched muscle for 10-20s as if closing the stretch.","RAIL: immediately contract the antagonist to open further for 10-20s."]}
-      ],
-      4:[
-        {title:"Core idea",body:["Mobility is flexibility plus strength and control through the range. Phase 4 integrates passive range, active access, load, and goal-specific work."]},
-        {title:"Jefferson curl",items:["Stand on a box or step holding 2-5kg to start.","Tuck chin, roll down vertebra by vertebra, and let the weight hang.","Hold 3-5s at the bottom, then roll back up slowly.","Do 3-5 reps. Increase 1-2kg every 2-3 weeks only when easy."]}
-      ],
-      5:[
-        {title:"Core idea",body:["There is no endpoint. After month 12, you have the base and technique library to self-direct. The question becomes what you want to do with the mobility and how you keep it."]},
-        {title:"Minimums",items:["CARs daily, even on rest days or while travelling.","Full stretch session 3x per week using static, PNF, or active work.","Jefferson curl weekly at maintenance weight."]}
-      ]
-    };
-
-    // ── Components ───────────────────────────────────────────────────────────────
-
-    // Icon SVGs
+    // ── Icons ──────────────────────────────────────────────────────────────────
     const Icons = {
-      Home: () => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-      ),
-      Dumbbell: () => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6.5 6.5h11M6.5 17.5h11M12 2v20M2 12h20M6.5 6.5v11M17.5 6.5v11"></path>
-        </svg>
-      ),
-      Tendon: () => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4.5 16.5c-1.5-2.5-1.5-5.5 0-8s4-3.5 6.5-2.5 3.5 4 2.5 6.5-4 3.5-6.5 2.5M13 14l7 7M15 10l6 6"></path>
-        </svg>
-      ),
-      Stretch: () => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 21a6 6 0 0 0-12 0M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 3v6M6 6h12"></path>
-        </svg>
-      ),
-      Chart: () => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10"></line>
-          <line x1="12" y1="20" x2="12" y2="4"></line>
-          <line x1="6" y1="20" x2="6" y2="14"></line>
-        </svg>
-      ),
-      Refresh: ({size=20}) => (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-        </svg>
-      ),
-      Play: ({size=24}) => (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-      ),
-      Pause: ({size=24}) => (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-          <rect x="6" y="4" width="4" height="16" rx="1"></rect>
-          <rect x="14" y="4" width="4" height="16" rx="1"></rect>
-        </svg>
-      )
+      Home:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
+      Dumbbell:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="10" width="15" height="4" rx="1"/><rect x="1" y="9" width="3.5" height="6" rx="1"/><rect x="19.5" y="9" width="3.5" height="6" rx="1"/></svg>,
+      Tendon:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h8l-1 8 11-12h-8z"/></svg>,
+      Stretch:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v6M9 21l3-8 3 8M6 13h12"/></svg>,
+      Chart:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+      Refresh:({size=20})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>,
+      Play:({size=24})=><svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+      Pause:({size=24})=><svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>,
     };
 
-    // Elegant Weight selector/chip with local state preservation
-    function WeightChip({exKey, defaultWeight, color, weights, onSave}) {
-      const [editing, setEditing] = useState(false);
-      const ref = useRef(null);
-      const stored = weights[exKey];
-      const val = stored !== undefined ? stored : (defaultWeight || "");
-      const [draft, setDraft] = useState(val);
-
-      const startEdit = e => {
-        e.stopPropagation();
-        setDraft(val);
-        setEditing(true);
-        setTimeout(() => { if (ref.current) { ref.current.focus(); ref.current.select(); } }, 50);
-      };
-      
-      const commit = () => {
-        onSave(exKey, draft.trim());
-        setEditing(false);
-      };
-
-      if (editing) {
-        return (
-          <input
-            ref={ref}
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={e => {
-              if (e.key === "Enter") commit();
-              if (e.key === "Escape") setEditing(false);
-            }}
-            onClick={e => e.stopPropagation()}
-            placeholder="e.g. 35kg"
-            style={{
-              background: `var(--accent-muted)`,
-              border: `1.5px solid var(--accent)`,
-              borderRadius: "8px",
-              color: "var(--text)",
-              fontSize: "13px",
-              fontWeight: "700",
-              padding: "6px 10px",
-              width: "85px",
-              textAlign: "center"
-            }}
-          />
-        );
-      }
-
-      return (
-        <button 
-          onClick={startEdit} 
-          style={{
-            background: val ? "var(--accent-muted)" : "var(--input-bg)",
-            border: val ? "1.5px solid var(--accent)" : "1.5px solid var(--card-border)",
-            borderRadius: "8px",
-            color: val ? "var(--accent)" : "var(--text-secondary)",
-            fontSize: "13px",
-            fontWeight: "700",
-            padding: "6px 12px"
-          }}
-        >
-          {val || "Set Weight"}
-        </button>
-      );
+    // ── WeightChip ─────────────────────────────────────────────────────────────
+    function WeightChip({exKey,defaultWeight,color,weights,onSave}) {
+      const [editing,setEditing]=useState(false);
+      const ref=useRef(null);
+      const stored=weights[exKey];
+      const val=stored!==undefined?stored:(defaultWeight||"");
+      const [draft,setDraft]=useState(val);
+      const startEdit=e=>{e.stopPropagation();setDraft(val);setEditing(true);setTimeout(()=>{if(ref.current){ref.current.focus();ref.current.select();}},50);};
+      const commit=()=>{onSave(exKey,draft.trim());setEditing(false);};
+      if(editing) return <input ref={ref} value={draft} onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} onClick={e=>e.stopPropagation()} placeholder="e.g. 35kg" style={{background:"var(--accent-muted)",border:"1.5px solid var(--accent)",borderRadius:"8px",color:"var(--text)",fontSize:"13px",fontWeight:"700",padding:"6px 10px",width:"85px",textAlign:"center"}}/>;
+      return <button onClick={startEdit} style={{background:val?"var(--accent-muted)":"var(--input-bg)",border:val?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",borderRadius:"8px",color:val?"var(--accent)":"var(--text-secondary)",fontSize:"13px",fontWeight:"700",padding:"6px 12px"}}>{val||"Set Weight"}</button>;
     }
 
-    // Modal with Tap Outside Close feature
-    function TapModal({isOpen, onClose, children}) {
-      if (!isOpen) return null;
-      
-      const handleBackdropClick = (e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      };
-
-      return (
-        <div className="modal-bg" onClick={handleBackdropClick}>
-          <div className="modal-body">
-            <div className="drag-bar"></div>
-            {children}
-          </div>
-        </div>
-      );
+    // ── TapModal ───────────────────────────────────────────────────────────────
+    function TapModal({isOpen,onClose,children}) {
+      if(!isOpen) return null;
+      return <div className="modal-bg" onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div className="modal-body"><div className="drag-bar"/>{children}</div></div>;
     }
 
-    // Customizable Exercise Edit Modal
-    function EditModal({ex, onSave, onDelete, onClose}) {
-      const [f, setF] = useState({
-        name: ex.name || "",
-        equip: ex.equip || "",
-        sets: String(ex.sets || 1),
-        reps: String(ex.reps || "5-8"),
-        rest: ex.rest || "90s",
-        weight: ex.weight || ex.defaultWeight || "",
-        cue: ex.cue || "",
-        hold: ex.hold || "",
-        tempo: ex.tempo || ""
-      });
-
-      const handleSave = () => {
-        onSave({
-          ...ex,
-          ...f,
-          sets: parseInt(f.sets) || 1,
-          defaultWeight: f.weight
-        });
-      };
-
+    // ── EditModal ──────────────────────────────────────────────────────────────
+    function EditModal({ex,onSave,onDelete,onClose}) {
+      const [f,setF]=useState({name:ex.name||"",equip:ex.equip||"",sets:String(ex.sets||1),reps:String(ex.reps||"10-12"),rest:ex.rest||"90s",weight:ex.weight||ex.defaultWeight||"",cue:ex.cue||"",hold:ex.hold||"",tempo:ex.tempo||""});
+      const upd=(k,v)=>setF(p=>({...p,[k]:v}));
       return (
-        <div style={{color: "var(--text)"}}>
-          <h3 className="font-bold" style={{marginBottom: "16px"}}>Edit Exercise</h3>
-          
+        <div style={{color:"var(--text)"}}>
+          <h3 className="font-bold" style={{marginBottom:"16px"}}>Edit Exercise</h3>
           <label className="field-label">Name</label>
-          <input className="field" value={f.name} onChange={e => setF({...f, name: e.target.value})} />
-
+          <input className="field" value={f.name} onChange={e=>upd("name",e.target.value)}/>
           <label className="field-label">Equipment</label>
-          <input className="field" value={f.equip} onChange={e => setF({...f, equip: e.target.value})} />
-
-          <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px"}}>
-            <div>
-              <label className="field-label">Sets</label>
-              <input className="field" type="number" value={f.sets} onChange={e => setF({...f, sets: e.target.value})} />
-            </div>
-            <div>
-              <label className="field-label">Reps / Hold</label>
-              <input className="field" value={f.hold ? f.hold : f.reps} onChange={e => f.hold ? setF({...f, hold: e.target.value}) : setF({...f, reps: e.target.value})} />
-            </div>
+          <input className="field" value={f.equip} onChange={e=>upd("equip",e.target.value)}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+            <div><label className="field-label">Sets</label><input className="field" type="number" value={f.sets} onChange={e=>upd("sets",e.target.value)}/></div>
+            <div><label className="field-label">Reps</label><input className="field" value={f.reps} onChange={e=>upd("reps",e.target.value)}/></div>
           </div>
-
-          <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px"}}>
-            <div>
-              <label className="field-label">Rest</label>
-              <input className="field" value={f.rest} onChange={e => setF({...f, rest: e.target.value})} />
-            </div>
-            <div>
-              <label className="field-label">Weight</label>
-              <input className="field" value={f.weight} onChange={e => setF({...f, weight: e.target.value})} />
-            </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+            <div><label className="field-label">Rest</label><input className="field" value={f.rest} onChange={e=>upd("rest",e.target.value)}/></div>
+            <div><label className="field-label">Weight</label><input className="field" value={f.weight} onChange={e=>upd("weight",e.target.value)}/></div>
           </div>
-
-          {f.tempo && (
-            <div>
-              <label className="field-label">Tempo</label>
-              <input className="field" value={f.tempo} onChange={e => setF({...f, tempo: e.target.value})} />
-            </div>
-          )}
-
-          <label className="field-label">Instructions / Cues</label>
-          <textarea className="field" style={{height: "80px"}} value={f.cue} onChange={e => setF({...f, cue: e.target.value})} />
-
-          <div style={{display: "flex", gap: "10px", marginTop: "20px"}}>
-            <button className="button-primary" onClick={handleSave}>Save</button>
-            <button className="button-secondary" style={{color: "var(--danger)", border: "1.5px solid var(--danger)", background: "transparent"}} onClick={onDelete}>Delete</button>
+          {f.hold&&<div><label className="field-label">Hold</label><input className="field" value={f.hold} onChange={e=>upd("hold",e.target.value)}/></div>}
+          {f.tempo&&<div><label className="field-label">Tempo</label><input className="field" value={f.tempo} onChange={e=>upd("tempo",e.target.value)}/></div>}
+          <label className="field-label">Cue</label>
+          <textarea className="field" style={{height:"80px"}} value={f.cue} onChange={e=>upd("cue",e.target.value)}/>
+          <div style={{display:"flex",gap:"10px",marginTop:"20px"}}>
+            <button className="button-primary" onClick={()=>onSave({...ex,...f,sets:parseInt(f.sets)||1,defaultWeight:f.weight})}>Save</button>
+            {onDelete&&<button className="button-secondary" style={{color:"var(--danger)",border:"1.5px solid var(--danger)",background:"transparent"}} onClick={onDelete}>Delete</button>}
           </div>
         </div>
       );
     }
 
-    // Canvas-based Progression Line Chart Component (Self-Contained & Responsive)
-    function ProgressionChart({data, selectedExercise}) {
-      const canvasRef = useRef(null);
-
-      useEffect(() => {
-        if (!canvasRef.current || !data || data.length < 2) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        
-        // Handle High-DPI screens
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * 2;
-        canvas.height = rect.height * 2;
-        ctx.scale(2, 2);
-
-        const width = rect.width;
-        const height = rect.height;
-        const padding = 35;
-
-        // Parse weights to numbers for charting
-        const parseW = str => {
-          if (!str) return 0;
-          const num = parseFloat(str.replace(/[^\d.]/g, ''));
-          return isNaN(num) ? 0 : num;
-        };
-
-        const points = data.map(d => ({
-          date: new Date(d.date),
-          weight: parseW(d.weight),
-          label: d.weight || "0"
-        })).sort((a,b) => a.date - b.date);
-
-        const weights = points.map(p => p.weight);
-        const minW = Math.min(...weights) * 0.9;
-        const maxW = Math.max(...weights) * 1.1 || 10;
-        const rangeW = maxW - minW || 10;
-
-        ctx.clearRect(0, 0, width, height);
-
-        // Chart styling based on theme
-        const isAntiRed = document.documentElement.getAttribute('data-theme') === 'anti-red';
-        const strokeColor = isAntiRed ? '#ffd700' : '#bf5af2';
-        const gridColor = isAntiRed ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 255, 255, 0.08)';
-        const textColor = isAntiRed ? '#ffd700' : '#8e8e93';
-
-        // Draw horizontal grid lines
-        ctx.strokeStyle = gridColor;
-        ctx.lineWidth = 1;
-        ctx.fillStyle = textColor;
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'right';
-
-        for (let i = 0; i <= 3; i++) {
-          const y = padding + (height - padding * 2) * (i / 3);
-          const wVal = maxW - rangeW * (i / 3);
-          
-          ctx.beginPath();
-          ctx.moveTo(padding, y);
-          ctx.lineTo(width - 15, y);
-          ctx.stroke();
-          
-          ctx.fillText(`${wVal.toFixed(1)}kg`, padding - 6, y + 3);
-        }
-
-        // Plot points & lines
-        const getX = idx => padding + (width - padding - 20) * (idx / (points.length - 1));
-        const getY = val => height - padding - (height - padding * 2) * ((val - minW) / rangeW);
-
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-
-        points.forEach((p, idx) => {
-          const x = getX(idx);
-          const y = getY(p.weight);
-          if (idx === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
+    // ── ProgressionChart ───────────────────────────────────────────────────────
+    function ProgressionChart({data,selectedExercise}) {
+      const canvasRef=useRef(null);
+      useEffect(()=>{
+        if(!canvasRef.current||!data||data.length<2) return;
+        const canvas=canvasRef.current;
+        const ctx=canvas.getContext('2d');
+        const rect=canvas.getBoundingClientRect();
+        canvas.width=rect.width*2; canvas.height=rect.height*2; ctx.scale(2,2);
+        const w=rect.width,h=rect.height,pad=35;
+        const parseW=str=>{if(!str)return 0;const n=parseFloat(str.replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
+        const pts=data.map(d=>({date:new Date(d.date),weight:parseW(d.weight),label:d.weight||"0"})).sort((a,b)=>a.date-b.date);
+        const wts=pts.map(p=>p.weight),minW=Math.min(...wts)*0.9,maxW=Math.max(...wts)*1.1||10,rng=maxW-minW||10;
+        ctx.clearRect(0,0,w,h);
+        const isAR=document.documentElement.getAttribute('data-theme')==='anti-red';
+        const sc=isAR?'#ffd700':'#bf5af2',gc=isAR?'rgba(255,215,0,0.15)':'rgba(255,255,255,0.08)',tc=isAR?'#ffd700':'#8e8e93';
+        ctx.strokeStyle=gc; ctx.lineWidth=1; ctx.fillStyle=tc; ctx.font='10px sans-serif'; ctx.textAlign='right';
+        for(let i=0;i<=3;i++){const y=pad+(h-pad*2)*(i/3),wv=maxW-rng*(i/3);ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-15,y);ctx.stroke();ctx.fillText(`${wv.toFixed(1)}kg`,pad-6,y+3);}
+        const gx=i=>pad+(w-pad-20)*(i/(pts.length-1)),gy=v=>h-pad-(h-pad*2)*((v-minW)/rng);
+        ctx.strokeStyle=sc; ctx.lineWidth=2.5; ctx.beginPath();
+        pts.forEach((p,i)=>{const x=gx(i),y=gy(p.weight);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
         ctx.stroke();
-
-        // Draw area fill under curve (if not anti-red)
-        if (!isAntiRed) {
-          ctx.fillStyle = 'rgba(191, 90, 242, 0.1)';
-          ctx.beginPath();
-          ctx.moveTo(getX(0), height - padding);
-          points.forEach((p, idx) => ctx.lineTo(getX(idx), getY(p.weight)));
-          ctx.lineTo(getX(points.length - 1), height - padding);
-          ctx.closePath();
-          ctx.fill();
-        }
-
-        // Draw point dots and text value labels
-        points.forEach((p, idx) => {
-          const x = getX(idx);
-          const y = getY(p.weight);
-
-          // Dot
-          ctx.fillStyle = strokeColor;
-          ctx.beginPath();
-          ctx.arc(x, y, 4, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Label above point
-          ctx.fillStyle = isAntiRed ? '#ffd700' : '#ffffff';
-          ctx.font = 'bold 9px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(p.label, x, y - 8);
-
-          // Date below axis
-          ctx.fillStyle = textColor;
-          ctx.font = '8px sans-serif';
-          const dateStr = `${p.date.getMonth() + 1}/${p.date.getDate()}`;
-          ctx.fillText(dateStr, x, height - padding + 14);
-        });
-
-      }, [data, selectedExercise]);
-
-      if (!data || data.length < 2) {
-        return (
-          <div className="chart-container" style={{display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", fontSize: "14px"}}>
-            📉 Complete this exercise twice to start tracking progression
-          </div>
-        );
-      }
-
-      return (
-        <div className="chart-container">
-          <canvas ref={canvasRef} className="chart-svg" style={{width: "100%", height: "100%"}}></canvas>
-        </div>
-      );
+        if(!isAR){ctx.fillStyle='rgba(191,90,242,0.1)';ctx.beginPath();ctx.moveTo(gx(0),h-pad);pts.forEach((p,i)=>ctx.lineTo(gx(i),gy(p.weight)));ctx.lineTo(gx(pts.length-1),h-pad);ctx.closePath();ctx.fill();}
+        pts.forEach((p,i)=>{const x=gx(i),y=gy(p.weight);ctx.fillStyle=sc;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle=isAR?'#ffd700':'#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillText(p.label,x,y-8);ctx.fillStyle=tc;ctx.font='8px sans-serif';ctx.fillText(`${p.date.getMonth()+1}/${p.date.getDate()}`,x,h-pad+14);});
+      },[data,selectedExercise]);
+      if(!data||data.length<2) return <div className="chart-container" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-secondary)",fontSize:"14px"}}>Complete this exercise twice to start tracking progression</div>;
+      return <div className="chart-container"><canvas ref={canvasRef} className="chart-svg" style={{width:"100%",height:"100%"}}/></div>;
     }
 
-    // ── ACTIVE TIMER SESSION PLAYER OVERLAY ───────────────────────────────────────
-    // Multi-mode: Workout Sets, Tendon Holds, Stretching Splits
-    function SessionPlayer({routineName, exercises, onFinish, onCancel}) {
-      const [exIdx, setExIdx] = useState(0);
-      const [setIdx, setSetIdx] = useState(0);
-      const [mode, setMode] = useState("work"); // "work", "rest_prepare", "rest", "split_transition"
-      
-      const activeEx = exercises[exIdx];
-      const nextEx = exIdx + 1 < exercises.length ? exercises[exIdx + 1] : null;
+    // ── SessionPlayer ──────────────────────────────────────────────────────────
+    function SessionPlayer({routineName,exercises,onFinish,onCancel}) {
+      const [exIdx,setExIdx]=useState(0);
+      const [setIdx,setSetIdx]=useState(0);
+      const [mode,setMode]=useState("work");
+      const activeEx=exercises[exIdx];
+      const nextEx=exIdx+1<exercises.length?exercises[exIdx+1]:null;
+      const sideLabels=activeEx.sideLabels||[];
+      const hasSides=sideLabels.length>0;
+      const [currentSideIdx,setCurrentSideIdx]=useState(0);
+      const [targetSeconds,setTargetSeconds]=useState(90);
+      const [remaining,setRemaining]=useState(90);
+      const [isRunning,setIsRunning]=useState(false);
+      const startTimeRef=useRef(0);
+      const accRef=useRef(0);
+      const rafRef=useRef(null);
+      const autoStartRestRef=useRef(false);
 
-      // Single-side stretch detection
-      const sideLabels = activeEx.sideLabels || [];
-      const hasSides = sideLabels.length > 0;
-      const [currentSideIdx, setCurrentSideIdx] = useState(0);
-
-      // Timer calculation variables
-      const [targetSeconds, setTargetSeconds] = useState(90);
-      const [remaining, setRemaining] = useState(90);
-      const [isRunning, setIsRunning] = useState(false);
-      
-      // Timestamp syncing for resilient background operation
-      const startTimeRef = useRef(0);
-      const accumulatedTimeRef = useRef(0);
-      const requestRef = useRef(null);
-
-      // Setup active target seconds
-      const setupTimer = () => {
-        setIsRunning(false);
-        accumulatedTimeRef.current = 0;
-
-        if (mode === "work") {
-          if (activeEx.hold) {
-            const secs = parseInt(activeEx.hold.replace(/[^\d]/g, '')) || 30;
-            const parsed = hasSides ? Math.round(secs / sideLabels.length) : secs;
-            setTargetSeconds(parsed);
-            setRemaining(parsed);
-          } else if (activeEx.totalSec) {
-            const parsed = hasSides ? Math.round(activeEx.totalSec / sideLabels.length) : activeEx.totalSec;
-            setTargetSeconds(parsed);
-            setRemaining(parsed);
-          } else {
-            // standard exercise reps (no timer)
-            setTargetSeconds(0);
-            setRemaining(0);
-          }
-        } else if (mode === "rest") {
-          const restVal = parseRestSec(activeEx.rest);
-          setTargetSeconds(restVal);
-          setRemaining(restVal);
-        } else if (mode === "split_transition") {
-          setTargetSeconds(3); // brief 3 seconds switch alert
-          setRemaining(3);
-          setIsRunning(true); // automatically start transitions
-          startTimeRef.current = Date.now();
-        }
-      };
-
-      useEffect(() => {
-        setupTimer();
-      }, [exIdx, setIdx, mode, currentSideIdx]);
-
-      // Timer Animation & Delta Engine (Resilient Clock Sync)
-      const tick = () => {
-        if (!isRunning) return;
-        const now = Date.now();
-        const elapsedMs = now - startTimeRef.current + accumulatedTimeRef.current;
-        const elapsedSec = Math.floor(elapsedMs / 1000);
-        const rem = Math.max(0, targetSeconds - elapsedSec);
-
-        // Sound cues for last 3 seconds
-        if (rem !== remaining && rem > 0 && rem <= 3 && mode === "work") {
-          triggerSound('tick');
-        }
-
-        setRemaining(rem);
-
-        if (rem <= 0) {
-          handleTimerComplete();
-        } else {
-          requestRef.current = requestAnimationFrame(tick);
-        }
-      };
-
-      useEffect(() => {
-        if (isRunning) {
-          startTimeRef.current = Date.now();
-          requestRef.current = requestAnimationFrame(tick);
-        } else {
-          cancelAnimationFrame(requestRef.current);
-        }
-        return () => cancelAnimationFrame(requestRef.current);
-      }, [isRunning, targetSeconds]);
-
-      const toggleTimer = () => {
-        if (isRunning) {
-          accumulatedTimeRef.current += Date.now() - startTimeRef.current;
+      const setupTimer=()=>{
+        accRef.current=0;
+        if(mode==="work"){
+          if(activeEx.hold){const s=parseInt(activeEx.hold.replace(/[^\d]/g,''))||30;const p=hasSides?Math.round(s/sideLabels.length):s;setTargetSeconds(p);setRemaining(p);}
+          else if(activeEx.totalSec){const p=hasSides?Math.round(activeEx.totalSec/sideLabels.length):activeEx.totalSec;setTargetSeconds(p);setRemaining(p);}
+          else{setTargetSeconds(0);setRemaining(0);}
           setIsRunning(false);
-        } else {
-          startTimeRef.current = Date.now();
+        } else if(mode==="rest"){
+          const rs=parseRestSec(activeEx.rest);
+          setTargetSeconds(rs);setRemaining(rs);
+          if(autoStartRestRef.current){
+            autoStartRestRef.current=false;
+            startTimeRef.current=Date.now();
+            setIsRunning(true);
+          } else {
+            setIsRunning(false);
+          }
+        } else if(mode==="split_transition"){
+          setTargetSeconds(3);setRemaining(3);
+          startTimeRef.current=Date.now();
           setIsRunning(true);
         }
       };
+      useEffect(()=>{setupTimer();},[exIdx,setIdx,mode,currentSideIdx]);
 
-      const restartTimer = () => {
+      const modeRef=useRef(mode);
+      useEffect(()=>{modeRef.current=mode;},[mode]);
+      const targetRef=useRef(targetSeconds);
+      useEffect(()=>{targetRef.current=targetSeconds;},[targetSeconds]);
+
+      const handleTimerComplete=()=>{
         setIsRunning(false);
-        accumulatedTimeRef.current = 0;
+        const m=modeRef.current;
+        if(m==="work"){
+          if(hasSides&&currentSideIdx+1<sideLabels.length){triggerSound('beep-high');setMode("split_transition");}
+          else{triggerSound('chime');onLogSet(activeEx,activeEx.weight||"");if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext();}
+        } else if(m==="rest"){triggerSound('rest-chime');moveToNext();}
+        else if(m==="split_transition"){setCurrentSideIdx(currentSideIdx+1);setMode("work");}
+      };
+
+      const tick=useRef(null);
+      tick.current=()=>{
+        const now=Date.now();
+        const elapsedMs=now-startTimeRef.current+accRef.current;
+        const elapsedSec=Math.floor(elapsedMs/1000);
+        const rem=Math.max(0,targetRef.current-elapsedSec);
+        setRemaining(rem);
+        if(rem<=0){handleTimerComplete();}
+        else{rafRef.current=requestAnimationFrame(()=>tick.current());}
+      };
+
+      useEffect(()=>{
+        if(isRunning){
+          accRef.current=0;
+          startTimeRef.current=Date.now();
+          rafRef.current=requestAnimationFrame(()=>tick.current());
+        } else {
+          cancelAnimationFrame(rafRef.current);
+        }
+        return()=>cancelAnimationFrame(rafRef.current);
+      },[isRunning]);
+
+      const toggleTimer=()=>{
+        if(isRunning){accRef.current+=Date.now()-startTimeRef.current;setIsRunning(false);}
+        else{startTimeRef.current=Date.now();setIsRunning(true);}
+      };
+      const restartTimer=()=>{
+        cancelAnimationFrame(rafRef.current);
+        accRef.current=0;
         setRemaining(targetSeconds);
+        startTimeRef.current=Date.now();
+        if(isRunning) rafRef.current=requestAnimationFrame(()=>tick.current());
       };
-
-      // Sound and flow controllers
-      const handleTimerComplete = () => {
+      const skipTimer=()=>{
         setIsRunning(false);
-        
-        if (mode === "work") {
-          if (hasSides && currentSideIdx + 1 < sideLabels.length) {
-            triggerSound('beep-high');
-            setMode("split_transition");
-          } else {
-            triggerSound('chime');
-            // Log set data automatically
-            onLogSet(activeEx, activeEx.weight || activeEx.defaultWeight || "");
-            
-            if (activeEx.rest && activeEx.rest !== "0s") {
-              setMode("rest_prepare"); // Pause, wait for ready rest click
-            } else {
-              moveToNext();
-            }
-          }
-        } else if (mode === "rest") {
-          triggerSound('rest-chime');
-          moveToNext();
-        } else if (mode === "split_transition") {
-          setCurrentSideIdx(currentSideIdx + 1);
-          setMode("work");
-        }
+        if(mode==="work"){
+          if(hasSides&&currentSideIdx+1<sideLabels.length){setCurrentSideIdx(currentSideIdx+1);}
+          else{onLogSet(activeEx,activeEx.weight||"");if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext();}
+        } else moveToNext();
       };
+      const moveToNext=()=>{setCurrentSideIdx(0);const maxSets=activeEx.sets||1;if(setIdx+1<maxSets){setSetIdx(setIdx+1);setMode("work");}else{if(exIdx+1<exercises.length){setExIdx(exIdx+1);setSetIdx(0);setMode("work");}else{onLogSession(exercises.length,exercises.length,false);onFinish();}}};
+      const finishEarly=()=>{if(confirm("Finish early? Progress logged as partial.")){onLogSession(exercises.length,exIdx,true);onFinish();}};
+      const onLogSet=(ex,weight)=>{const p=store.get("workout_progression",[]);p.push({id:uid(),date:new Date().toISOString().split('T')[0],exercise:ex.name,weight:weight||"0",hold:ex.hold||"0"});store.set("workout_progression",p);};
+      const onLogSession=(total,completed,isPartial)=>{const logs=store.get("workout_logs",[]);logs.push({id:uid(),date:new Date().toISOString().split('T')[0],routine:routineName,total,completed,isPartial});store.set("workout_logs",logs);const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});if(routineName.includes("Stretch"))c.stretches+=1;else if(routineName.includes("Tendon"))c.tendons+=1;else c.workouts+=1;store.set("workout_completed_counts",c);};
 
-      const skipTimer = () => {
-        setIsRunning(false);
-        if (mode === "work") {
-          if (hasSides && currentSideIdx + 1 < sideLabels.length) {
-            setCurrentSideIdx(currentSideIdx + 1);
-            setupTimer();
-          } else {
-            onLogSet(activeEx, activeEx.weight || activeEx.defaultWeight || "");
-            if (activeEx.rest) setMode("rest_prepare");
-            else moveToNext();
-          }
-        } else if (mode === "rest" || mode === "rest_prepare" || mode === "split_transition") {
-          moveToNext();
-        }
-      };
-
-      const startRestTimer = () => {
-        setMode("rest");
-        setIsRunning(true);
-        startTimeRef.current = Date.now();
-      };
-
-      const moveToNext = () => {
-        setCurrentSideIdx(0);
-        const maxSets = activeEx.sets || 1;
-        
-        if (setIdx + 1 < maxSets) {
-          setSetIdx(setIdx + 1);
-          setMode("work");
-        } else {
-          if (exIdx + 1 < exercises.length) {
-            setExIdx(exIdx + 1);
-            setSetIdx(0);
-            setMode("work");
-          } else {
-            // Whole routine finished
-            onLogSession(exercises.length, exercises.length, false);
-            onFinish();
-          }
-        }
-      };
-
-      const finishEarly = () => {
-        const confirmFinish = confirm("Finish this session early? Your progress will be logged as a Partial Session.");
-        if (confirmFinish) {
-          const completedCount = exIdx; // current count of exercises fully finished
-          onLogSession(exercises.length, completedCount, true);
-          onFinish();
-        }
-      };
-
-      // Logging helpers
-      const onLogSet = (ex, weight) => {
-        const prog = store.get("workout_progression", []);
-        prog.push({
-          id: uid(),
-          date: new Date().toISOString().split('T')[0],
-          exercise: ex.name,
-          weight: weight || "0",
-          hold: ex.hold || ex.totalSec || "0"
-        });
-        store.set("workout_progression", prog);
-      };
-
-      const onLogSession = (total, completed, isPartial) => {
-        const logs = store.get("workout_logs", []);
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Append log
-        logs.push({
-          id: uid(),
-          date: today,
-          routine: routineName,
-          total,
-          completed,
-          isPartial
-        });
-        store.set("workout_logs", logs);
-
-        // Update total counters
-        const counts = store.get("workout_completed_counts", {workouts:0, tendons:0, stretches:0});
-        if (routineName.includes("Phase")) {
-          if (routineName.includes("Tendon")) counts.tendons += 1;
-          else counts.stretches += 1;
-        } else {
-          counts.workouts += 1;
-        }
-        store.set("workout_completed_counts", counts);
-      };
-
-      // Compute visual progress percentage
-      const progressPercent = targetSeconds > 0 ? ((targetSeconds - remaining) / targetSeconds) * 100 : 0;
-      const strokeDashoffset = 628 - (628 * progressPercent) / 100;
+      const progressPercent=targetSeconds>0?((targetSeconds-remaining)/targetSeconds)*100:0;
+      const strokeDashoffset=628-(628*progressPercent)/100;
 
       return (
         <div className="timer-overlay">
-          {/* Header */}
-          <div className="flex-between" style={{width: "100%", marginBottom: "10px"}}>
+          <div className="flex-between" style={{width:"100%",marginBottom:"10px"}}>
             <div>
-              <span className="badge" style={{marginLeft: "0", background: "var(--accent-muted)"}}>
-                {routineName}
-              </span>
-              <p className="text-small" style={{marginTop: "4px"}}>Exercise {exIdx + 1} of {exercises.length} • Set {setIdx + 1} of {activeEx.sets || 1}</p>
+              <span className="badge" style={{marginLeft:"0"}}>{routineName}</span>
+              <p className="text-small" style={{marginTop:"4px"}}>Exercise {exIdx+1} of {exercises.length} — Set {setIdx+1} of {activeEx.sets||1}</p>
             </div>
-            <button className="button-secondary" style={{width: "auto", padding: "6px 12px", fontSize: "12px", border: "1.5px solid var(--danger)", color: "var(--danger)", background: "transparent"}} onClick={finishEarly}>
-              Finish Early
-            </button>
+            <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 12px",fontSize:"12px",fontWeight:"700"}} onClick={finishEarly}>Finish Early</button>
           </div>
 
-          <div style={{flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-            
-            {/* Split switch banner */}
-            {mode === "split_transition" && (
-              <div className="card text-warning" style={{borderColor: "var(--warning)", width: "100%", textAlign: "center", padding: "12px", fontSize: "18px", fontWeight: "800", animation: "pulse 1s infinite"}}>
-                👉 CHANGE SIDE! Prepare {sideLabels[currentSideIdx + 1]}
-              </div>
-            )}
-
-            {/* Display Active Mode Text */}
-            <h2 className="font-bold" style={{fontSize: "24px", textAlign: "center", marginBottom: "4px"}}>
-              {activeEx.name}
-            </h2>
-            <p className="text-small font-bold" style={{textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--accent)"}}>
-              {mode === "work" && (hasSides ? `${sideLabels[currentSideIdx]} hold` : "ACTIVE WORK")}
-              {mode === "rest_prepare" && "Ready for Rest"}
-              {mode === "rest" && "RESTING"}
-              {mode === "split_transition" && "TRANSITION"}
+          <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center"}}>
+            {mode==="split_transition"&&<div className="card text-warning" style={{borderColor:"var(--warning)",width:"100%",textAlign:"center",padding:"12px",fontSize:"18px",fontWeight:"800"}}>Change side — {sideLabels[currentSideIdx+1]}</div>}
+            <h2 className="font-bold" style={{fontSize:"24px",textAlign:"center",marginBottom:"4px"}}>{activeEx.name}</h2>
+            <p className="text-small font-bold" style={{textTransform:"uppercase",letterSpacing:"0.05em",color:"var(--accent)"}}>
+              {mode==="work"&&(hasSides?`${sideLabels[currentSideIdx]} hold`:"Active Work")}
+              {mode==="rest"&&"Resting"}
+              {mode==="split_transition"&&"Transition"}
             </p>
-
-            {/* Hold Timer Circle */}
-            {(mode === "work" && targetSeconds > 0) || mode === "rest" || mode === "split_transition" ? (
+            {((mode==="work"&&targetSeconds>0)||mode==="rest"||mode==="split_transition")?(
               <div className="timer-circle-container">
                 <svg className="timer-circle-svg" viewBox="0 0 220 220">
-                  <circle className="timer-circle-bg" cx="110" cy="110" r="100"></circle>
-                  <circle 
-                    className="timer-circle-progress" 
-                    cx="110" 
-                    cy="110" 
-                    r="100"
-                    strokeDasharray="628"
-                    strokeDashoffset={strokeDashoffset}
-                  ></circle>
+                  <circle className="timer-circle-bg" cx="110" cy="110" r="100"/>
+                  <circle className="timer-circle-progress" cx="110" cy="110" r="100" strokeDasharray="628" strokeDashoffset={strokeDashoffset}/>
                 </svg>
-                <div className="timer-display">
-                  <span>{fmtTime(remaining)}</span>
-                  <span className="timer-label">{mode === "work" ? "hold" : "rest"}</span>
-                </div>
+                <div className="timer-display"><span>{fmtTime(remaining)}</span><span className="timer-label">{mode==="work"?"hold":"rest"}</span></div>
               </div>
-            ) : (
-              // Reps interface (No Timer needed)
-              <div style={{margin: "40px auto", textAlign: "center"}}>
-                {mode === "work" && (
-                  <div>
-                    <div style={{fontSize: "52px", fontWeight: "900", letterSpacing: "-0.02em"}}>{activeEx.reps}</div>
-                    <div className="timer-label" style={{fontSize: "14px"}}>Target Reps</div>
-                    {activeEx.weight && (
-                      <div className="badge" style={{marginTop: "12px", fontSize: "14px", padding: "6px 14px"}}>{activeEx.weight}</div>
-                    )}
-                  </div>
-                )}
-                {mode === "rest_prepare" && (
-                  <div style={{textAlign: "center"}}>
-                    <p style={{fontSize: "18px", marginBottom: "16px"}}>Nice set! Up to {activeEx.rest} rest.</p>
-                    <button className="button-primary" onClick={startRestTimer}>Start Rest Timer</button>
-                  </div>
-                )}
+            ):(
+              <div style={{margin:"40px auto",textAlign:"center"}}>
+                {mode==="work"&&<div><div style={{fontSize:"52px",fontWeight:"900"}}>{activeEx.reps}</div><div className="timer-label" style={{fontSize:"14px"}}>Target Reps</div>{activeEx.weight&&<div className="badge" style={{marginTop:"12px",fontSize:"14px",padding:"6px 14px"}}>{activeEx.weight}</div>}</div>}
               </div>
             )}
-
-            {/* Instruction Cues */}
-            {mode === "work" && (
-              <div className="exercise-cue-box" style={{width: "100%", maxHeight: "110px", overflowY: "auto"}}>
-                <strong>Focus Cue:</strong> {activeEx.cue}
-              </div>
-            )}
-
-            {/* Workout Cues during rests */}
-            {(mode === "rest" || mode === "rest_prepare") && nextEx && (
-              <div className="card" style={{width: "100%", background: "var(--input-bg)"}}>
-                <p className="text-small font-bold" style={{textTransform: "uppercase", color: "var(--accent)"}}>Up Next</p>
-                <p className="font-bold" style={{fontSize: "16px", marginTop: "2px"}}>{nextEx.name}</p>
-                <p className="text-small" style={{fontSize: "12px"}}>{nextEx.equip} • {nextEx.sets} set{nextEx.sets > 1 ? "s" : ""} • {nextEx.reps || nextEx.hold}</p>
+            {mode==="work"&&<div className="exercise-cue-box" style={{width:"100%",maxHeight:"110px",overflowY:"auto"}}><strong>Cue:</strong> {activeEx.cue}</div>}
+            {mode==="rest"&&nextEx&&(
+              <div className="card" style={{width:"100%",background:"var(--input-bg)"}}>
+                <p className="text-small font-bold" style={{textTransform:"uppercase",color:"var(--accent)"}}>Up Next</p>
+                <p className="font-bold" style={{fontSize:"16px",marginTop:"2px"}}>{nextEx.name}</p>
+                <p className="text-small" style={{fontSize:"12px"}}>{nextEx.equip} — {nextEx.sets} set{nextEx.sets>1?"s":""} — {nextEx.reps||nextEx.hold}</p>
               </div>
             )}
           </div>
 
-          {/* Interactive Player Controls */}
-          <div style={{display: "flex", flexDirection: "column", gap: "16px", alignItems: "center"}}>
-            
-            {/* Pause/Play/Restart controls */}
-            {((mode === "work" && targetSeconds > 0) || mode === "rest") && (
-              <div style={{display: "flex", gap: "24px", alignItems: "center"}}>
-                <button className="restart-btn" onClick={restartTimer}>
-                  <Icons.Refresh size={22} />
-                </button>
-                <button className="play-pause-btn" onClick={toggleTimer}>
-                  {isRunning ? <Icons.Pause size={28} /> : <Icons.Play size={28} />}
-                </button>
-                <button className="restart-btn" style={{opacity: 0, pointerEvents: "none"}}>
-                  <Icons.Refresh size={22} />
-                </button>
+          <div style={{display:"flex",flexDirection:"column",gap:"16px",alignItems:"center"}}>
+            {((mode==="work"&&targetSeconds>0)||mode==="rest")&&(
+              <div style={{display:"flex",gap:"24px",alignItems:"center"}}>
+                <button className="restart-btn" onClick={restartTimer}><Icons.Refresh size={22}/></button>
+                <button className="play-pause-btn" onClick={toggleTimer}>{isRunning?<Icons.Pause size={28}/>:<Icons.Play size={28}/>}</button>
+                <div style={{width:"52px"}}/>
               </div>
             )}
-
-            {/* Manual completion for rep-based work */}
-            {mode === "work" && targetSeconds === 0 && (
-              <button className="button-primary" style={{padding: "16px 20px", fontSize: "18px"}} onClick={handleTimerComplete}>
-                Set Completed ✔
-              </button>
-            )}
-
-            {/* Big, highly visible Skip / Next Button */}
-            <div style={{display: "flex", width: "100%", justifyContent: "center", gap: "12px", marginTop: "10px"}}>
-              <button className="skip-btn-large" onClick={skipTimer}>
-                Skip {mode === "work" ? "Hold" : "Rest"} ➔
-              </button>
-            </div>
+            {mode==="work"&&targetSeconds===0&&<button className="button-primary" style={{padding:"16px 20px",fontSize:"18px"}} onClick={handleTimerComplete}>Set Completed</button>}
+            <button className="skip-btn-large" onClick={skipTimer}>Skip {mode==="work"?"Hold":"Rest"} →</button>
           </div>
         </div>
       );
     }
 
-    // ── MAIN APPLICATION WRAPPER ──────────────────────────────────────────────────
+    // ── WorkoutsTab ────────────────────────────────────────────────────────────
+    function WorkoutsTab({workouts,setWorkouts,weights,saveWeight,counts,setActiveRoutine,setModalContent}) {
+      const [activeSection,setActiveSection]=useState(null);
+      const triggerEdit=(ex,secName)=>setModalContent({type:"edit_exercise",data:{ex,secName}});
+      const handleAddExercise=secName=>{
+        const nm=prompt("New exercise name:");
+        if(!nm) return;
+        const u=workouts.map(s=>s.section===secName?{...s,exercises:[...s.exercises,{name:nm,equip:"Bodyweight",sets:1,reps:"10-12",rest:"90s",weight:"",cue:""}]}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u);
+      };
+      const launchSectionSession=sec=>{
+        setActiveRoutine({name:`${sec.section} Workout`,exercises:sec.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
+      };
+      return (
+        <div>
+          <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><h2 className="font-bold" style={{fontSize:"20px"}}>Strength & Hypertrophy</h2><p className="text-small">Progressive overload tracking</p></div>
+            <span className="badge" style={{background:"var(--success-muted)",color:"var(--success)",borderColor:"var(--success)"}}>{counts.workouts} Done</span>
+          </div>
+          <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderColor:"var(--accent)",borderWidth:"1.5px"}}>
+            <div>
+              <p className="font-bold" style={{fontSize:"16px"}}>Full Body</p>
+              <p className="text-small">{workouts.reduce((a,s)=>a+s.exercises.length,0)} exercises — all sections</p>
+            </div>
+            <button className="button-primary" style={{width:"auto",padding:"10px 20px",fontSize:"14px"}}
+              onClick={()=>setActiveRoutine({name:"Full Body Workout",exercises:workouts.flatMap(s=>s.exercises.map(e=>({...e,section:s.section,weight:weights[e.name]||e.weight||""})))})}>
+              Start
+            </button>
+          </div>
+          {workouts.map((sec,si)=>{
+            const isOpen=activeSection===sec.section;
+            return (
+              <div key={si} className="card" style={{padding:"12px 16px"}}>
+                <div className="flex-between" style={{cursor:"pointer"}} onClick={()=>setActiveSection(isOpen?null:sec.section)}>
+                  <div className="flex-row"><p className="font-bold" style={{fontSize:"17px"}}>{sec.section}</p><span className="exercise-count-badge">{sec.exercises.length}</span></div>
+                  <span style={{fontSize:"18px",transition:"transform 0.2s",transform:isOpen?"rotate(90deg)":"none"}}>→</span>
+                </div>
+                {isOpen&&(
+                  <div style={{marginTop:"16px",borderTop:"1px solid var(--card-border)",paddingTop:"12px"}}>
+                    <button className="button-primary" style={{marginBottom:"16px",padding:"10px 14px",fontSize:"14px"}} onClick={()=>launchSectionSession(sec)}>Start Session</button>
+                    {sec.exercises.map((ex,ei)=>(
+                      <div key={ei} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none"}}>
+                        <div style={{maxWidth:"60%",cursor:"pointer"}} onClick={()=>triggerEdit(ex,sec.section)}>
+                          <p className="font-bold" style={{fontSize:"14px",textDecoration:"underline"}}>{ex.name}</p>
+                          <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets — {ex.reps}</p>
+                        </div>
+                        <WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
+                      </div>
+                    ))}
+                    <button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ── TendonsTab ─────────────────────────────────────────────────────────────
+    function TendonsTab({weights,saveWeight,counts,setActiveRoutine}) {
+      const [selectedPhase,setSelectedPhase]=useState("p1");
+      const pd=TENDON[selectedPhase];
+      const launchTendonSession=sess=>{
+        setActiveRoutine({name:`Tendon - ${pd.label} (${sess.label})`,exercises:sess.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
+      };
+      return (
+        <div>
+          <div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
+            {Object.keys(TENDON).map(k=>(
+              <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?TENDON[k].color:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>
+                {TENDON[k].label}
+              </button>
+            ))}
+          </div>
+          <div className="card">
+            <div className="flex-between">
+              <div><h2 className="font-bold" style={{fontSize:"20px",color:pd.color}}>{pd.name}</h2><p className="text-small">{pd.weeks}</p></div>
+              <span className="badge" style={{background:`${pd.color}20`,color:pd.color,borderColor:pd.color}}>{counts.tendons} Done</span>
+            </div>
+            <p className="exercise-cue-box" style={{borderLeftColor:pd.color,marginTop:"14px"}}>{pd.meta}</p>
+          </div>
+          {pd.sessions.map((sess,i)=>(
+            <div key={i} className="card">
+              <div className="flex-between" style={{marginBottom:"12px"}}>
+                <div><h3 className="font-bold" style={{fontSize:"17px"}}>{sess.label}</h3><p className="text-small">{sess.day}</p></div>
+                <button className="button-primary" style={{width:"auto",padding:"8px 16px",fontSize:"13px",background:pd.color,borderColor:pd.color}} onClick={()=>launchTendonSession(sess)}>Start</button>
+              </div>
+              <div style={{borderTop:"1.5px solid var(--card-border)",paddingTop:"8px"}}>
+                {sess.exercises.map((ex,ei)=>(
+                  <div key={ei} className="flex-between" style={{padding:"8px 0",borderBottom:ei+1<sess.exercises.length?"0.5px solid var(--card-border)":"none"}}>
+                    <div style={{maxWidth:"60%"}}><p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p><p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}</p></div>
+                    <WeightChip exKey={ex.name} defaultWeight={ex.weight} color={pd.color} weights={weights} onSave={saveWeight}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ── StretchesTab ───────────────────────────────────────────────────────────
+    function StretchesTab({counts,setActiveRoutine}) {
+      const [selectedPhase,setSelectedPhase]=useState(1);
+      const phaseData=SPHASE[selectedPhase];
+      const stretchList=getPhaseStretches(selectedPhase);
+      const launchStretchSession=()=>{
+        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s"}))});
+      };
+      return (
+        <div>
+          <div className="card" style={{padding:"8px",display:"flex",gap:"4px",marginBottom:"14px",overflowX:"auto"}}>
+            {Object.keys(SPHASE).map(k=>{const a=selectedPhase===parseInt(k);return(
+              <button key={k} onClick={()=>setSelectedPhase(parseInt(k))} style={{flex:"1 0 auto",padding:"8px 12px",borderRadius:"10px",background:a?SPHASE[k].color:"transparent",color:a?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"12px"}}>
+                Phase {k}
+              </button>
+            );})}
+          </div>
+          <div className="card">
+            <div className="flex-between">
+              <div><h2 className="font-bold" style={{fontSize:"20px",color:phaseData.color}}>{phaseData.name}</h2><p className="text-small">{phaseData.months}</p></div>
+              <span className="badge" style={{background:`${phaseData.color}20`,color:phaseData.color,borderColor:phaseData.color}}>{counts.stretches} Done</span>
+            </div>
+            <p className="text-small" style={{marginTop:"8px"}}>{phaseData.desc}</p>
+            <button className="button-primary" style={{marginTop:"16px",background:phaseData.color,borderColor:phaseData.color}} onClick={launchStretchSession}>
+              Start — {fmtMin(getPhaseTotalSec(selectedPhase))}
+            </button>
+          </div>
+          <div className="card" style={{padding:"12px 16px"}}>
+            <h3 className="font-bold" style={{fontSize:"16px",marginBottom:"12px"}}>Exercises</h3>
+            {stretchList.map((st,i)=>(
+              <div key={i} style={{padding:"10px 0",borderBottom:i+1<stretchList.length?"0.5px solid var(--card-border)":"none"}}>
+                <div className="flex-between">
+                  <p className="font-bold">{st.name}{st.isNew&&<span className="badge" style={{fontSize:"9px"}}>NEW</span>}</p>
+                  <span className="text-small font-bold" style={{color:phaseData.color}}>{st.totalSec}s</span>
+                </div>
+                <p className="text-small" style={{fontSize:"12px",marginTop:"4px"}}>{st.phases[selectedPhase]?.how||st.phases[1]?.how}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ── ProgressionTab ─────────────────────────────────────────────────────────
+    function ProgressionTab({reloadLogs}) {
+      const trackedPts=store.get("workout_progression",[]);
+      const uniqueEx=[...new Set(trackedPts.map(p=>p.exercise))];
+      const [selectedEx,setSelectedEx]=useState(uniqueEx[0]||"");
+      const filtered=trackedPts.filter(p=>p.exercise===selectedEx);
+      const handleReset=()=>{if(confirm("Delete all training history? This cannot be undone.")){localStorage.removeItem("workout_progression");localStorage.removeItem("workout_logs");localStorage.removeItem("workout_completed_counts");reloadLogs();setSelectedEx("");}};
+      return (
+        <div>
+          <div className="card"><h2 className="font-bold" style={{fontSize:"20px"}}>Progression</h2><p className="text-small">Weight and hold tracking over time</p></div>
+          {uniqueEx.length===0?(
+            <div className="card" style={{textAlign:"center",padding:"40px 20px",color:"var(--text-secondary)"}}>Complete sets inside Workouts or Tendons to start tracking.</div>
+          ):(
+            <div>
+              <div className="card">
+                <label className="field-label">Exercise</label>
+                <select className="field" value={selectedEx} onChange={e=>setSelectedEx(e.target.value)} style={{background:"var(--input-bg)",cursor:"pointer"}}>
+                  {uniqueEx.map((ue,i)=><option key={i} value={ue}>{ue}</option>)}
+                </select>
+                <h3 className="font-bold" style={{fontSize:"15px",marginTop:"14px"}}>Progression Curve</h3>
+                <ProgressionChart data={filtered} selectedExercise={selectedEx}/>
+              </div>
+              <div className="card">
+                <h3 className="font-bold" style={{fontSize:"15px",marginBottom:"10px"}}>Log History</h3>
+                {[...filtered].reverse().map((l,i)=>(
+                  <div key={i} className="progression-item">
+                    <span>{l.date}</span>
+                    <span className="font-bold text-accent">{l.weight||"BW"}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="card" style={{border:"1px dashed var(--danger)"}}>
+            <p className="font-bold text-danger">Danger Zone</p>
+            <p className="text-small" style={{marginBottom:"12px"}}>Wipe all logged history and counters.</p>
+            <button className="button-secondary" style={{color:"var(--danger)",border:"1.5px solid var(--danger)",background:"transparent"}} onClick={handleReset}>Reset All Tracking Data</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── App ────────────────────────────────────────────────────────────────────
     function App() {
-      const [activeTab, setActiveTab] = useState("home"); // "home", "workouts", "tendons", "stretches", "progression"
-      const [theme, setTheme] = useState(() => store.get("workout_theme", "dark"));
-      const [weights, setWeights] = useState(() => store.get("workout_weights", {}));
-      
-      // Exercises configurations (Workout additions/deletions saved locally)
-      const [workouts, setWorkouts] = useState(() => store.get("workout_sections_custom", FB_SECTIONS));
-      
-      // Completion and tracking logs state
-      const [logs, setLogs] = useState(() => store.get("workout_logs", []));
-      const [counts, setCounts] = useState(() => store.get("workout_completed_counts", {workouts:0, tendons:0, stretches:0}));
+      const [activeTab,setActiveTab]=useState("home");
+      const [theme,setTheme]=useState(()=>store.get("workout_theme","dark"));
+      const [weights,setWeights]=useState(()=>store.get("workout_weights",{}));
+      const [workouts,setWorkouts]=useState(()=>store.get("workout_sections_custom",FB_SECTIONS));
+      const [logs,setLogs]=useState(()=>store.get("workout_logs",[]));
+      const [counts,setCounts]=useState(()=>store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));
+      const [activeRoutine,setActiveRoutine]=useState(null);
+      const [modalContent,setModalContent]=useState(null);
 
-      // Active player routine overlays
-      const [activeRoutine, setActiveRoutine] = useState(null); // { name, exercises }
+      useEffect(()=>{document.documentElement.setAttribute('data-theme',theme);store.set("workout_theme",theme);},[theme]);
+      const reloadLogs=()=>{setLogs(store.get("workout_logs",[]));setCounts(store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));};
+      const saveWeight=(k,v)=>{const u={...weights,[k]:v};setWeights(u);store.set("workout_weights",u);};
+      const cycleTheme=()=>{const t=["dark","light","anti-red"];setTheme(t[(t.indexOf(theme)+1)%t.length]);};
 
-      // Custom dialog modal tracking
-      const [modalContent, setModalContent] = useState(null); // { type, data }
-
-      // Set document theme attribute
-      useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
-        store.set("workout_theme", theme);
-      }, [theme]);
-
-      // Sync active state counters
-      const reloadLogs = () => {
-        setLogs(store.get("workout_logs", []));
-        setCounts(store.get("workout_completed_counts", {workouts:0, tendons:0, stretches:0}));
+      const handleEditSave=updatedEx=>{
+        if(!modalContent?.data) return;
+        const u=workouts.map(s=>s.section===modalContent.data.secName?{...s,exercises:s.exercises.map(e=>e.name===modalContent.data.ex.name?updatedEx:e)}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u); setModalContent(null);
+      };
+      const handleEditDelete=()=>{
+        if(!modalContent?.data) return;
+        const u=workouts.map(s=>s.section===modalContent.data.secName?{...s,exercises:s.exercises.filter(e=>e.name!==modalContent.data.ex.name)}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u); setModalContent(null);
       };
 
-      const saveWeight = (key, val) => {
-        const upd = {...weights, [key]: val};
-        setWeights(upd);
-        store.set("workout_weights", upd);
-      };
-
-      const triggerThemeToggle = () => {
-        const themes = ["dark", "light", "anti-red"];
-        const next = themes[(themes.indexOf(theme) + 1) % themes.length];
-        setTheme(next);
-      };
-
-      // ── RENDER HOME TAB ────────────────────────────────────────────────────────
-      const renderHome = () => {
-        // Build 30-Day Contribution Grid Calendar
-        const last30Days = [];
-        const today = new Date();
-        
-        for (let i = 29; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(today.getDate() - i);
-          const dateStr = d.toISOString().split('T')[0];
-          
-          // Check for completed logs on this date
-          const dayLogs = logs.filter(l => l.date === dateStr);
-          let status = "none"; // "none", "completed", "partial"
-          if (dayLogs.length > 0) {
-            const hasFull = dayLogs.some(l => !l.isPartial);
-            status = hasFull ? "completed" : "partial";
-          }
-
-          last30Days.push({
-            date: dateStr,
-            dayName: d.toLocaleDateString('en-US', {weekday: 'short'}).charAt(0),
-            dayNum: d.getDate(),
-            status,
-            logs: dayLogs
-          });
+      // ── Home tab ─────────────────────────────────────────────────────────────
+      const renderHome=()=>{
+        const today=new Date();
+        const last30=[];
+        for(let i=29;i>=0;i--){
+          const d=new Date(); d.setDate(today.getDate()-i);
+          const ds=d.toISOString().split('T')[0];
+          const dl=logs.filter(l=>l.date===ds);
+          let status="none";
+          if(dl.length>0) status=dl.some(l=>!l.isPartial)?"completed":"partial";
+          last30.push({date:ds,dayNum:d.getDate(),status,logs:dl});
         }
-
-        const showDayDetails = (day) => {
-          if (day.logs.length === 0) return;
-          setModalContent({
-            type: "day_details",
-            data: day
-          });
-        };
-
+        const showDay=day=>{if(day.logs.length>0) setModalContent({type:"day_details",data:day});};
         return (
           <div>
             <div className="card">
-              <h2 className="font-bold" style={{fontSize: "20px", marginBottom: "4px"}}>Welcome Back</h2>
-              <p className="text-small">Keep tracking your strength & joint longevity daily</p>
-              
-              <div className="badge-bar" style={{marginTop: "16px"}}>
-                <div className="session-badge">
-                  <span>💪 Workouts:</span>
-                  <span className="text-accent font-bold">{counts.workouts} done</span>
-                </div>
-                <div className="session-badge">
-                  <span>🦵 Tendons:</span>
-                  <span className="text-accent font-bold">{counts.tendons} done</span>
-                </div>
-                <div className="session-badge">
-                  <span>🧘 Stretches:</span>
-                  <span className="text-accent font-bold">{counts.stretches} done</span>
-                </div>
+              <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Training Log</h2>
+              <p className="text-small">Strength, tendon, and mobility tracking</p>
+              <div className="badge-bar" style={{marginTop:"16px"}}>
+                <div className="session-badge"><span>Workouts:</span><span className="text-accent font-bold">{counts.workouts}</span></div>
+                <div className="session-badge"><span>Tendon:</span><span className="text-accent font-bold">{counts.tendons}</span></div>
+                <div className="session-badge"><span>Stretches:</span><span className="text-accent font-bold">{counts.stretches}</span></div>
               </div>
             </div>
-
-            {/* 30-Day History Calendar Grid */}
             <div className="card">
-              <h3 className="font-bold" style={{fontSize: "16px"}}>30-Day Grid</h3>
-              <p className="text-small" style={{marginBottom: "12px"}}>Tap on highlighted days to view session logs</p>
-              
+              <h3 className="font-bold" style={{fontSize:"16px"}}>30-Day Grid</h3>
+              <p className="text-small" style={{marginBottom:"12px"}}>Tap a highlighted day to view session logs</p>
               <div className="calendar-grid">
-                {/* Week headers */}
-                {["S","M","T","W","T","F","S"].map((h, i) => (
-                  <div key={i} className="calendar-header-day">{h}</div>
-                ))}
-                
-                {/* Padding to align first grid blocks based on correct day-of-week */}
-                {Array.from({length: new Date(last30Days[0].date).getDay()}).map((_, i) => (
-                  <div key={`pad-${i}`} className="calendar-day-box empty"></div>
-                ))}
-
-                {last30Days.map((day, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => showDayDetails(day)}
-                    className={`calendar-day-box ${day.status === "completed" ? "completed" : ""} ${day.status === "partial" ? "partial" : ""} ${day.date === today.toISOString().split('T')[0] ? "today" : ""}`}
-                  >
+                {["S","M","T","W","T","F","S"].map((h,i)=><div key={i} className="calendar-header-day">{h}</div>)}
+                {Array.from({length:new Date(last30[0].date).getDay()}).map((_,i)=><div key={`p${i}`} className="calendar-day-box empty"/>)}
+                {last30.map((day,i)=>(
+                  <div key={i} onClick={()=>showDay(day)} className={`calendar-day-box ${day.status==="completed"?"completed":""} ${day.status==="partial"?"partial":""} ${day.date===today.toISOString().split('T')[0]?"today":""}`}>
                     <span>{day.dayNum}</span>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Support Config toggles */}
-            <SoundConfigCard />
-            <WakeLockToggle />
+            <SoundConfigCard/>
+            <WakeLockToggle/>
           </div>
         );
       };
 
-      // ── RENDER STRENGTH WORKOUTS TAB ───────────────────────────────────────────
-      const renderWorkouts = () => {
-        const [activeSection, setActiveSection] = useState(null);
-
-        const triggerEdit = (ex, secName) => {
-          setModalContent({
-            type: "edit_exercise",
-            data: { ex, secName, type: "workout" }
-          });
-        };
-
-        const handleEditSave = (updatedEx) => {
-          const updatedWorkouts = workouts.map(s => {
-            if (s.section === modalContent.data.secName) {
-              return {
-                ...s,
-                exercises: s.exercises.map(e => e.name === modalContent.data.ex.name ? updatedEx : e)
-              };
-            }
-            return s;
-          });
-          setWorkouts(updatedWorkouts);
-          store.set("workout_sections_custom", updatedWorkouts);
-          setModalContent(null);
-        };
-
-        const handleEditDelete = () => {
-          const updatedWorkouts = workouts.map(s => {
-            if (s.section === modalContent.data.secName) {
-              return {
-                ...s,
-                exercises: s.exercises.filter(e => e.name !== modalContent.data.ex.name)
-              };
-            }
-            return s;
-          });
-          setWorkouts(updatedWorkouts);
-          store.set("workout_sections_custom", updatedWorkouts);
-          setModalContent(null);
-        };
-
-        const handleAddExercise = (secName) => {
-          const newExName = prompt("Enter new exercise name:");
-          if (!newExName) return;
-          const updatedWorkouts = workouts.map(s => {
-            if (s.section === secName) {
-              return {
-                ...s,
-                exercises: [...s.exercises, {
-                  name: newExName,
-                  equip: "Bodyweight",
-                  sets: 1,
-                  reps: "10-12",
-                  rest: "90s",
-                  cue: "Custom exercise cue details."
-                }]
-              };
-            }
-            return s;
-          });
-          setWorkouts(updatedWorkouts);
-          store.set("workout_sections_custom", updatedWorkouts);
-        };
-
-        const launchSectionSession = (sec) => {
-          // Bind custom weights saved locally to active routine exercises
-          const loadedExercises = sec.exercises.map(e => ({
-            ...e,
-            weight: weights[e.name] || e.weight || ""
-          }));
-          
-          setActiveRoutine({
-            name: `${sec.section} Workout`,
-            exercises: loadedExercises
-          });
-        };
-
-        return (
-          <div>
-            <div className="card" style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-              <div>
-                <h2 className="font-bold" style={{fontSize: "20px"}}>Strength & Hypertrophy</h2>
-                <p className="text-small">Progressive overload tracking</p>
-              </div>
-              <span className="badge" style={{background: "var(--success-muted)", color: "var(--success)", borderColor: "var(--success)"}}>
-                {counts.workouts} Sessions Done
-              </span>
-            </div>
-
-            {workouts.map((sec, secIdx) => {
-              const isOpen = activeSection === sec.section;
-              return (
-                <div key={secIdx} className="card" style={{padding: "12px 16px"}}>
-                  <div className="flex-between" style={{cursor: "pointer"}} onClick={() => setActiveSection(isOpen ? null : sec.section)}>
-                    <div className="flex-row">
-                      <p className="font-bold" style={{fontSize: "17px"}}>{sec.section}</p>
-                      <span className="exercise-count-badge">{sec.exercises.length} Exercises</span>
-                    </div>
-                    <span style={{fontSize: "18px", transition: "transform 0.2s", transform: isOpen ? "rotate(90deg)" : "none"}}>➔</span>
-                  </div>
-
-                  {isOpen && (
-                    <div style={{marginTop: "16px", borderTop: "1px solid var(--card-border)", paddingTop: "12px"}}>
-                      
-                      {/* Section Session Player Launch */}
-                      <button className="button-primary" style={{marginBottom: "16px", padding: "10px 14px", fontSize: "14px"}} onClick={() => launchSectionSession(sec)}>
-                        ▶ Start Section Session Flow
-                      </button>
-
-                      {sec.exercises.map((ex, exIdx) => (
-                        <div key={exIdx} className="flex-between" style={{padding: "10px 0", borderBottom: exIdx + 1 < sec.exercises.length ? "0.5px solid var(--card-border)" : "none"}}>
-                          <div style={{maxWidth: "60%", cursor: "pointer"}} onClick={() => triggerEdit(ex, sec.section)}>
-                            <p className="font-bold" style={{fontSize: "14px", textDecoration: "underline"}}>{ex.name}</p>
-                            <p className="text-small" style={{fontSize: "11px", marginTop: "2px"}}>{ex.equip} • {ex.sets} sets • {ex.reps}</p>
-                          </div>
-                          
-                          {/* Weight selector chip */}
-                          <WeightChip 
-                            exKey={ex.name} 
-                            defaultWeight={ex.weight} 
-                            color="var(--accent)" 
-                            weights={weights} 
-                            onSave={saveWeight} 
-                          />
-                        </div>
-                      ))}
-
-                      <button className="button-secondary" style={{marginTop: "12px", padding: "8px", fontSize: "13px"}} onClick={() => handleAddExercise(sec.section)}>
-                        ➕ Add Custom Exercise
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      };
-
-      // ── RENDER REHAB TENDONS TAB ───────────────────────────────────────────────
-      const renderTendons = () => {
-        const [selectedPhase, setSelectedPhase] = useState("p1");
-        const phaseData = TENDON[selectedPhase];
-
-        const launchTendonSession = (sess) => {
-          // Holds for tendons specifically but all holds don’t need reps.
-          // Map hold property inside active timers automatically
-          const exercises = sess.exercises.map(e => ({
-            ...e,
-            sets: e.sets || 3,
-            hold: e.hold || "30s",
-            weight: weights[e.name] || e.weight || "",
-            // Provide empty rep configuration so UI renders holds instead of reps
-            reps: null
-          }));
-
-          setActiveRoutine({
-            name: `Tendon Rehab - ${phaseData.label} (${sess.label})`,
-            exercises
-          });
-        };
-
-        return (
-          <div>
-            {/* Phase Selector tabs */}
-            <div className="card" style={{padding: "8px", display: "flex", gap: "6px", marginBottom: "14px"}}>
-              {Object.keys(TENDON).map((key) => (
-                <button
-                  key={key}
-                  onClick={() => setSelectedPhase(key)}
-                  style={{
-                    flex: 1, padding: "10px", borderRadius: "10px",
-                    background: selectedPhase === key ? TENDON[key].color : "transparent",
-                    color: selectedPhase === key ? "var(--btn-text)" : "var(--text-secondary)",
-                    fontWeight: "700", fontSize: "13px"
-                  }}
-                >
-                  {TENDON[key].label}
-                </button>
-              ))}
-            </div>
-
-            <div className="card">
-              <div className="flex-between">
-                <div>
-                  <h2 className="font-bold" style={{fontSize: "20px", color: phaseData.color}}>{phaseData.name} Rehab</h2>
-                  <p className="text-small">{phaseData.weeks}</p>
-                </div>
-                <span className="badge" style={{background: `${phaseData.color}20`, color: phaseData.color, borderColor: phaseData.color}}>
-                  {counts.tendons} Completed
-                </span>
-              </div>
-              <p className="exercise-cue-box" style={{borderLeftColor: phaseData.color, marginTop: "14px"}}>
-                {phaseData.meta}
-              </p>
-            </div>
-
-            {/* Sessions Cards */}
-            {phaseData.sessions.map((sess, idx) => (
-              <div key={idx} className="card">
-                <div className="flex-between" style={{marginBottom: "12px"}}>
-                  <div>
-                    <h3 className="font-bold" style={{fontSize: "17px"}}>{sess.label}</h3>
-                    <p className="text-small">{sess.day}</p>
-                  </div>
-                  <button className="button-primary" style={{width: "auto", padding: "8px 16px", fontSize: "13px", background: phaseData.color, borderColor: phaseData.color}} onClick={() => launchTendonSession(sess)}>
-                    ▶ Play
-                  </button>
-                </div>
-
-                <div style={{borderTop: "1.5px solid var(--card-border)", paddingTop: "8px"}}>
-                  {sess.exercises.map((ex, exIdx) => (
-                    <div key={exIdx} className="flex-between" style={{padding: "8px 0", borderBottom: exIdx + 1 < sess.exercises.length ? "0.5px solid var(--card-border)" : "none"}}>
-                      <div style={{maxWidth: "60%"}}>
-                        <p className="font-bold" style={{fontSize: "14px"}}>{ex.name}</p>
-                        {/* Holds don't need reps display */}
-                        <p className="text-small" style={{fontSize: "11px"}}>{ex.equip} • {ex.sets} sets • Hold {ex.hold}</p>
-                      </div>
-                      
-                      <WeightChip 
-                        exKey={ex.name} 
-                        defaultWeight={ex.weight} 
-                        color={phaseData.color} 
-                        weights={weights} 
-                        onSave={saveWeight} 
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      };
-
-      // ── RENDER MOBILITY STRETCHES TAB ──────────────────────────────────────────
-      const renderStretches = () => {
-        const [selectedPhase, setSelectedPhase] = useState(1);
-        const phaseData = SPHASE[selectedPhase];
-        const stretchList = getPhaseStretches(selectedPhase);
-
-        const launchStretchSession = () => {
-          // Process stretch lists and compile separate timers for one-sided exercises
-          const exercises = [];
-          
-          stretchList.forEach(s => {
-            const sideLabels = s.sideLabels || [];
-            
-            if (sideLabels.length > 0) {
-              // For stretches, if its a one sided stretch do a separate timer instead of an overall timer
-              // Set hold seconds specifically for the sides
-              const rawSecs = s.totalSec;
-              exercises.push({
-                ...s,
-                sets: 1,
-                hold: `${rawSecs}s`,
-                rest: "30s", // standard transition rest
-                sideLabels
-              });
-            } else {
-              exercises.push({
-                ...s,
-                sets: 1,
-                hold: `${s.totalSec}s`,
-                rest: "30s"
-              });
-            }
-          });
-
-          setActiveRoutine({
-            name: `Stretch Phase ${selectedPhase} — ${phaseData.name}`,
-            exercises
-          });
-        };
-
-        return (
-          <div>
-            {/* Phase Tabs Selector */}
-            <div className="card" style={{padding: "8px", display: "flex", gap: "4px", marginBottom: "14px", overflowX: "auto"}}>
-              {Object.keys(SPHASE).map((key) => {
-                const isActive = selectedPhase === parseInt(key);
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedPhase(parseInt(key))}
-                    style={{
-                      flex: "1 0 auto", padding: "8px 12px", borderRadius: "10px",
-                      background: isActive ? SPHASE[key].color : "transparent",
-                      color: isActive ? "var(--btn-text)" : "var(--text-secondary)",
-                      fontWeight: "700", fontSize: "12px"
-                    }}
-                  >
-                    Phase {key}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="card">
-              <div className="flex-between">
-                <div>
-                  <h2 className="font-bold" style={{fontSize: "20px", color: phaseData.color}}>{phaseData.name}</h2>
-                  <p className="text-small">{phaseData.months}</p>
-                </div>
-                <span className="badge" style={{background: `${phaseData.color}20`, color: phaseData.color, borderColor: phaseData.color}}>
-                  {counts.stretches} Completed
-                </span>
-              </div>
-              <p className="text-small" style={{marginTop: "8px"}}>{phaseData.desc}</p>
-              
-              <button className="button-primary" style={{marginTop: "16px", background: phaseData.color, borderColor: phaseData.color}} onClick={launchStretchSession}>
-                ▶ Start Phase Stretching Flow ({fmtMin(getPhaseTotalSec(selectedPhase))})
-              </button>
-            </div>
-
-            {/* Stretch Guides details Accordions */}
-            <div className="card" style={{padding: "8px 16px"}}>
-              <h3 className="font-bold" style={{fontSize: "16px", marginBottom: "12px"}}>Phase Stretching Guides</h3>
-              {PHASE_INFO[selectedPhase] && PHASE_INFO[selectedPhase].map((info, idx) => (
-                <div key={idx} style={{marginBottom: "14px", borderBottom: idx + 1 < PHASE_INFO[selectedPhase].length ? "0.5px solid var(--card-border)" : "none", paddingBottom: "10px"}}>
-                  <h4 className="font-bold" style={{fontSize: "14px", color: phaseData.color}}>{info.title}</h4>
-                  {info.body && info.body.map((b, bIdx) => <p key={bIdx} className="text-small" style={{fontSize: "12px", marginTop: "4px"}}>{b}</p>)}
-                  {info.items && (
-                    <ul style={{paddingLeft: "16px", marginTop: "6px"}}>
-                      {info.items.map((it, itIdx) => <li key={itIdx} className="text-small" style={{fontSize: "12px", listStyle: "circle", marginBottom: "4px"}}>{it}</li>)}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* List of active stretches */}
-            <div className="card" style={{padding: "12px 16px"}}>
-              <h3 className="font-bold" style={{fontSize: "16px", marginBottom: "12px"}}>Exercises Included</h3>
-              {stretchList.map((st, idx) => (
-                <div key={idx} style={{padding: "10px 0", borderBottom: idx + 1 < stretchList.length ? "0.5px solid var(--card-border)" : "none"}}>
-                  <div className="flex-between">
-                    <p className="font-bold" style={{fontSize: "14px"}}>{st.name} {st.isNew && <span className="badge" style={{fontSize: "9px"}}>NEW</span>}</p>
-                    <span className="text-small font-bold" style={{color: phaseData.color}}>{st.totalSec}s</span>
-                  </div>
-                  <p className="text-small" style={{fontSize: "12px", marginTop: "4px"}}>{st.phases[selectedPhase]?.how || st.phases[1]?.how}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      };
-
-      // ── RENDER PROGRESSION DASHBOARD TAB ───────────────────────────────────────
-      const renderProgression = () => {
-        // Find all logged exercises to construct dropdown selectors
-        const trackedPoints = store.get("workout_progression", []);
-        const uniqueExercises = [...new Set(trackedPoints.map(p => p.exercise))];
-        const [selectedEx, setSelectedEx] = useState(uniqueExercises[0] || "");
-
-        const filteredLogs = trackedPoints.filter(p => p.exercise === selectedEx);
-
-        const handleResetProgression = () => {
-          const conf = confirm("Delete all training history data? This cannot be undone.");
-          if (conf) {
-            localStorage.removeItem("workout_progression");
-            localStorage.removeItem("workout_logs");
-            localStorage.removeItem("workout_completed_counts");
-            reloadLogs();
-            setSelectedEx("");
-          }
-        };
-
-        return (
-          <div>
-            <div className="card">
-              <h2 className="font-bold" style={{fontSize: "20px"}}>Strength & Hold Progression</h2>
-              <p className="text-small">Visual progression analysis (zero-dependency Canvas charts)</p>
-            </div>
-
-            {uniqueExercises.length === 0 ? (
-              <div className="card" style={{textAlign: "center", padding: "40px 20px", color: "var(--text-secondary)"}}>
-                🏋️ No data logged yet. Complete standard sets inside Strength or Tendons to start tracking.
-              </div>
-            ) : (
-              <div>
-                {/* Select dropdown */}
-                <div className="card">
-                  <label className="field-label">Choose Exercise</label>
-                  <select 
-                    className="field" 
-                    value={selectedEx} 
-                    onChange={e => setSelectedEx(e.target.value)}
-                    style={{background: "var(--input-bg)", cursor: "pointer"}}
-                  >
-                    {uniqueExercises.map((ue, idx) => (
-                      <option key={idx} value={ue}>{ue}</option>
-                    ))}
-                  </select>
-
-                  <h3 className="font-bold" style={{fontSize: "15px", marginTop: "14px"}}>Progression Curve</h3>
-                  <ProgressionChart data={filteredLogs} selectedExercise={selectedEx} />
-                </div>
-
-                {/* Historical records */}
-                <div className="card">
-                  <h3 className="font-bold" style={{fontSize: "15px", marginBottom: "10px"}}>Logged Logs</h3>
-                  {filteredLogs.reverse().map((l, idx) => (
-                    <div key={idx} className="progression-item">
-                      <span>📅 {l.date}</span>
-                      <span className="font-bold text-accent">Hold/Weight: {l.weight || "BW"}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Reset data */}
-            <div className="card" style={{border: "1px dashed var(--danger)"}}>
-              <p className="font-bold text-danger">Danger Zone</p>
-              <p className="text-small" style={{marginBottom: "12px"}}>Wipe all logged history and streak database counters.</p>
-              <button className="button-secondary" style={{color: "var(--danger)", border: "1.5px solid var(--danger)", background: "transparent"}} onClick={handleResetProgression}>
-                Reset All Tracking Data
-              </button>
-            </div>
-          </div>
-        );
-      };
-
-      // ── Tap-Outside Modal Renderers ─────────────────────────────────────────────
-      const renderModal = () => {
-        if (!modalContent) return null;
-
-        if (modalContent.type === "day_details") {
-          const day = modalContent.data;
+      // ── Modal renderer ────────────────────────────────────────────────────────
+      const renderModal=()=>{
+        if(!modalContent) return null;
+        if(modalContent.type==="day_details"){
+          const day=modalContent.data;
           return (
-            <TapModal isOpen={true} onClose={() => setModalContent(null)}>
-              <h3 className="font-bold" style={{fontSize: "18px", marginBottom: "12px"}}>Completions on {day.date}</h3>
-              {day.logs.map((l, idx) => (
-                <div key={idx} className="card" style={{background: "var(--input-bg)", marginBottom: "8px"}}>
+            <TapModal isOpen onClose={()=>setModalContent(null)}>
+              <h3 className="font-bold" style={{fontSize:"18px",marginBottom:"12px"}}>{day.date}</h3>
+              {day.logs.map((l,i)=>(
+                <div key={i} className="card" style={{background:"var(--input-bg)",marginBottom:"8px"}}>
                   <div className="flex-between">
                     <p className="font-bold">{l.routine}</p>
-                    <span className={l.isPartial ? "text-warning font-bold" : "text-success font-bold"}>
-                      {l.isPartial ? "Partial (Half-Done)" : "Completed ✔"}
-                    </span>
+                    <span className={l.isPartial?"text-warning font-bold":"text-success font-bold"}>{l.isPartial?"Partial":"Done"}</span>
                   </div>
-                  <p className="text-small" style={{marginTop: "4px"}}>Finished: {l.completed} of {l.total} exercises</p>
+                  <p className="text-small" style={{marginTop:"4px"}}>{l.completed} of {l.total} exercises</p>
                 </div>
               ))}
             </TapModal>
           );
         }
-
-        if (modalContent.type === "edit_exercise") {
+        if(modalContent.type==="edit_exercise"){
           return (
-            <TapModal isOpen={true} onClose={() => setModalContent(null)}>
-              <EditModal 
-                ex={modalContent.data.ex}
-                onSave={handleEditSave}
-                onDelete={handleEditDelete}
-                onClose={() => setModalContent(null)}
-              />
+            <TapModal isOpen onClose={()=>setModalContent(null)}>
+              <EditModal ex={modalContent.data.ex} onSave={handleEditSave} onDelete={handleEditDelete} onClose={()=>setModalContent(null)}/>
             </TapModal>
           );
         }
-
         return null;
       };
 
       return (
         <div>
-          {/* Header Bar */}
           <header>
             <div className="app-title font-bold text-accent">WORKOUT FLOW</div>
-            <button 
-              onClick={triggerThemeToggle} 
-              style={{
-                border: "1.5px solid var(--card-border)", borderRadius: "20px",
-                padding: "6px 14px", fontSize: "12px", fontWeight: "700", textTransform: "uppercase"
-              }}
-            >
-              Theme: {theme}
+            <button onClick={cycleTheme} style={{border:"1.5px solid var(--card-border)",borderRadius:"20px",padding:"6px 14px",fontSize:"12px",fontWeight:"700",textTransform:"uppercase"}}>
+              {theme}
             </button>
           </header>
 
-          {/* Active Overlay Session Player */}
-          {activeRoutine && (
-            <SessionPlayer 
-              routineName={activeRoutine.name}
-              exercises={activeRoutine.exercises}
-              onFinish={() => {
-                setActiveRoutine(null);
-                reloadLogs();
-              }}
-              onCancel={() => setActiveRoutine(null)}
-            />
+          {activeRoutine&&(
+            <SessionPlayer routineName={activeRoutine.name} exercises={activeRoutine.exercises}
+              onFinish={()=>{setActiveRoutine(null);reloadLogs();}}
+              onCancel={()=>setActiveRoutine(null)}/>
           )}
 
-          {/* Body Content Container */}
           <div className="container">
-            {activeTab === "home" && renderHome()}
-            {activeTab === "workouts" && renderWorkouts()}
-            {activeTab === "tendons" && renderTendons()}
-            {activeTab === "stretches" && renderStretches()}
-            {activeTab === "progression" && renderProgression()}
+            {activeTab==="home"&&renderHome()}
+            {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} setModalContent={setModalContent}/>}
+            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine}/>}
+            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine}/>}
+            {activeTab==="progression"&&<ProgressionTab reloadLogs={reloadLogs}/>}
           </div>
 
-          {/* Modals manager */}
           {renderModal()}
 
-          {/* Persistent Nav Tab Bar */}
           <div className="tab-bar">
-            <button className={`tab-btn ${activeTab === "home" ? "active" : ""}`} onClick={() => setActiveTab("home")}>
-              <Icons.Home />
-              <span>Home</span>
-            </button>
-            <button className={`tab-btn ${activeTab === "workouts" ? "active" : ""}`} onClick={() => setActiveTab("workouts")}>
-              <Icons.Dumbbell />
-              <span>Workouts</span>
-            </button>
-            <button className={`tab-btn ${activeTab === "tendons" ? "active" : ""}`} onClick={() => setActiveTab("tendons")}>
-              <Icons.Tendon />
-              <span>Tendons</span>
-            </button>
-            <button className={`tab-btn ${activeTab === "stretches" ? "active" : ""}`} onClick={() => setActiveTab("stretches")}>
-              <Icons.Stretch />
-              <span>Stretches</span>
-            </button>
-            <button className={`tab-btn ${activeTab === "progression" ? "active" : ""}`} onClick={() => setActiveTab("progression")}>
-              <Icons.Chart />
-              <span>Progress</span>
-            </button>
+            {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:"Workouts",Icon:Icons.Dumbbell},{id:"tendons",label:"Tendons",Icon:Icons.Tendon},{id:"stretches",label:"Stretch",Icon:Icons.Stretch},{id:"progression",label:"Progress",Icon:Icons.Chart}].map(({id,label,Icon})=>(
+              <button key={id} className={`tab-btn ${activeTab===id?"active":""}`} onClick={()=>setActiveTab(id)}>
+                <Icon/><span>{label}</span>
+              </button>
+            ))}
           </div>
         </div>
       );
     }
 
-    const rootElement = document.getElementById("root");
-    const root = ReactDOM.createRoot(rootElement);
-    root.render(<App />);
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   </script>
 </body>
 </html>
