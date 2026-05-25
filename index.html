@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Workout">
+  <meta name="apple-mobile-web-app-title" content="Workout Flow">
   <meta name="theme-color" content="#121214">
   <title>Workout & Mobility Flow</title>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -118,6 +118,15 @@
     const store = {
       get:(k,d)=>{try{const v=localStorage.getItem(k);if(!v)return d;const p=JSON.parse(v);if(Array.isArray(d)&&!Array.isArray(p))return d;if(d&&typeof d==='object'&&!Array.isArray(d)){if(typeof p!=='object'||p===null||Array.isArray(p))return d;return{...d,...p};}return p;}catch{return d;}},
       set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
+    };
+
+    // ── Exercise classification helpers ───────────────────────────────────────
+    // Hold = isometric or timed stretch — no reps to log, timer is the record
+    const isHoldEx = ex => !!ex.hold || !!ex.totalSec;
+    // Bodyweight = no load to track in kg
+    const isBodyweightEx = ex => {
+      const eq = (ex.equip || "").toLowerCase();
+      return eq === "bodyweight" || eq.includes("band") || (ex.weight || "").toLowerCase() === "bodyweight";
     };
 
     // ── Audio ──────────────────────────────────────────────────────────────────
@@ -542,9 +551,15 @@
       };
       const updateSetLog=patch=>setSetLogs(p=>({...p,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,...p[setKey],...patch}}));
       const logCurrentSet=()=>{
-        const nextLogs={...setLogs,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,logged:true}};
+        const logData={
+          reps: isHoldEx(activeEx) ? "" : actualReps,
+          weight: isBodyweightEx(activeEx) ? "BW" : actualWeight,
+          seconds: isHoldEx(activeEx) ? (actualSeconds || String(parseInt((activeEx.hold||"").replace(/[^\d]/g,""))||activeEx.totalSec||0)) : "",
+          logged: true,
+        };
+        const nextLogs={...setLogs,[setKey]:logData};
         setSetLogs(nextLogs);
-        onLogSet(activeEx,{reps:actualReps,weight:actualWeight,seconds:actualSeconds});
+        onLogSet(activeEx,logData);
         if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext(nextLogs);
       };
       const moveToNext=(logsOverride=setLogs)=>{setCurrentSideIdx(0);const maxSets=activeEx.sets||1;if(setIdx+1<maxSets){setSetIdx(setIdx+1);setMode("work");}else{if(exIdx+1<exercises.length){setExIdx(exIdx+1);setSetIdx(0);setMode("work");}else{const completed=Object.values(logsOverride).filter(l=>l.logged).length;onLogSession(totalSets,completed,completed<totalSets);onFinish();}}};
@@ -587,16 +602,27 @@
               </div>
             ):(
               <div style={{margin:"40px auto",textAlign:"center"}}>
-                {mode==="work"&&<div><div style={{fontSize:"52px",fontWeight:"900"}}>{activeEx.reps}</div><div className="timer-label" style={{fontSize:"14px"}}>Target Reps</div>{activeEx.weight&&<div className="badge" style={{marginTop:"12px",fontSize:"14px",padding:"6px 14px"}}>{activeEx.weight}</div>}</div>}
+                {mode==="work"&&<div>
+                  <div style={{fontSize:"52px",fontWeight:"900"}}>{activeEx.reps}</div>
+                  <div className="timer-label" style={{fontSize:"14px"}}>Target Reps</div>
+                  {activeEx.weight&&!isBodyweightEx(activeEx)&&<div className="badge" style={{marginTop:"12px",fontSize:"14px",padding:"6px 14px"}}>{activeEx.weight}</div>}
+                </div>}
               </div>
             )}
-            {mode==="work"&&<div className="exercise-cue-box" style={{width:"100%",maxHeight:"110px",overflowY:"auto"}}><strong>Cue:</strong> {activeEx.cue}</div>}
-            {mode==="work"&&(
+            {mode==="work"&&activeEx.cue&&<div className="exercise-cue-box" style={{width:"100%",maxHeight:"110px",overflowY:"auto"}}><strong>Cue:</strong> {activeEx.cue}</div>}
+            {mode==="work"&&!isHoldEx(activeEx)&&(
               <div className="card" style={{width:"100%",padding:"12px",marginBottom:"0"}}>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px"}}>
-                  <div><label className="field-label">Reps</label><input className="field" value={actualReps} onChange={e=>updateSetLog({reps:e.target.value})}/></div>
-                  <div><label className="field-label">Weight</label><input className="field" value={actualWeight} onChange={e=>updateSetLog({weight:e.target.value})}/></div>
-                  <div><label className="field-label">Seconds</label><input className="field" value={actualSeconds} onChange={e=>updateSetLog({seconds:e.target.value})}/></div>
+                <div style={{display:"grid",gridTemplateColumns:isBodyweightEx(activeEx)?"1fr":"1fr 1fr",gap:"10px"}}>
+                  <div>
+                    <label className="field-label">Reps done</label>
+                    <input className="field" value={actualReps} onChange={e=>updateSetLog({reps:e.target.value})}/>
+                  </div>
+                  {!isBodyweightEx(activeEx)&&(
+                    <div>
+                      <label className="field-label">Weight</label>
+                      <input className="field" value={actualWeight} onChange={e=>updateSetLog({weight:e.target.value})}/>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -821,7 +847,7 @@
         saveCustom({...customStretches,[selectedPhase]:[...(customStretches[selectedPhase]||[]),item]});
       };
       const launchStretchSession=()=>{
-        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s"}))});
+        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s",cue:s.phases[selectedPhase]?.how||s.phases[1]?.how||""}))});
       };
       return (
         <div>
@@ -1170,7 +1196,7 @@
       return (
         <div>
           <header>
-            <div className="app-title font-bold text-accent">WORKOUT</div>
+            <div className="app-title font-bold text-accent">WORKOUT FLOW</div>
             <button onClick={cycleTheme} style={{border:"1.5px solid var(--card-border)",borderRadius:"20px",padding:"6px 14px",fontSize:"12px",fontWeight:"700",textTransform:"uppercase"}}>
               {theme}
             </button>
