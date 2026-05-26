@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Workout Flow">
+  <meta name="apple-mobile-web-app-title" content="Workout">
   <meta name="theme-color" content="#121214">
   <title>Workout & Mobility Flow</title>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -19,6 +19,7 @@
       --warning:#ff9f0a;--warning-muted:rgba(255,159,10,0.15);--danger:#ff453a;
       --danger-muted:rgba(255,69,58,0.15);--header-bg:#1c1c1e;--btn-text:#fff;
       --input-bg:rgba(255,255,255,0.05);--shadow:0 8px 24px rgba(0,0,0,0.3);--border-thickness:1px;
+      --timer-circle-bg:rgba(255,255,255,0.08);
     }
     :root[data-theme="light"] {
       --bg:#f5f5f7;--card-bg:#fff;--card-border:rgba(0,0,0,0.06);--text:#1c1c1e;
@@ -27,14 +28,81 @@
       --warning:#ff9500;--warning-muted:rgba(255,149,0,0.1);--danger:#ff3b30;
       --danger-muted:rgba(255,59,48,0.1);--header-bg:#fff;--btn-text:#fff;
       --input-bg:rgba(0,0,0,0.03);--shadow:0 8px 24px rgba(0,0,0,0.05);--border-thickness:1px;
+      --timer-circle-bg:rgba(0,0,0,0.06);
     }
     :root[data-theme="anti-red"] {
-      --bg:#000;--card-bg:#0c0c0c;--card-border:#ffd700;--text:#ffd700;
-      --text-secondary:#e5c158;--accent:#ffd700;--accent-muted:rgba(255,215,0,0.15);
-      --accent-rgb:255,215,0;--success:#ffd700;--success-muted:rgba(255,215,0,0.1);
-      --warning:#ffd700;--warning-muted:rgba(255,215,0,0.1);--danger:#ffd700;
-      --danger-muted:rgba(255,215,0,0.1);--header-bg:#0c0c0c;--btn-text:#000;
-      --input-bg:rgba(255,215,0,0.05);--shadow:none;--border-thickness:1.5px;
+      --bg:#000;--card-bg:#0a0a0a;--card-border:#ffd700;--text:#ffd700;
+      --text-secondary:#c8a800;--accent:#ffd700;--accent-muted:rgba(255,215,0,0.18);
+      --accent-rgb:255,215,0;--success:#ffd700;--success-muted:rgba(255,215,0,0.18);
+      --warning:#ffd700;--warning-muted:rgba(255,215,0,0.18);--danger:#ffd700;
+      --danger-muted:rgba(255,215,0,0.18);--header-bg:#0a0a0a;--btn-text:#000;
+      --input-bg:rgba(255,215,0,0.07);--shadow:none;--border-thickness:1.5px;
+      --timer-circle-bg:rgba(255,215,0,0.2);
+    }
+    :root[data-theme="anti-red"] .button-secondary {
+      border-color: #ffd700 !important;
+      color: #ffd700 !important;
+      background: rgba(255,215,0,0.07) !important;
+    }
+    :root[data-theme="anti-red"] .skip-btn-large {
+      background: rgba(255,215,0,0.12) !important;
+      border-color: #ffd700 !important;
+      color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .restart-btn {
+      background: rgba(255,215,0,0.07) !important;
+      border-color: #ffd700 !important;
+      color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .play-pause-btn {
+      background: #ffd700 !important;
+      color: #000 !important;
+    }
+    :root[data-theme="anti-red"] .timer-circle-progress {
+      stroke: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .timer-circle-bg {
+      stroke: rgba(255,215,0,0.2) !important;
+    }
+    :root[data-theme="anti-red"] .calendar-day-box.completed {
+      background: #ffd700 !important;
+      color: #000 !important;
+      border-color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .calendar-day-box.partial {
+      background: rgba(255,215,0,0.15) !important;
+      border-color: #ffd700 !important;
+      color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .calendar-day-box.today {
+      border-color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .badge {
+      background: rgba(255,215,0,0.15) !important;
+      color: #ffd700 !important;
+      border-color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .field {
+      border-color: rgba(255,215,0,0.35) !important;
+      color: #ffd700 !important;
+      background: rgba(255,215,0,0.05) !important;
+    }
+    :root[data-theme="anti-red"] .field:focus {
+      border-color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] select.field option {
+      background: #0a0a0a !important;
+      color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .exercise-cue-box {
+      border-left-color: #ffd700 !important;
+      color: #c8a800 !important;
+    }
+    :root[data-theme="anti-red"] .tab-btn.active {
+      color: #ffd700 !important;
+    }
+    :root[data-theme="anti-red"] .app-title {
+      color: #ffd700 !important;
     }
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;transition:background 0.25s,color 0.25s}
@@ -64,7 +132,7 @@
     .timer-overlay{position:fixed;inset:0;background:var(--bg);z-index:120;display:flex;flex-direction:column;padding:20px 20px calc(30px + env(safe-area-inset-bottom));animation:fadeIn 0.25s ease-out;overflow-y:auto}
     .timer-circle-container{position:relative;width:230px;height:230px;margin:40px auto;display:flex;align-items:center;justify-content:center}
     .timer-circle-svg{transform:rotate(-90deg);width:100%;height:100%}
-    .timer-circle-bg{fill:none;stroke:var(--card-border);stroke-width:10}
+    .timer-circle-bg{fill:none;stroke:var(--timer-circle-bg);stroke-width:10}
     .timer-circle-progress{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 0.1s linear}
     .timer-display{position:absolute;font-size:48px;font-weight:800;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:center;justify-content:center}
     .timer-label{font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary);margin-top:4px;font-weight:700}
@@ -95,6 +163,10 @@
     .badge-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
     .session-badge{background:var(--input-bg);border:var(--border-thickness) solid var(--card-border);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px}
     .progression-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--card-border);font-size:14px}
+    .custom-tick{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--card-border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s,border-color 0.15s}
+    .custom-tick.checked{background:var(--accent);border-color:var(--accent)}
+    .custom-tick svg{display:none}
+    .custom-tick.checked svg{display:block}
   </style>
 </head>
 <body>
@@ -102,7 +174,6 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // ── Utilities ──────────────────────────────────────────────────────────────
     const parseRestSec = r => {
       if (!r) return 90;
       const m = r.match(/(\d+(?:\.\d+)?)\s*min/);
@@ -112,24 +183,18 @@
       return 90;
     };
     const fmtTime = s => s <= 0 ? "0:00" : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-    // FIX 1: fmtMin was called in StretchesTab but never defined
     const fmtMin = s => { const m = Math.floor(s/60); const rem = s%60; return rem > 0 ? `${m}m ${rem}s` : `${m} min`; };
     const uid = () => Math.random().toString(36).slice(2,9);
+    const getThemeColor = (rawColor, themeOverride) => {
+      const t = themeOverride || document.documentElement.getAttribute('data-theme');
+      if (t === 'anti-red') return 'var(--accent)';
+      return rawColor;
+    };
     const store = {
       get:(k,d)=>{try{const v=localStorage.getItem(k);if(!v)return d;const p=JSON.parse(v);if(Array.isArray(d)&&!Array.isArray(p))return d;if(d&&typeof d==='object'&&!Array.isArray(d)){if(typeof p!=='object'||p===null||Array.isArray(p))return d;return{...d,...p};}return p;}catch{return d;}},
       set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
     };
 
-    // ── Exercise classification helpers ───────────────────────────────────────
-    // Hold = isometric or timed stretch — no reps to log, timer is the record
-    const isHoldEx = ex => !!ex.hold || !!ex.totalSec;
-    // Bodyweight = no load to track in kg
-    const isBodyweightEx = ex => {
-      const eq = (ex.equip || "").toLowerCase();
-      return eq === "bodyweight" || eq.includes("band") || (ex.weight || "").toLowerCase() === "bodyweight";
-    };
-
-    // ── Audio ──────────────────────────────────────────────────────────────────
     const playSynthTone = (freqs, duration, type='sine', volume=0.1) => {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
@@ -147,7 +212,17 @@
         });
       } catch {}
     };
+    const DEFAULT_SOUNDS = {tick:true,'rest-chime':true,chime:true,'beep-high':true};
+    let _activeSounds = null;
+    const getActiveSounds = () => {
+      if (!_activeSounds) _activeSounds = store.get("workout_active_sounds", DEFAULT_SOUNDS);
+      return _activeSounds;
+    };
+    const setActiveSounds = (s) => { _activeSounds = s; store.set("workout_active_sounds", s); };
+
     const triggerSound = type => {
+      const active = getActiveSounds();
+      if (!active[type]) return;
       if (type==='tick')        playSynthTone([440],0.05,'triangle',0.15);
       else if (type==='chime')  playSynthTone([523.25,659.25,783.99],0.6,'sine',0.2);
       else if (type==='rest-chime') playSynthTone([392,523.25],0.4,'sine',0.15);
@@ -155,18 +230,48 @@
     };
 
     function SoundConfigCard() {
+      const [sounds, setSounds] = useState(() => store.get("workout_active_sounds", DEFAULT_SOUNDS));
+      const toggle = key => {
+        const u = {...sounds, [key]: !sounds[key]};
+        setSounds(u);
+        setActiveSounds(u);
+      };
+      const SOUND_LIST = [
+        {key:'tick',    label:'Tick',   desc:'Rep count'},
+        {key:'beep-high',label:'Beep',  desc:'Side switch'},
+        {key:'rest-chime',label:'Rest', desc:'Rest start'},
+        {key:'chime',   label:'Done',   desc:'Set done'},
+      ];
       return (
         <div className="card">
           <div className="flex-between" style={{marginBottom:"12px"}}>
             <div>
-              <p className="font-bold">Sound Synthesizer</p>
-              <p className="text-small">Built-in audio alerts — works offline</p>
+              <p className="font-bold">Sound Alerts</p>
+              <p className="text-small">Tap to toggle — tick = active</p>
             </div>
-            <div style={{display:"flex",gap:"6px"}}>
-              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('tick')}>Tick</button>
-              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('rest-chime')}>Rest</button>
-              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('chime')}>Alarm</button>
-            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+            {SOUND_LIST.map(({key,label,desc})=>(
+              <button key={key} onClick={()=>toggle(key)}
+                style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",borderRadius:"10px",
+                  background:sounds[key]?"var(--accent-muted)":"var(--input-bg)",
+                  border:sounds[key]?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",
+                  color:sounds[key]?"var(--accent)":"var(--text-secondary)",
+                  textAlign:"left"}}>
+                <span style={{fontSize:"16px",lineHeight:"1"}}>{sounds[key]?"✓":"○"}</span>
+                <div>
+                  <div style={{fontWeight:"700",fontSize:"13px"}}>{label}</div>
+                  <div style={{fontSize:"11px",opacity:0.7}}>{desc}</div>
+                </div>
+                <button style={{marginLeft:"auto",fontSize:"11px",opacity:0.6,padding:"2px 6px",borderRadius:"6px",background:"var(--input-bg)",color:"var(--text-secondary)"}}
+                  onClick={e=>{e.stopPropagation();playSynthTone(
+                    key==='tick'?[440]:key==='chime'?[523.25,659.25,783.99]:key==='rest-chime'?[392,523.25]:[880],
+                    key==='tick'?0.05:key==='chime'?0.6:0.4,
+                    key==='tick'?'triangle':'sine',
+                    0.15
+                  );}}>▶</button>
+              </button>
+            ))}
           </div>
         </div>
       );
@@ -203,7 +308,6 @@
       );
     }
 
-    // ── Data ───────────────────────────────────────────────────────────────────
     const FB_SECTIONS = [
       {section:"Arms",exercises:[
         {name:"Overhead Triceps Extension",equip:"Cable",sets:2,reps:"8-12",weight:"",rest:"2 min",hero:true,
@@ -352,7 +456,6 @@
     const getPhaseStretches = phase => STRETCHES;
     const getPhaseTotalSec = phase => STRETCHES.reduce((a,s)=>a+s.totalSec,0);
 
-    // ── Icons ──────────────────────────────────────────────────────────────────
     const Icons = {
       Home:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
       Dumbbell:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="10" width="15" height="4" rx="1"/><rect x="1" y="9" width="3.5" height="6" rx="1"/><rect x="19.5" y="9" width="3.5" height="6" rx="1"/></svg>,
@@ -364,7 +467,6 @@
       Pause:({size=24})=><svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>,
     };
 
-    // ── WeightChip ─────────────────────────────────────────────────────────────
     function WeightChip({exKey,defaultWeight,color,weights,onSave}) {
       const [editing,setEditing]=useState(false);
       const ref=useRef(null);
@@ -377,13 +479,23 @@
       return <button onClick={startEdit} style={{background:val?"var(--accent-muted)":"var(--input-bg)",border:val?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",borderRadius:"8px",color:val?"var(--accent)":"var(--text-secondary)",fontSize:"13px",fontWeight:"700",padding:"6px 12px"}}>{val||"Set Weight"}</button>;
     }
 
-    // ── TapModal ───────────────────────────────────────────────────────────────
+    function RepsChip({exKey,defaultReps,color,reps,onSave}) {
+      const [editing,setEditing]=useState(false);
+      const ref=useRef(null);
+      const stored=reps[exKey];
+      const val=stored!==undefined?stored:(defaultReps||"");
+      const [draft,setDraft]=useState(val);
+      const startEdit=e=>{e.stopPropagation();setDraft(val);setEditing(true);setTimeout(()=>{if(ref.current){ref.current.focus();ref.current.select();}},50);};
+      const commit=()=>{onSave(exKey,draft.trim());setEditing(false);};
+      if(editing) return <input ref={ref} value={draft} onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} onClick={e=>e.stopPropagation()} placeholder="e.g. 10" style={{background:"var(--accent-muted)",border:"1.5px solid var(--accent)",borderRadius:"8px",color:"var(--text)",fontSize:"13px",fontWeight:"700",padding:"6px 10px",width:"75px",textAlign:"center"}}/>;
+      return <button onClick={startEdit} style={{background:val?"var(--accent-muted)":"var(--input-bg)",border:val?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",borderRadius:"8px",color:val?"var(--accent)":"var(--text-secondary)",fontSize:"13px",fontWeight:"700",padding:"6px 12px"}}>{val||"Reps"}</button>;
+    }
+
     function TapModal({isOpen,onClose,children}) {
       if(!isOpen) return null;
       return <div className="modal-bg" onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div className="modal-body"><div className="drag-bar"/>{children}</div></div>;
     }
 
-    // ── EditModal ──────────────────────────────────────────────────────────────
     function EditModal({ex,onSave,onDelete,onClose}) {
       const [f,setF]=useState({name:ex.name||"",equip:ex.equip||"",sets:String(ex.sets||1),reps:String(ex.reps||"10-12"),rest:ex.rest||"90s",weight:ex.weight||ex.defaultWeight||"",cue:ex.cue||"",hold:ex.hold||"",tempo:ex.tempo||""});
       const upd=(k,v)=>setF(p=>({...p,[k]:v}));
@@ -414,7 +526,6 @@
       );
     }
 
-    // ── ProgressionChart ───────────────────────────────────────────────────────
     function ProgressionChart({data,selectedExercise}) {
       const canvasRef=useRef(null);
       useEffect(()=>{
@@ -443,12 +554,13 @@
       return <div className="chart-container"><canvas ref={canvasRef} className="chart-svg" style={{width:"100%",height:"100%"}}/></div>;
     }
 
-    // ── SessionPlayer ──────────────────────────────────────────────────────────
     function SessionPlayer({routineName,exercises,onFinish,onCancel}) {
       const [exIdx,setExIdx]=useState(0);
       const [setIdx,setSetIdx]=useState(0);
       const [mode,setMode]=useState("work");
       const [setLogs,setSetLogs]=useState({});
+      const [historyStack,setHistoryStack]=useState([]);
+      const [isFinishedScreen,setIsFinishedScreen]=useState(false);
       const activeEx=exercises[exIdx];
       const nextEx=exIdx+1<exercises.length?exercises[exIdx+1]:null;
       const setKey=`${exIdx}-${setIdx}`;
@@ -467,25 +579,20 @@
       const startTimeRef=useRef(0);
       const accRef=useRef(0);
       const rafRef=useRef(null);
-      const autoStartRestRef=useRef(false);
+      const [pendingAutoStart,setPendingAutoStart]=useState(null);
 
       const setupTimer=()=>{
         accRef.current=0;
         if(mode==="work"){
-          if(activeEx.hold){const s=parseInt(activeEx.hold.replace(/[^\d]/g,''))||30;const p=hasSides?Math.round(s/sideLabels.length):s;setTargetSeconds(p);setRemaining(p);}
-          else if(activeEx.totalSec){const p=hasSides?Math.round(activeEx.totalSec/sideLabels.length):activeEx.totalSec;setTargetSeconds(p);setRemaining(p);}
+          let p=0;
+          if(activeEx.hold){const s=parseInt(activeEx.hold.replace(/[^\d]/g,''))||30;p=hasSides?Math.round(s/sideLabels.length):s;setTargetSeconds(p);setRemaining(p);}
+          else if(activeEx.totalSec){p=hasSides?Math.round(activeEx.totalSec/sideLabels.length):activeEx.totalSec;setTargetSeconds(p);setRemaining(p);}
           else{setTargetSeconds(0);setRemaining(0);}
           setIsRunning(false);
         } else if(mode==="rest"){
           const rs=parseRestSec(activeEx.rest);
           setTargetSeconds(rs);setRemaining(rs);
-          if(autoStartRestRef.current){
-            autoStartRestRef.current=false;
-            startTimeRef.current=Date.now();
-            setIsRunning(true);
-          } else {
-            setIsRunning(false);
-          }
+          setIsRunning(false);
         } else if(mode==="split_transition"){
           setTargetSeconds(3);setRemaining(3);
           startTimeRef.current=Date.now();
@@ -494,19 +601,82 @@
       };
       useEffect(()=>{setupTimer();},[exIdx,setIdx,mode,currentSideIdx]);
 
+      useEffect(()=>{
+        if(!pendingAutoStart) return;
+        if(pendingAutoStart==='rest' && mode==='rest'){
+          setPendingAutoStart(null);
+          accRef.current=0;
+          startTimeRef.current=Date.now();
+          setIsRunning(true);
+        } else if(pendingAutoStart==='work' && mode==='work'){
+          const hasTimer=!!(activeEx.hold||activeEx.totalSec);
+          setPendingAutoStart(null);
+          if(hasTimer){accRef.current=0;startTimeRef.current=Date.now();setIsRunning(true);}
+        }
+      },[pendingAutoStart,mode,exIdx,setIdx]);
+
       const modeRef=useRef(mode);
       useEffect(()=>{modeRef.current=mode;},[mode]);
       const targetRef=useRef(targetSeconds);
       useEffect(()=>{targetRef.current=targetSeconds;},[targetSeconds]);
 
+      const pushHistory=(currentLogs=setLogs)=>{
+        setHistoryStack(prev=>[...prev,{
+          exIdx,setIdx,mode,currentSideIdx,
+          setLogs:JSON.parse(JSON.stringify(currentLogs))
+        }]);
+      };
+
+      const handleBack=()=>{
+        if(historyStack.length===0) return;
+        const prev=historyStack[historyStack.length-1];
+        setHistoryStack(prevStack=>prevStack.slice(0,-1));
+        const removedLogIds=[];
+        Object.keys(setLogs).forEach(k=>{
+          if(setLogs[k]?.logged && setLogs[k]?.logId && !prev.setLogs[k]?.logged){
+            removedLogIds.push(setLogs[k].logId);
+          }
+        });
+        if(removedLogIds.length>0){
+          const p=store.get("workout_progression",[]);
+          const updated=p.filter(item=>!removedLogIds.includes(item.id));
+          store.set("workout_progression",updated);
+        }
+        setExIdx(prev.exIdx);
+        setSetIdx(prev.setIdx);
+        setMode(prev.mode);
+        setCurrentSideIdx(prev.currentSideIdx);
+        setSetLogs(prev.setLogs);
+        setIsRunning(false);
+      };
+
       const handleTimerComplete=()=>{
+        pushHistory();
         setIsRunning(false);
         const m=modeRef.current;
         if(m==="work"){
-          if(hasSides&&currentSideIdx+1<sideLabels.length){triggerSound('beep-high');setMode("split_transition");}
-          else{triggerSound('chime');}
-        } else if(m==="rest"){triggerSound('rest-chime');moveToNext();}
-        else if(m==="split_transition"){setCurrentSideIdx(currentSideIdx+1);setMode("work");}
+          if(hasSides&&currentSideIdx+1<sideLabels.length){
+            triggerSound('beep-high');
+            setMode("split_transition");
+          } else {
+            triggerSound('chime');
+            if(activeEx.rest&&activeEx.rest!=="0s"){
+              setPendingAutoStart("rest");
+              setMode("rest");
+            } else {
+              setPendingAutoStart("work");
+              moveToNext();
+            }
+          }
+        } else if(m==="rest"){
+          triggerSound('rest-chime');
+          setPendingAutoStart("work");
+          moveToNext();
+        } else if(m==="split_transition"){
+          setPendingAutoStart("work");
+          setCurrentSideIdx(currentSideIdx+1);
+          setMode("work");
+        }
       };
 
       const tick=useRef(null);
@@ -543,44 +713,140 @@
         if(isRunning) rafRef.current=requestAnimationFrame(()=>tick.current());
       };
       const skipTimer=()=>{
+        pushHistory();
         setIsRunning(false);
         if(mode==="work"){
-          if(hasSides&&currentSideIdx+1<sideLabels.length){setCurrentSideIdx(currentSideIdx+1);}
-          else{if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext();}
-        } else moveToNext();
+          if(hasSides&&currentSideIdx+1<sideLabels.length){
+            setPendingAutoStart("work");
+            setMode("split_transition");
+          } else {
+            if(activeEx.rest&&activeEx.rest!=="0s"){
+              setPendingAutoStart("rest");
+              setMode("rest");
+            } else {
+              setPendingAutoStart("work");
+              moveToNext();
+            }
+          }
+        } else {
+          setPendingAutoStart("work");
+          moveToNext();
+        }
       };
       const updateSetLog=patch=>setSetLogs(p=>({...p,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,...p[setKey],...patch}}));
       const logCurrentSet=()=>{
-        const logData={
-          reps: isHoldEx(activeEx) ? "" : actualReps,
-          weight: isBodyweightEx(activeEx) ? "BW" : actualWeight,
-          seconds: isHoldEx(activeEx) ? (actualSeconds || String(parseInt((activeEx.hold||"").replace(/[^\d]/g,""))||activeEx.totalSec||0)) : "",
-          logged: true,
-        };
-        const nextLogs={...setLogs,[setKey]:logData};
+        const logId=uid();
+        const nextLogs={...setLogs,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,logged:true,logId}};
+        pushHistory(setLogs);
         setSetLogs(nextLogs);
-        onLogSet(activeEx,logData);
-        if(activeEx.rest&&activeEx.rest!=="0s"){autoStartRestRef.current=true;setMode("rest");}else moveToNext(nextLogs);
+        onLogSet(activeEx,{reps:actualReps,weight:actualWeight,seconds:actualSeconds},logId);
+        if(activeEx.rest&&activeEx.rest!=="0s"){
+          setPendingAutoStart("rest");
+          setMode("rest");
+        } else {
+          setPendingAutoStart("work");
+          moveToNext(nextLogs);
+        }
       };
-      const moveToNext=(logsOverride=setLogs)=>{setCurrentSideIdx(0);const maxSets=activeEx.sets||1;if(setIdx+1<maxSets){setSetIdx(setIdx+1);setMode("work");}else{if(exIdx+1<exercises.length){setExIdx(exIdx+1);setSetIdx(0);setMode("work");}else{const completed=Object.values(logsOverride).filter(l=>l.logged).length;onLogSession(totalSets,completed,completed<totalSets);onFinish();}}};
-      const finishEarly=()=>{if(confirm("Finish and save logged sets?")){const completed=Object.values(setLogs).filter(l=>l.logged).length;onLogSession(totalSets,completed,completed<totalSets);onFinish();}};
-      const finishWithoutSaving=()=>{if(confirm("Finish without saving this session?"))onCancel();};
-      const onLogSet=(ex,data)=>{const p=store.get("workout_progression",[]);p.push({id:uid(),date:new Date().toISOString().split('T')[0],exercise:ex.name,weight:data.weight||"0",reps:data.reps||"",hold:data.seconds||ex.hold||"0"});store.set("workout_progression",p);};
-      const onLogSession=(total,completed,isPartial)=>{const logs=store.get("workout_logs",[]);logs.push({id:uid(),date:new Date().toISOString().split('T')[0],routine:routineName,total,completed,isPartial});store.set("workout_logs",logs);const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});if(completed>0){if(routineName.includes("Stretch"))c.stretches+=1;else if(routineName.includes("Tendon"))c.tendons+=1;else c.workouts+=1;}store.set("workout_completed_counts",c);};
+      const moveToNext=(logsOverride=setLogs)=>{
+        setCurrentSideIdx(0);
+        const maxSets=activeEx.sets||1;
+        if(setIdx+1<maxSets){
+          setSetIdx(setIdx+1);
+          setMode("work");
+        }else{
+          if(exIdx+1<exercises.length){
+            setExIdx(exIdx+1);
+            setSetIdx(0);
+            setMode("work");
+          }else{
+            setIsFinishedScreen(true);
+          }
+        }
+      };
+
+      const onLogSet=(ex,data,logId)=>{
+        const p=store.get("workout_progression",[]);
+        p.push({id:logId,date:new Date().toISOString().split('T')[0],exercise:ex.name,weight:data.weight||"0",reps:data.reps||"",hold:data.seconds||ex.hold||"0"});
+        store.set("workout_progression",p);
+      };
+      const onLogSession=(total,completed,isPartial)=>{
+        const logs=store.get("workout_logs",[]);
+        logs.push({id:uid(),date:new Date().toISOString().split('T')[0],routine:routineName,total,completed,isPartial});
+        store.set("workout_logs",logs);
+        const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});
+        if(completed>0){
+          if(routineName.includes("Stretch"))c.stretches+=1;
+          else if(routineName.includes("Tendon"))c.tendons+=1;
+          else c.workouts+=1;
+        }
+        store.set("workout_completed_counts",c);
+      };
 
       const progressPercent=targetSeconds>0?((targetSeconds-remaining)/targetSeconds)*100:0;
       const strokeDashoffset=628-(628*progressPercent)/100;
 
+      if(isFinishedScreen){
+        return (
+          <div className="timer-overlay" style={{justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px"}}>
+            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",maxWidth:"400px",width:"100%"}}>
+              <div style={{fontSize:"72px",marginBottom:"16px",lineHeight:"1"}}>🏆</div>
+              <h1 style={{fontSize:"32px",fontWeight:"900",lineHeight:"1.1",marginBottom:"12px"}}>You did it!</h1>
+              <p style={{fontSize:"19px",color:"var(--text-secondary)",marginBottom:"8px"}}>
+                <strong style={{color:"var(--accent)",fontSize:"22px",display:"block",marginBottom:"4px"}}>{routineName}</strong>
+                is complete.
+              </p>
+              <div className="card" style={{width:"100%",padding:"20px",marginBottom:"32px",background:"var(--input-bg)"}}>
+                <p className="text-small" style={{textTransform:"uppercase",fontWeight:"800",letterSpacing:"0.05em",marginBottom:"6px"}}>Workout Summary</p>
+                <p style={{fontSize:"28px",fontWeight:"900"}} className="text-accent">
+                  {loggedSets} <span style={{fontSize:"16px",color:"var(--text-secondary)",fontWeight:"normal"}}>sets completed</span>
+                </p>
+                <p className="text-small" style={{marginTop:"8px"}}>out of {totalSets} planned sets</p>
+              </div>
+            </div>
+            <div style={{width:"100%",maxWidth:"400px",display:"flex",flexDirection:"column",gap:"12px"}}>
+              <button className="button-primary" style={{padding:"20px",fontSize:"19px",borderRadius:"18px",fontWeight:"900",letterSpacing:"0.02em"}} onClick={()=>{
+                onLogSession(totalSets,loggedSets,loggedSets<totalSets);
+                onFinish();
+              }}>
+                Finish & Log Workout
+              </button>
+              <button className="button-secondary" style={{color:"var(--danger)",borderColor:"var(--danger)",background:"transparent"}} onClick={()=>{
+                if(confirm("Are you sure you want to discard all logged sets for this workout?")){
+                  const sessionLogIds = Object.values(setLogs)
+                    .filter(l => l.logged && l.logId)
+                    .map(l => l.logId);
+                  if(sessionLogIds.length > 0){
+                    const p = store.get("workout_progression", []);
+                    const updated = p.filter(item => !sessionLogIds.includes(item.id));
+                    store.set("workout_progression", updated);
+                  }
+                  onCancel();
+                }
+              }}>
+                Discard Workout
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="timer-overlay">
           <div className="flex-between" style={{width:"100%",marginBottom:"10px"}}>
-            <div>
-              <span className="badge" style={{marginLeft:"0"}}>{routineName}</span>
-              <p className="text-small" style={{marginTop:"4px"}}>Exercise {exIdx+1} of {exercises.length} — Set {setIdx+1} of {activeEx.sets||1} — Logged {loggedSets}/{totalSets}</p>
+            <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+              {historyStack.length>0&&(
+                <button onClick={handleBack} style={{padding:"6px 12px",background:"var(--input-bg)",border:"1.5px solid var(--card-border)",borderRadius:"10px",fontSize:"13px",fontWeight:"800"}}>
+                  ← Back
+                </button>
+              )}
+              <div>
+                <span className="badge" style={{marginLeft:"0"}}>{routineName}</span>
+                <p className="text-small" style={{marginTop:"4px"}}>Exercise {exIdx+1} of {exercises.length} — Set {setIdx+1} of {activeEx.sets||1} — Logged {loggedSets}/{totalSets}</p>
+              </div>
             </div>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
-              <button style={{border:"1.5px solid var(--card-border)",color:"var(--text-secondary)",background:"transparent",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}} onClick={finishWithoutSaving}>Finish No Save</button>
-              <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}} onClick={finishEarly}>Finish</button>
+              <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 14px",fontSize:"13px",fontWeight:"800",textTransform:"uppercase"}} onClick={()=>setIsFinishedScreen(true)}>Finish</button>
             </div>
           </div>
 
@@ -602,28 +868,27 @@
               </div>
             ):(
               <div style={{margin:"40px auto",textAlign:"center"}}>
-                {mode==="work"&&<div>
-                  <div style={{fontSize:"52px",fontWeight:"900"}}>{activeEx.reps}</div>
-                  <div className="timer-label" style={{fontSize:"14px"}}>Target Reps</div>
-                  {activeEx.weight&&!isBodyweightEx(activeEx)&&<div className="badge" style={{marginTop:"12px",fontSize:"14px",padding:"6px 14px"}}>{activeEx.weight}</div>}
-                </div>}
+                {mode==="work"&&<div><div style={{fontSize:"52px",fontWeight:"900"}}>{activeEx.reps}</div><div className="timer-label" style={{fontSize:"14px"}}>Target Reps</div>{activeEx.weight&&<div className="badge" style={{marginTop:"12px",fontSize:"14px",padding:"6px 14px"}}>{activeEx.weight}</div>}</div>}
               </div>
             )}
-            {mode==="work"&&activeEx.cue&&<div className="exercise-cue-box" style={{width:"100%",maxHeight:"110px",overflowY:"auto"}}><strong>Cue:</strong> {activeEx.cue}</div>}
-            {mode==="work"&&!isHoldEx(activeEx)&&(
+            {mode==="work"&&<div className="exercise-cue-box" style={{width:"100%",maxHeight:"110px",overflowY:"auto"}}><strong>Cue:</strong> {activeEx.cue}</div>}
+            {mode==="work"&&!routineName.startsWith("Stretching")&&(
               <div className="card" style={{width:"100%",padding:"12px",marginBottom:"0"}}>
-                <div style={{display:"grid",gridTemplateColumns:isBodyweightEx(activeEx)?"1fr":"1fr 1fr",gap:"10px"}}>
-                  <div>
-                    <label className="field-label">Reps done</label>
-                    <input className="field" value={actualReps} onChange={e=>updateSetLog({reps:e.target.value})}/>
-                  </div>
-                  {!isBodyweightEx(activeEx)&&(
-                    <div>
-                      <label className="field-label">Weight</label>
-                      <input className="field" value={actualWeight} onChange={e=>updateSetLog({weight:e.target.value})}/>
-                    </div>
-                  )}
-                </div>
+                {(()=>{
+                  const isHold=!!(activeEx.hold||activeEx.totalSec);
+                  const isBW=activeEx.equip&&/bodyweight|bw/i.test(activeEx.equip);
+                  const fields=[];
+                  if(!isHold) fields.push(
+                    <div key="reps"><label className="field-label">Reps</label><input className="field" value={actualReps} onChange={e=>updateSetLog({reps:e.target.value})}/></div>
+                  );
+                  if(!isBW) fields.push(
+                    <div key="weight"><label className="field-label">Weight</label><input className="field" value={actualWeight} onChange={e=>updateSetLog({weight:e.target.value})}/></div>
+                  );
+                  if(isHold) fields.push(
+                    <div key="secs"><label className="field-label">Seconds</label><input className="field" value={actualSeconds} onChange={e=>updateSetLog({seconds:e.target.value})}/></div>
+                  );
+                  return <div style={{display:"grid",gridTemplateColumns:`repeat(${fields.length},1fr)`,gap:"10px"}}>{fields}</div>;
+                })()}
               </div>
             )}
             {mode==="rest"&&nextEx&&(
@@ -635,29 +900,76 @@
             )}
           </div>
 
-          <div style={{display:"flex",flexDirection:"column",gap:"16px",alignItems:"center"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:"16px",alignItems:"center",width:"100%"}}>
             {((mode==="work"&&targetSeconds>0)||mode==="rest")&&(
-              <div style={{display:"flex",gap:"24px",alignItems:"center"}}>
+              <div style={{display:"flex",gap:"24px",alignItems:"center",justifyContent:"center"}}>
                 <button className="restart-btn" onClick={restartTimer}><Icons.Refresh size={22}/></button>
                 <button className="play-pause-btn" onClick={toggleTimer}>{isRunning?<Icons.Pause size={28}/>:<Icons.Play size={28}/>}</button>
                 <div style={{width:"52px"}}/>
               </div>
             )}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",width:"100%"}}>
-              <button className="button-secondary" onClick={skipTimer}>{mode==="rest"?"Skip Rest":"Next No Log"}</button>
-              {mode==="work"&&<button className="button-primary" onClick={logCurrentSet}>Log & Next</button>}
-            </div>
+            {mode==="rest"?(
+              <div style={{width:"100%",display:"flex",justifyContent:"center"}}>
+                <button className="button-secondary" style={{maxWidth:"260px",width:"100%",textAlign:"center"}} onClick={skipTimer}>Skip Rest</button>
+              </div>
+            ):(
+              <div style={{display:"grid",gridTemplateColumns:mode==="work"?"1fr 1fr":"1fr",gap:"10px",width:"100%"}}>
+                <button className="button-secondary" onClick={skipTimer}>Next No Log</button>
+                {mode==="work"&&<button className="button-primary" onClick={logCurrentSet}>Log & Next</button>}
+              </div>
+            )}
           </div>
         </div>
       );
     }
 
-    // ── WorkoutsTab ────────────────────────────────────────────────────────────
-    function WorkoutsTab({workouts,setWorkouts,weights,saveWeight,counts,setActiveRoutine,setModalContent}) {
+    function WorkoutsTab({workouts,setWorkouts,weights,saveWeight,customReps,saveReps,counts,setActiveRoutine,setModalContent,reloadLogs,theme}) {
       const [activeSection,setActiveSection]=useState(null);
       const [editMode,setEditMode]=useState(false);
+      const [checkedExercises,setCheckedExercises]=useState({});
       const workoutSections=workouts.filter(s=>!(s.description||s.phases));
-      const triggerEdit=(ex,secName)=>setModalContent({type:"edit_exercise",data:{ex,secName}});
+
+      const moveExercise=(secName,idx,direction)=>{
+        const sec=workouts.find(s=>s.section===secName);
+        if(!sec) return;
+        const exercises=[...sec.exercises];
+        const targetIdx=idx+direction;
+        if(targetIdx<0||targetIdx>=exercises.length) return;
+        const temp=exercises[idx];
+        exercises[idx]=exercises[targetIdx];
+        exercises[targetIdx]=temp;
+        const u=workouts.map(s=>s.section===secName?{...s,exercises}:s);
+        setWorkouts(u);
+        store.set("workout_sections_custom",u);
+      };
+
+      const renameSection=(oldName,newName)=>{
+        const u=workouts.map(s=>s.section===oldName?{...s,section:newName}:s);
+        setWorkouts(u);store.set("workout_sections_custom",u);
+        if(activeSection===oldName) setActiveSection(newName);
+      };
+      const deleteSection=(secName)=>{
+        if(!confirm(`Delete "${secName}" and all its exercises?`)) return;
+        const u=workouts.filter(s=>s.section!==secName);
+        setWorkouts(u);store.set("workout_sections_custom",u);
+        if(activeSection===secName) setActiveSection(null);
+      };
+      const addSection=()=>{
+        const nm=prompt("New section name:");
+        if(!nm) return;
+        const u=[...workouts,{section:nm,exercises:[]}];
+        setWorkouts(u);store.set("workout_sections_custom",u);
+      };
+      const moveExerciseTo=(fromSec,exName,toSec)=>{
+        const ex=workouts.find(s=>s.section===fromSec)?.exercises.find(e=>e.name===exName);
+        if(!ex) return;
+        const u=workouts.map(s=>{
+          if(s.section===fromSec) return{...s,exercises:s.exercises.filter(e=>e.name!==exName)};
+          if(s.section===toSec) return{...s,exercises:[...s.exercises,ex]};
+          return s;
+        });
+        setWorkouts(u);store.set("workout_sections_custom",u);
+      };
       const updateExercise=(secName,idx,patch)=>{
         const u=workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s);
         setWorkouts(u); store.set("workout_sections_custom",u);
@@ -675,13 +987,44 @@
       const launchSectionSession=sec=>{
         setActiveRoutine({name:`${sec.section} Workout`,exercises:sec.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
       };
+
+      const logCheckedExercises=()=>{
+        const selectedNames=Object.keys(checkedExercises).filter(name=>checkedExercises[name]);
+        if(selectedNames.length===0) return;
+        const today=new Date().toISOString().split('T')[0];
+        const progression=store.get("workout_progression",[]);
+        selectedNames.forEach(name=>{
+          let foundEx=null;
+          for(const sec of workoutSections){
+            const match=sec.exercises.find(e=>e.name===name);
+            if(match){foundEx=match;break;}
+          }
+          const weightVal=weights[name]||(foundEx?.weight||"0");
+          const repsVal=customReps[name]||(foundEx?.reps||"10");
+          progression.push({id:uid(),date:today,exercise:name,weight:weightVal,reps:repsVal,hold:"0"});
+        });
+        store.set("workout_progression",progression);
+        const sessionLogs=store.get("workout_logs",[]);
+        sessionLogs.push({id:uid(),date:today,routine:"Manual List Logging",total:selectedNames.length,completed:selectedNames.length,isPartial:false});
+        store.set("workout_logs",sessionLogs);
+        const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});
+        c.workouts+=1;
+        store.set("workout_completed_counts",c);
+        setCheckedExercises({});
+        alert(`Successfully logged ${selectedNames.length} exercises!`);
+        if(reloadLogs) reloadLogs();
+      };
+
+      const checkedCount=Object.keys(checkedExercises).filter(name=>checkedExercises[name]).length;
+      const successColor=theme==='anti-red'?'var(--accent)':'var(--success)';
+
       return (
         <div>
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><h2 className="font-bold" style={{fontSize:"20px"}}>Strength & Hypertrophy</h2><p className="text-small">Progressive overload tracking</p></div>
             <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
               <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
-              <span className="badge" style={{background:"var(--success-muted)",color:"var(--success)",borderColor:"var(--success)"}}>{counts.workouts} Done</span>
+              <span className="badge" style={{background:theme==='anti-red'?`var(--accent-muted)`:`var(--success-muted)`,color:successColor,borderColor:successColor}}>{counts.workouts} Done</span>
             </div>
           </div>
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderColor:"var(--accent)",borderWidth:"1.5px"}}>
@@ -696,30 +1039,68 @@
           </div>
           {workoutSections.map((sec,si)=>{
             const isOpen=activeSection===sec.section;
+            const otherSections=workoutSections.filter(s=>s.section!==sec.section).map(s=>s.section);
             return (
               <div key={si} className="card" style={{padding:"12px 16px"}}>
-                <div className="flex-between" style={{cursor:"pointer"}} onClick={()=>setActiveSection(isOpen?null:sec.section)}>
-                  <div className="flex-row"><p className="font-bold" style={{fontSize:"17px"}}>{sec.section}</p><span className="exercise-count-badge">{sec.exercises.length}</span></div>
-                  <span style={{fontSize:"18px",transition:"transform 0.2s",transform:isOpen?"rotate(90deg)":"none"}}>→</span>
+                <div className="flex-between" style={{cursor:"pointer"}} onClick={()=>!editMode&&setActiveSection(isOpen?null:sec.section)}>
+                  <div className="flex-row">
+                    {editMode?(
+                      <input className="field" style={{marginBottom:0,fontWeight:"700",fontSize:"16px",padding:"6px 10px",width:"160px"}}
+                        value={sec.section} onClick={e=>e.stopPropagation()}
+                        onChange={e=>renameSection(sec.section,e.target.value)}/>
+                    ):(
+                      <p className="font-bold" style={{fontSize:"17px"}}>{sec.section}</p>
+                    )}
+                    <span className="exercise-count-badge">{sec.exercises.length}</span>
+                  </div>
+                  {editMode?(
+                    <button onClick={e=>{e.stopPropagation();deleteSection(sec.section);}} style={{padding:"4px 10px",borderRadius:"8px",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"12px",fontWeight:"700"}}>Delete</button>
+                  ):(
+                    <span style={{fontSize:"18px",transition:"transform 0.2s",transform:isOpen?"rotate(90deg)":"none"}}>→</span>
+                  )}
                 </div>
-                {isOpen&&(
+                {(isOpen||editMode)&&(
                   <div style={{marginTop:"16px",borderTop:"1px solid var(--card-border)",paddingTop:"12px"}}>
-                    <button className="button-primary" style={{marginBottom:"16px",padding:"10px 14px",fontSize:"14px"}} onClick={()=>launchSectionSession(sec)}>Start Session</button>
+                    {!editMode&&<button className="button-primary" style={{marginBottom:"16px",padding:"10px 14px",fontSize:"14px"}} onClick={()=>launchSectionSession(sec)}>Start Session</button>}
                     {sec.exercises.map((ex,ei)=>(
-                      <div key={ei} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none"}}>
+                      <div key={ei} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none",gap:"10px"}}>
+                        {!editMode&&(
+                          <button className={`custom-tick ${checkedExercises[ex.name]?"checked":""}`} onClick={()=>setCheckedExercises(prev=>({...prev,[ex.name]:!prev[ex.name]}))}>
+                            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>
+                          </button>
+                        )}
                         {editMode?(
-                          <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
-                            <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}/>
-                            <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(sec.section,ei,{sets:parseInt(e.target.value)||1})}/>
-                            <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||""} onChange={e=>updateExercise(sec.section,ei,{reps:e.target.value})}/>
+                          <div style={{flex:1,display:"flex",gap:"6px",alignItems:"center"}}>
+                            <div style={{display:"flex",flexDirection:"column",gap:"2px"}}>
+                              <button onClick={()=>moveExercise(sec.section,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▲</button>
+                              <button onClick={()=>moveExercise(sec.section,ei,1)} disabled={ei===sec.exercises.length-1} style={{opacity:ei===sec.exercises.length-1?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▼</button>
+                            </div>
+                            <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 50px 65px",gap:"6px",alignItems:"center"}}>
+                              <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}/>
+                              <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(sec.section,ei,{sets:parseInt(e.target.value)||1})}/>
+                              <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||""} onChange={e=>updateExercise(sec.section,ei,{reps:e.target.value})}/>
+                            </div>
+                            {otherSections.length>0&&(
+                              <select className="field" style={{marginBottom:0,fontSize:"12px",padding:"6px",width:"90px",cursor:"pointer"}}
+                                value="" onChange={e=>{if(e.target.value)moveExerciseTo(sec.section,ex.name,e.target.value);}}>
+                                <option value="">Move→</option>
+                                {otherSections.map(s=><option key={s} value={s}>{s}</option>)}
+                              </select>
+                            )}
                           </div>
                         ):(
-                          <div style={{maxWidth:"60%"}}>
-                            <p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p>
-                            <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets — {ex.reps}</p>
+                          <div style={{flex:1,display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",minWidth:0}}>
+                            <div style={{flex:1,minWidth:0}}>
+                              <p className="font-bold" style={{fontSize:"14px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ex.name}</p>
+                              <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets</p>
+                            </div>
+                            <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+                              <WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
+                              <RepsChip exKey={ex.name} defaultReps={ex.reps} color="var(--accent)" reps={customReps} onSave={saveReps}/>
+                            </div>
                           </div>
                         )}
-                        {editMode?<button onClick={()=>deleteExercise(sec.section,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:<WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>}
+                        {editMode&&<button onClick={()=>deleteExercise(sec.section,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>}
                       </div>
                     ))}
                     {editMode&&<button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>}
@@ -728,16 +1109,31 @@
               </div>
             );
           })}
+          {editMode&&(
+            <button className="button-secondary" style={{width:"100%",padding:"12px",marginBottom:"16px",fontSize:"14px"}} onClick={addSection}>+ Add Section</button>
+          )}
+          {checkedCount>0&&(
+            <div className="card" style={{position:"sticky",bottom:"80px",background:"var(--card-bg)",border:"2px solid var(--accent)",zIndex:80,display:"flex",flexDirection:"column",gap:"10px",boxShadow:"var(--shadow)"}}>
+              <div className="flex-between">
+                <p className="font-bold">Log Checked Exercises</p>
+                <span className="badge" style={{background:"var(--accent-muted)",color:"var(--accent)",borderColor:"var(--accent)"}}>{checkedCount} selected</span>
+              </div>
+              <button className="button-primary" onClick={logCheckedExercises}>
+                Log Selected ({checkedCount}) to History
+              </button>
+            </div>
+          )}
         </div>
       );
     }
 
-    // ── TendonsTab ─────────────────────────────────────────────────────────────
-    function TendonsTab({weights,saveWeight,counts,setActiveRoutine}) {
+    function TendonsTab({weights,saveWeight,counts,setActiveRoutine,theme,reloadLogs}) {
       const [selectedPhase,setSelectedPhase]=useState("p1");
       const [editMode,setEditMode]=useState(false);
+      const [checkedExercises,setCheckedExercises]=useState({});
       const [tendonData,setTendonData]=useState(()=>store.get("tendon_custom",TENDON));
       const pd=tendonData[selectedPhase];
+      const pdColor=getThemeColor(pd.color,theme);
       const saveTendon=u=>{setTendonData(u);store.set("tendon_custom",u);};
       const updatePhaseField=(field,value)=>saveTendon({...tendonData,[selectedPhase]:{...pd,[field]:value}});
       const updateTendonEx=(sessLabel,idx,patch)=>{
@@ -746,6 +1142,20 @@
       };
       const deleteTendonEx=(sessLabel,exName)=>{
         const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.filter(e=>e.name!==exName)}:s)}};
+        saveTendon(u);
+      };
+      const moveTendonEx=(sessLabel,idx,dir)=>{
+        const sess=pd.sessions.find(s=>s.label===sessLabel);
+        if(!sess) return;
+        const exs=[...sess.exercises];
+        const ti=idx+dir;
+        if(ti<0||ti>=exs.length) return;
+        [exs[idx],exs[ti]]=[exs[ti],exs[idx]];
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:exs}:s)}};
+        saveTendon(u);
+      };
+      const updateSessLabel=(oldLabel,newLabel)=>{
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===oldLabel?{...s,label:newLabel}:s)}};
         saveTendon(u);
       };
       const addTendonEx=sessLabel=>{
@@ -758,14 +1168,38 @@
       const launchTendonSession=sess=>{
         setActiveRoutine({name:`Tendon - ${pd.label} (${sess.label})`,exercises:sess.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
       };
+      const logChecked=()=>{
+        const names=Object.keys(checkedExercises).filter(n=>checkedExercises[n]);
+        if(!names.length) return;
+        const today=new Date().toISOString().split('T')[0];
+        const prog=store.get("workout_progression",[]);
+        names.forEach(n=>{
+          let ex=null;
+          for(const sess of pd.sessions){ex=sess.exercises.find(e=>e.name===n);if(ex)break;}
+          prog.push({id:uid(),date:today,exercise:n,weight:weights[n]||ex?.weight||"0",reps:ex?.reps||"",hold:ex?.hold||"0"});
+        });
+        store.set("workout_progression",prog);
+        const logs=store.get("workout_logs",[]);
+        logs.push({id:uid(),date:today,routine:`Tendon ${pd.label}`,total:names.length,completed:names.length,isPartial:false});
+        store.set("workout_logs",logs);
+        const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});
+        c.tendons+=1; store.set("workout_completed_counts",c);
+        setCheckedExercises({});
+        if(reloadLogs) reloadLogs();
+        alert(`Logged ${names.length} tendon exercise${names.length>1?"s":""}!`);
+      };
+      const checkedCount=Object.values(checkedExercises).filter(Boolean).length;
       return (
         <div>
           <div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
-            {Object.keys(tendonData).map(k=>(
-              <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?tendonData[k].color:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>
-                {tendonData[k].label}
-              </button>
-            ))}
+            {Object.keys(tendonData).map(k=>{
+              const btnColor=getThemeColor(tendonData[k].color,theme);
+              return (
+                <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?btnColor:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>
+                  {tendonData[k].label}
+                </button>
+              );
+            })}
           </div>
           <div className="card">
             <div className="flex-between">
@@ -776,66 +1210,113 @@
                     <input className="field" style={{marginBottom:0}} value={pd.weeks} onChange={e=>updatePhaseField("weeks",e.target.value)}/>
                   </div>
                 ):(
-                  <><h2 className="font-bold" style={{fontSize:"20px",color:pd.color}}>{pd.name}</h2><p className="text-small">{pd.weeks}</p></>
+                  <><h2 className="font-bold" style={{fontSize:"20px",color:pdColor}}>{pd.name}</h2><p className="text-small">{pd.weeks}</p></>
                 )}
               </div>
               <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-                <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?pd.color:"var(--card-border)",color:editMode?pd.color:"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
-                <span className="badge" style={{background:`${pd.color}20`,color:pd.color,borderColor:pd.color}}>{counts.tendons} Done</span>
+                <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?pdColor:"var(--card-border)",color:editMode?pdColor:"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
+                <span className="badge" style={{background:theme==='anti-red'?'var(--accent-muted)':`${pdColor}20`,color:pdColor,borderColor:pdColor}}>{counts.tendons} Done</span>
               </div>
             </div>
-            <p className="exercise-cue-box" style={{borderLeftColor:pd.color,marginTop:"14px"}}>{pd.meta}</p>
+            <p className="exercise-cue-box" style={{borderLeftColor:pdColor,marginTop:"14px"}}>{pd.meta}</p>
           </div>
           {pd.sessions.map((sess,i)=>(
             <div key={i} className="card">
               <div className="flex-between" style={{marginBottom:"12px"}}>
-                <div><h3 className="font-bold" style={{fontSize:"17px"}}>{sess.label}</h3><p className="text-small">{sess.day}</p></div>
-                <button className="button-primary" style={{width:"auto",padding:"8px 16px",fontSize:"13px",background:pd.color,borderColor:pd.color}} onClick={()=>launchTendonSession(sess)}>Start</button>
+                <div style={{flex:1,marginRight:"8px"}}>
+                  {editMode
+                    ?<input className="field" style={{marginBottom:"4px",fontWeight:"700",fontSize:"16px",padding:"6px 10px"}} value={sess.label} onChange={e=>updateSessLabel(sess.label,e.target.value)}/>
+                    :<h3 className="font-bold" style={{fontSize:"17px"}}>{sess.label}</h3>
+                  }
+                  <p className="text-small">{sess.day}</p>
+                </div>
+                <button className="button-primary" style={{width:"auto",padding:"8px 16px",fontSize:"13px",background:pdColor,borderColor:pdColor}} onClick={()=>launchTendonSession(sess)}>Start</button>
               </div>
               <div style={{borderTop:"1.5px solid var(--card-border)",paddingTop:"8px"}}>
                 {sess.exercises.map((ex,ei)=>(
-                  <div key={ei} className="flex-between" style={{padding:"8px 0",borderBottom:ei+1<sess.exercises.length?"0.5px solid var(--card-border)":"none"}}>
+                  <div key={ei} className="flex-between" style={{padding:"8px 0",borderBottom:ei+1<sess.exercises.length?"0.5px solid var(--card-border)":"none",gap:"8px"}}>
                     {editMode?(
-                      <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
-                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateTendonEx(sess.label,ei,{name:e.target.value})}/>
-                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateTendonEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
-                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateTendonEx(sess.label,ei,{reps:e.target.value,hold:e.target.value})}/>
-                      </div>
+                      <>
+                        <div style={{display:"flex",flexDirection:"column",gap:"2px"}}>
+                          <button onClick={()=>moveTendonEx(sess.label,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
+                          <button onClick={()=>moveTendonEx(sess.label,ei,1)} disabled={ei===sess.exercises.length-1} style={{opacity:ei===sess.exercises.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
+                        </div>
+                        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                          <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateTendonEx(sess.label,ei,{name:e.target.value})}/>
+                          <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateTendonEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
+                          <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateTendonEx(sess.label,ei,{reps:e.target.value,hold:e.target.value})}/>
+                        </div>
+                        <button onClick={()=>deleteTendonEx(sess.label,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900",flexShrink:0}}>×</button>
+                      </>
                     ):(
-                      <div style={{maxWidth:"60%"}}><p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p><p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}</p></div>
+                      <>
+                        <button className={`custom-tick ${checkedExercises[ex.name]?"checked":""}`} onClick={()=>setCheckedExercises(p=>({...p,[ex.name]:!p[ex.name]}))}>
+                            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>
+                          </button>
+                        <div style={{flex:1,minWidth:0}}>
+                          <p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p>
+                          <p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}</p>
+                        </div>
+                        <WeightChip exKey={ex.name} defaultWeight={ex.weight} color={pdColor} weights={weights} onSave={saveWeight}/>
+                      </>
                     )}
-                    {editMode?<button onClick={()=>deleteTendonEx(sess.label,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:<WeightChip exKey={ex.name} defaultWeight={ex.weight} color={pd.color} weights={weights} onSave={saveWeight}/>}
                   </div>
                 ))}
                 {editMode&&<button className="button-secondary" style={{marginTop:"10px",padding:"8px",fontSize:"13px"}} onClick={()=>addTendonEx(sess.label)}>+ Add Exercise</button>}
               </div>
             </div>
           ))}
+          {checkedCount>0&&(
+            <div className="card" style={{position:"sticky",bottom:"80px",background:"var(--card-bg)",border:"2px solid var(--accent)",zIndex:80,display:"flex",flexDirection:"column",gap:"10px"}}>
+              <div className="flex-between">
+                <p className="font-bold">Log Checked Exercises</p>
+                <span className="badge">{checkedCount} selected</span>
+              </div>
+              <button className="button-primary" onClick={logChecked}>Log Selected ({checkedCount})</button>
+            </div>
+          )}
         </div>
       );
     }
 
-    // ── StretchesTab ───────────────────────────────────────────────────────────
-    function StretchesTab({counts,setActiveRoutine}) {
+    function StretchesTab({counts,setActiveRoutine,theme,reloadLogs}) {
       const [selectedPhase,setSelectedPhase]=useState(1);
       const [editMode,setEditMode]=useState(false);
+      const [checkedExercises,setCheckedExercises]=useState({});
       const [customStretches,setCustomStretches]=useState(()=>store.get("stretch_custom",{}));
       const [hiddenStretches,setHiddenStretches]=useState(()=>store.get("stretch_hidden",{}));
       const phaseData=SPHASE[selectedPhase];
+      const phaseColor=getThemeColor(phaseData.color,theme);
       const baseList=getPhaseStretches(selectedPhase).filter(s=>!(hiddenStretches[selectedPhase]||[]).includes(s.name));
-      const stretchList=[...baseList,...(customStretches[selectedPhase]||[])];
+      const [customOrder,setCustomOrder]=useState(()=>store.get("stretch_order",{}));
+      const saveCustomOrder=u=>{setCustomOrder(u);store.set("stretch_order",u);};
+      const rawList=[...baseList,...(customStretches[selectedPhase]||[])];
+      const order=customOrder[selectedPhase];
+      const stretchList=order
+        ?order.map(n=>rawList.find(s=>s.name===n)).filter(Boolean).concat(rawList.filter(s=>!order.includes(s.name)))
+        :rawList;
       const saveCustom=u=>{setCustomStretches(u);store.set("stretch_custom",u);};
       const saveHidden=u=>{setHiddenStretches(u);store.set("stretch_hidden",u);};
       const [phaseEdits,setPhaseEdits]=useState(()=>store.get("stretch_phase_edits",{}));
       const displayPhase={...phaseData,...(phaseEdits[selectedPhase]||{})};
       const savePhaseEdit=patch=>{const u={...phaseEdits,[selectedPhase]:{...(phaseEdits[selectedPhase]||{}),...patch}};setPhaseEdits(u);store.set("stretch_phase_edits",u);};
+      const moveStretch=(name,dir)=>{
+        const names=stretchList.map(s=>s.name);
+        const idx=names.indexOf(name);
+        const newIdx=idx+dir;
+        if(newIdx<0||newIdx>=names.length) return;
+        const arr=[...names];
+        [arr[idx],arr[newIdx]]=[arr[newIdx],arr[idx]];
+        saveCustomOrder({...customOrder,[selectedPhase]:arr});
+      };
       const updateStretch=(idx,patch)=>{
-        const baseLen=baseList.length;
-        if(idx<baseLen){
-          saveHidden({...hiddenStretches,[selectedPhase]:[...(hiddenStretches[selectedPhase]||[]),baseList[idx].name]});
-          saveCustom({...customStretches,[selectedPhase]:[...(customStretches[selectedPhase]||[]),{...baseList[idx],...patch}]});
+        const st=stretchList[idx];
+        const baseIdx=baseList.findIndex(s=>s.name===st.name);
+        if(baseIdx>=0){
+          saveHidden({...hiddenStretches,[selectedPhase]:[...(hiddenStretches[selectedPhase]||[]),st.name]});
+          saveCustom({...customStretches,[selectedPhase]:[...(customStretches[selectedPhase]||[]),{...st,...patch}]});
         }else{
-          const ci=idx-baseLen;
+          const ci=(customStretches[selectedPhase]||[]).findIndex(s=>s.name===st.name);
           saveCustom({...customStretches,[selectedPhase]:(customStretches[selectedPhase]||[]).map((s,i)=>i===ci?{...s,...patch}:s)});
         }
       };
@@ -843,20 +1324,41 @@
       const addStretch=()=>{
         const nm=prompt("New stretch name:");
         if(!nm)return;
-        const item={name:nm,totalSec:60,sideLabels:[],muscles:["Custom"],phases:{[selectedPhase]:{dur:"60s",how:"Custom movement. Edit this file later for more detail."}}};
+        const item={name:nm,totalSec:60,sideLabels:[],muscles:["Custom"],phases:{[selectedPhase]:{dur:"60s",how:"Custom movement."}}};
         saveCustom({...customStretches,[selectedPhase]:[...(customStretches[selectedPhase]||[]),item]});
       };
       const launchStretchSession=()=>{
-        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s",cue:s.phases[selectedPhase]?.how||s.phases[1]?.how||""}))});
+        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s"}))});
       };
+      const logChecked=()=>{
+        const names=Object.keys(checkedExercises).filter(n=>checkedExercises[n]);
+        if(!names.length) return;
+        const today=new Date().toISOString().split('T')[0];
+        const prog=store.get("workout_progression",[]);
+        names.forEach(n=>{prog.push({id:uid(),date:today,exercise:n,weight:"0",reps:"",hold:`${stretchList.find(s=>s.name===n)?.totalSec||60}s`});});
+        store.set("workout_progression",prog);
+        const logs=store.get("workout_logs",[]);
+        logs.push({id:uid(),date:today,routine:`Stretch Phase ${selectedPhase}`,total:names.length,completed:names.length,isPartial:false});
+        store.set("workout_logs",logs);
+        const c=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});
+        c.stretches+=1; store.set("workout_completed_counts",c);
+        setCheckedExercises({});
+        if(reloadLogs) reloadLogs();
+        alert(`Logged ${names.length} stretch${names.length>1?"es":""}!`);
+      };
+      const checkedCount=Object.values(checkedExercises).filter(Boolean).length;
       return (
         <div>
           <div className="card" style={{padding:"8px",display:"flex",gap:"4px",marginBottom:"14px",overflowX:"auto"}}>
-            {Object.keys(SPHASE).map(k=>{const a=selectedPhase===parseInt(k);return(
-              <button key={k} onClick={()=>setSelectedPhase(parseInt(k))} style={{flex:"1 0 auto",padding:"8px 12px",borderRadius:"10px",background:a?SPHASE[k].color:"transparent",color:a?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"12px"}}>
-                {phaseEdits[k]?.name||`Phase ${k}`}
-              </button>
-            );})}
+            {Object.keys(SPHASE).map(k=>{
+              const a=selectedPhase===parseInt(k);
+              const btnColor=getThemeColor(SPHASE[k].color,theme);
+              return(
+                <button key={k} onClick={()=>setSelectedPhase(parseInt(k))} style={{flex:"1 0 auto",padding:"8px 12px",borderRadius:"10px",background:a?btnColor:"transparent",color:a?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"12px"}}>
+                  {phaseEdits[k]?.name||`Phase ${k}`}
+                </button>
+              );
+            })}
           </div>
           <div className="card">
             <div className="flex-between">
@@ -867,47 +1369,91 @@
                     <input className="field" style={{marginBottom:0}} value={displayPhase.months} onChange={e=>savePhaseEdit({months:e.target.value})}/>
                   </div>
                 ):(
-                  <><h2 className="font-bold" style={{fontSize:"20px",color:phaseData.color}}>{displayPhase.name}</h2><p className="text-small">{displayPhase.months}</p></>
+                  <><h2 className="font-bold" style={{fontSize:"20px",color:phaseColor}}>{displayPhase.name}</h2><p className="text-small">{displayPhase.months}</p></>
                 )}
               </div>
               <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-                <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?phaseData.color:"var(--card-border)",color:editMode?phaseData.color:"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
-                <span className="badge" style={{background:`${phaseData.color}20`,color:phaseData.color,borderColor:phaseData.color}}>{counts.stretches} Done</span>
+                <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?phaseColor:"var(--card-border)",color:editMode?phaseColor:"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
+                <span className="badge" style={{background:theme==='anti-red'?'var(--accent-muted)':`${phaseColor}20`,color:phaseColor,borderColor:phaseColor}}>{counts.stretches} Done</span>
               </div>
             </div>
             <p className="text-small" style={{marginTop:"8px"}}>{displayPhase.desc}</p>
-            <button className="button-primary" style={{marginTop:"16px",background:phaseData.color,borderColor:phaseData.color}} onClick={launchStretchSession}>
+            <button className="button-primary" style={{marginTop:"16px",background:phaseColor,borderColor:phaseColor}} onClick={launchStretchSession}>
               Start — {fmtMin(getPhaseTotalSec(selectedPhase))}
             </button>
           </div>
           <div className="card" style={{padding:"12px 16px"}}>
             <h3 className="font-bold" style={{fontSize:"16px",marginBottom:"12px"}}>Exercises</h3>
             {stretchList.map((st,i)=>(
-              <div key={i} style={{padding:"10px 0",borderBottom:i+1<stretchList.length?"0.5px solid var(--card-border)":"none"}}>
-                <div className="flex-between">
-                  {editMode?<div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 72px 72px",gap:"8px",alignItems:"center"}}>
-                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={st.name} onChange={e=>updateStretch(i,{name:e.target.value})}/>
-                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={st.sets||1} onChange={e=>updateStretch(i,{sets:parseInt(e.target.value)||1})}/>
-                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={st.reps||st.hold||`${st.totalSec}s`} onChange={e=>updateStretch(i,{reps:e.target.value,hold:e.target.value})}/>
-                  </div>:<p className="font-bold">{st.name}{st.isNew&&<span className="badge" style={{fontSize:"9px"}}>NEW</span>}</p>}
-                  {editMode?<button onClick={()=>deleteStretch(st.name)} style={{width:"32px",height:"32px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"18px",fontWeight:"900"}}>×</button>:<span className="text-small font-bold" style={{color:phaseData.color}}>{st.totalSec}s</span>}
+              <div key={st.name+i} style={{padding:"10px 0",borderBottom:i+1<stretchList.length?"0.5px solid var(--card-border)":"none"}}>
+                <div className="flex-between" style={{gap:"8px"}}>
+                  {editMode&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:"2px"}}>
+                      <button onClick={()=>moveStretch(st.name,-1)} disabled={i===0} style={{opacity:i===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
+                      <button onClick={()=>moveStretch(st.name,1)} disabled={i===stretchList.length-1} style={{opacity:i===stretchList.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
+                    </div>
+                  )}
+                  {!editMode&&(
+                    <button className={`custom-tick ${checkedExercises[st.name]?"checked":""}`} onClick={()=>setCheckedExercises(p=>({...p,[st.name]:!p[st.name]}))}>
+                            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>
+                          </button>
+                  )}
+                  {editMode?(
+                    <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 72px",gap:"8px",alignItems:"center"}}>
+                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={st.name} onChange={e=>updateStretch(i,{name:e.target.value})}/>
+                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="10" max="150" value={st.totalSec} onChange={e=>{const v=parseInt(e.target.value)||60;if(v>150){alert("Maximum stretch duration is 150 seconds.");updateStretch(i,{totalSec:150});}else{updateStretch(i,{totalSec:v});}}}/>  
+                    </div>
+                  ):(
+                    <p className="font-bold" style={{flex:1}}>{st.name}{st.isNew&&<span className="badge" style={{fontSize:"9px",marginLeft:"6px"}}>NEW</span>}</p>
+                  )}
+                  {editMode
+                    ?<button onClick={()=>deleteStretch(st.name)} style={{width:"32px",height:"32px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"18px",fontWeight:"900",flexShrink:0}}>×</button>
+                    :<span className="text-small font-bold" style={{color:phaseColor,flexShrink:0}}>{st.totalSec}s</span>
+                  }
                 </div>
-                <p className="text-small" style={{fontSize:"12px",marginTop:"4px"}}>{st.phases[selectedPhase]?.how||st.phases[1]?.how}</p>
+                {!editMode&&<p className="text-small" style={{fontSize:"12px",marginTop:"4px",marginLeft:"28px"}}>{st.phases[selectedPhase]?.how||st.phases[1]?.how}</p>}
               </div>
             ))}
             {editMode&&<button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={addStretch}>+ Add Movement</button>}
           </div>
+          {checkedCount>0&&(
+            <div className="card" style={{position:"sticky",bottom:"80px",background:"var(--card-bg)",border:"2px solid var(--accent)",zIndex:80,display:"flex",flexDirection:"column",gap:"10px"}}>
+              <div className="flex-between">
+                <p className="font-bold">Log Checked Stretches</p>
+                <span className="badge">{checkedCount} selected</span>
+              </div>
+              <button className="button-primary" onClick={logChecked}>Log Selected ({checkedCount})</button>
+            </div>
+          )}
         </div>
       );
     }
 
-    // ── ProgressionTab ─────────────────────────────────────────────────────────
     function ProgressionTab({reloadLogs}) {
-      const trackedPts=store.get("workout_progression",[]);
+      const [trackedPts,setTrackedPts]=useState(()=>store.get("workout_progression",[]));
       const uniqueEx=[...new Set(trackedPts.map(p=>p.exercise))];
       const [selectedEx,setSelectedEx]=useState(uniqueEx[0]||"");
       const filtered=trackedPts.filter(p=>p.exercise===selectedEx);
-      const handleReset=()=>{if(confirm("Delete all training history? This cannot be undone.")){localStorage.removeItem("workout_progression");localStorage.removeItem("workout_logs");localStorage.removeItem("workout_completed_counts");reloadLogs();setSelectedEx("");}};
+      const handleReset=()=>{
+        if(confirm("Delete all training history? This cannot be undone.")){
+          localStorage.removeItem("workout_progression");
+          localStorage.removeItem("workout_logs");
+          localStorage.removeItem("workout_completed_counts");
+          reloadLogs();
+          setTrackedPts([]);
+          setSelectedEx("");
+        }
+      };
+      const handleDeleteSet=(id)=>{
+        if(confirm("Are you sure you want to delete this recorded set?")){
+          const updated=trackedPts.filter(item=>item.id!==id);
+          store.set("workout_progression",updated);
+          setTrackedPts(updated);
+          const remainingEx=[...new Set(updated.map(p=>p.exercise))];
+          if(remainingEx.length===0){setSelectedEx("");}
+          else if(!remainingEx.includes(selectedEx)){setSelectedEx(remainingEx[0]);}
+        }
+      };
       return (
         <div>
           <div className="card"><h2 className="font-bold" style={{fontSize:"20px"}}>Progression</h2><p className="text-small">Weight and hold tracking over time</p></div>
@@ -926,9 +1472,12 @@
               <div className="card">
                 <h3 className="font-bold" style={{fontSize:"15px",marginBottom:"10px"}}>Log History</h3>
                 {[...filtered].reverse().map((l,i)=>(
-                  <div key={i} className="progression-item">
-                    <span>{l.date}</span>
-                    <span className="font-bold text-accent">{l.weight||"BW"}{l.reps?` · ${l.reps} reps`:""}{l.hold&&l.hold!=="0"?` · ${l.hold}`:""}</span>
+                  <div key={i} className="progression-item" style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+                    <div style={{flex:1,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span>{l.date}</span>
+                      <span className="font-bold text-accent">{l.weight||"BW"}{l.reps?` · ${l.reps} reps`:""}{l.hold&&l.hold!=="0"?` · ${l.hold}`:""}</span>
+                    </div>
+                    <button onClick={()=>handleDeleteSet(l.id)} style={{color:"var(--danger)",background:"var(--danger-muted)",width:"22px",height:"22px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"900"}}>×</button>
                   </div>
                 ))}
               </div>
@@ -950,16 +1499,7 @@
       const save=()=>{
         const pCount=Math.max(1,Math.min(8,parseInt(phaseCount)||1));
         const phases=Array.from({length:pCount},(_,i)=>`Phase ${i+1}`);
-        const exercises=Array.from({length:n},(_,i)=>({
-          name:`Exercise ${i+1}`,
-          equip:"Bodyweight",
-          sets:1,
-          reps:"8-12",
-          hold:"",
-          rest:"90s",
-          weight:"",
-          cue:"",
-        }));
+        const exercises=Array.from({length:n},(_,i)=>({name:`Exercise ${i+1}`,equip:"Bodyweight",sets:1,reps:"8-12",hold:"",rest:"90s",weight:"",cue:""}));
         onSave({id:uid(),section:"New Split",description:"",phases,exercises});
       };
       return (
@@ -987,6 +1527,15 @@
           store.set("workout_sections_custom",u);
           return u;
         });
+      };
+      const moveExercise=(idx,direction)=>{
+        const exercises=[...split.exercises];
+        const targetIdx=idx+direction;
+        if(targetIdx<0||targetIdx>=exercises.length) return;
+        const temp=exercises[idx];
+        exercises[idx]=exercises[targetIdx];
+        exercises[targetIdx]=temp;
+        saveSplit({exercises});
       };
       const updateExercise=(idx,patch)=>saveSplit({exercises:split.exercises.map((e,i)=>i===idx?{...e,...patch}:e)});
       const deleteExercise=idx=>saveSplit({exercises:split.exercises.filter((_,i)=>i!==idx)});
@@ -1029,12 +1578,18 @@
           <div className="card">
             <h3 className="font-bold" style={{fontSize:"16px",marginBottom:"10px"}}>Exercises</h3>
             {split.exercises.map((ex,i)=>(
-              <div key={i} className="flex-between" style={{padding:"10px 0",borderBottom:i+1<split.exercises.length?"0.5px solid var(--card-border)":"none"}}>
+              <div key={i} className="flex-between" style={{padding:"10px 0",borderBottom:i+1<split.exercises.length?"0.5px solid var(--card-border)":"none",gap:"10px"}}>
                 {editMode?(
-                  <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
-                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(i,{name:e.target.value})}/>
-                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(i,{sets:parseInt(e.target.value)||1})}/>
-                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateExercise(i,{reps:e.target.value})}/>
+                  <div style={{flex:1,display:"flex",gap:"6px",alignItems:"center"}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:"2px"}}>
+                      <button onClick={()=>moveExercise(i,-1)} disabled={i===0} style={{opacity:i===0?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▲</button>
+                      <button onClick={()=>moveExercise(i,1)} disabled={i===split.exercises.length-1} style={{opacity:i===split.exercises.length-1?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▼</button>
+                    </div>
+                    <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(i,{name:e.target.value})}/>
+                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(i,{sets:parseInt(e.target.value)||1})}/>
+                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateExercise(i,{reps:e.target.value})}/>
+                    </div>
                   </div>
                 ):(
                   <div><p className="font-bold">{ex.name}</p><p className="text-small">{ex.sets} sets — {ex.reps||ex.hold}</p></div>
@@ -1048,15 +1603,20 @@
       );
     }
 
-    // ── App ────────────────────────────────────────────────────────────────────
     function App() {
       const [activeTab,setActiveTab]=useState("home");
-      const [theme,setTheme]=useState(()=>store.get("workout_theme","dark"));
+      const [theme,setTheme]=useState(()=>{
+        const t=store.get("workout_theme","dark");
+        document.documentElement.setAttribute('data-theme',t);
+        return t;
+      });
       const [username,setUsername]=useState(()=>store.get("workout_username","Abiram"));
       const [editingName,setEditingName]=useState(false);
       const [hiddenTabs,setHiddenTabs]=useState(()=>store.get("workout_hidden_tabs",[]));
       const [weights,setWeights]=useState(()=>store.get("workout_weights",{}));
+      const [customReps,setCustomReps]=useState(()=>store.get("workout_reps",{}));
       const [workouts,setWorkouts]=useState(()=>store.get("workout_sections_custom",FB_SECTIONS));
+      const saveReps=(k,v)=>{const u={...customReps,[k]:v};setCustomReps(u);store.set("workout_reps",u);};
       const [logs,setLogs]=useState(()=>store.get("workout_logs",[]));
       const [counts,setCounts]=useState(()=>store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));
       const [activeRoutine,setActiveRoutine]=useState(null);
@@ -1087,7 +1647,6 @@
         setWorkouts(u); store.set("workout_sections_custom",u); setModalContent(null);
       };
 
-      // ── Home tab ─────────────────────────────────────────────────────────────
       const renderHome=()=>{
         const today=new Date();
         const last30=[];
@@ -1121,9 +1680,9 @@
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:"20px"}}>
               {homeTiles.map(tile=>(
-                <button key={tile.id} onClick={()=>tile.custom?setActiveTab(`split-${tile.id}`):setActiveTab(tile.id)} style={{minHeight:"150px",borderRadius:"20px",background:"var(--card-bg)",border:`1.5px solid ${tile.color}`,padding:"22px",textAlign:"left",position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                <button key={tile.id} onClick={()=>tile.custom?setActiveTab(`split-${tile.id}`):setActiveTab(tile.id)} style={{minHeight:"150px",borderRadius:"20px",background:"var(--card-bg)",border:`1.5px solid ${getThemeColor(tile.color,theme)}`,padding:"22px",textAlign:"left",position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
                   <span onClick={e=>{e.stopPropagation();deleteHomeSplit(tile.id);}} style={{position:"absolute",top:"20px",right:"20px",width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",fontWeight:"900"}}>×</span>
-                  <span style={{color:tile.color}}><tile.Icon/></span>
+                  <span style={{color:getThemeColor(tile.color,theme)}}><tile.Icon/></span>
                   <span style={{fontSize:"23px",fontWeight:"900"}}>{tile.label}</span>
                 </button>
               ))}
@@ -1160,7 +1719,6 @@
         );
       };
 
-      // ── Modal renderer ────────────────────────────────────────────────────────
       const renderModal=()=>{
         if(!modalContent) return null;
         if(modalContent.type==="day_details"){
@@ -1169,8 +1727,28 @@
             <TapModal isOpen onClose={()=>setModalContent(null)}>
               <h3 className="font-bold" style={{fontSize:"18px",marginBottom:"12px"}}>{day.date}</h3>
               {day.logs.map((l,i)=>(
-                <div key={i} className="card" style={{background:"var(--input-bg)",marginBottom:"8px"}}>
-                  <div className="flex-between">
+                <div key={i} className="card" style={{background:"var(--input-bg)",marginBottom:"8px",position:"relative"}}>
+                  <button onClick={()=>{
+                    if(confirm(`Are you sure you want to delete the log for "${l.routine}" on this day?`)){
+                      const allLogs=store.get("workout_logs",[]);
+                      const updatedLogs=allLogs.filter(log=>log.id!==l.id);
+                      store.set("workout_logs",updatedLogs);
+                      const c={workouts:0,tendons:0,stretches:0};
+                      updatedLogs.forEach(log=>{
+                        if(log.completed>0){
+                          if(log.routine.includes("Stretch"))c.stretches+=1;
+                          else if(log.routine.includes("Tendon"))c.tendons+=1;
+                          else c.workouts+=1;
+                        }
+                      });
+                      store.set("workout_completed_counts",c);
+                      reloadLogs();
+                      const updatedDayLogs=day.logs.filter(log=>log.id!==l.id);
+                      if(updatedDayLogs.length===0){setModalContent(null);}
+                      else{setModalContent({type:"day_details",data:{...day,logs:updatedDayLogs}});}
+                    }
+                  }} style={{position:"absolute",top:"12px",right:"12px",width:"24px",height:"24px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",fontWeight:"900",zIndex:10}}>×</button>
+                  <div className="flex-between" style={{marginRight:"24px"}}>
                     <p className="font-bold">{l.routine}</p>
                     <span className={l.isPartial?"text-warning font-bold":"text-success font-bold"}>{l.isPartial?"Partial":"Done"}</span>
                   </div>
@@ -1196,7 +1774,7 @@
       return (
         <div>
           <header>
-            <div className="app-title font-bold text-accent">WORKOUT FLOW</div>
+            <div className="app-title font-bold text-accent">WORKOUT</div>
             <button onClick={cycleTheme} style={{border:"1.5px solid var(--card-border)",borderRadius:"20px",padding:"6px 14px",fontSize:"12px",fontWeight:"700",textTransform:"uppercase"}}>
               {theme}
             </button>
@@ -1210,9 +1788,9 @@
 
           <div className="container">
             {activeTab==="home"&&renderHome()}
-            {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} setModalContent={setModalContent}/>}
-            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine}/>}
-            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine}/>}
+            {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} customReps={customReps} saveReps={saveReps} counts={counts} setActiveRoutine={setActiveRoutine} setModalContent={setModalContent} reloadLogs={reloadLogs} theme={theme}/>}
+            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs}/>}
+            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs}/>}
             {activeTab==="progression"&&<ProgressionTab reloadLogs={reloadLogs}/>}
             {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine}/>}
           </div>
