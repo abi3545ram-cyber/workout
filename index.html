@@ -105,8 +105,8 @@
       color: #ffd700 !important;
     }
     *{margin:0;padding:0;box-sizing:border-box}
-    html,body{height:100%;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;transition:background 0.25s,color 0.25s}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;padding-bottom:calc(85px + env(safe-area-inset-bottom))}
+    html{height:100%}body{min-height:100%;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;transition:background 0.25s,color 0.25s}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;padding-bottom:calc(100px + env(safe-area-inset-bottom))}
     ::-webkit-scrollbar{display:none}
     *{scrollbar-width:none}
     button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;color:inherit;transition:opacity 0.15s,transform 0.1s}
@@ -926,6 +926,7 @@
     function WorkoutsTab({workouts,setWorkouts,weights,saveWeight,customReps,saveReps,counts,setActiveRoutine,setModalContent,reloadLogs,theme}) {
       const [activeSection,setActiveSection]=useState(null);
       const [editMode,setEditMode]=useState(false);
+      const [draftNames,setDraftNames]=useState({});
       const [checkedExercises,setCheckedExercises]=useState({});
       const workoutSections=workouts.filter(s=>!(s.description||s.phases));
 
@@ -1023,7 +1024,26 @@
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><h2 className="font-bold" style={{fontSize:"20px"}}>Strength & Hypertrophy</h2><p className="text-small">Progressive overload tracking</p></div>
             <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-              <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
+              <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>{
+                if(editMode){
+                  // Commit non-empty drafts, revert empty ones to original
+                  let u=[...workouts];
+                  Object.entries(draftNames).forEach(([oldName,draft])=>{
+                    const trimmed=draft.trim();
+                    if(trimmed&&trimmed!==oldName){
+                      u=u.map(s=>s.section===oldName?{...s,section:trimmed}:s);
+                      if(activeSection===oldName) setActiveSection(trimmed);
+                    }
+                    // empty draft: workouts unchanged, so name reverts naturally
+                  });
+                  setWorkouts(u);store.set("workout_sections_custom",u);
+                  setDraftNames({});
+                  setEditMode(false);
+                } else {
+                  setDraftNames({});
+                  setEditMode(true);
+                }
+              }}>{editMode?"Done":"Edit"}</button>
               <span className="badge" style={{background:theme==='anti-red'?`var(--accent-muted)`:`var(--success-muted)`,color:successColor,borderColor:successColor}}>{counts.workouts} Done</span>
             </div>
           </div>
@@ -1046,8 +1066,9 @@
                   <div className="flex-row">
                     {editMode?(
                       <input className="field" style={{marginBottom:0,fontWeight:"700",fontSize:"16px",padding:"6px 10px",width:"160px"}}
-                        value={sec.section} onClick={e=>e.stopPropagation()}
-                        onChange={e=>renameSection(sec.section,e.target.value)}/>
+                        value={draftNames[sec.section]!==undefined?draftNames[sec.section]:sec.section}
+                        onClick={e=>e.stopPropagation()}
+                        onChange={e=>setDraftNames(p=>({...p,[sec.section]:e.target.value}))}/>
                     ):(
                       <p className="font-bold" style={{fontSize:"17px"}}>{sec.section}</p>
                     )}
