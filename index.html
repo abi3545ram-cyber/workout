@@ -30,25 +30,15 @@
       --input-bg:rgba(0,0,0,0.03);--shadow:0 8px 24px rgba(0,0,0,0.05);--border-thickness:1px;
       --timer-circle-bg:rgba(0,0,0,0.06);
     }
-    :root[data-theme="anti-red"]{--bg:#000;--card-bg:#0a0a0a;--card-border:#ffd700;--text:#ffd700;--text-secondary:#c8a800;--accent:#ffd700;--accent-muted:rgba(255,215,0,0.18);--accent-rgb:255,215,0;--success:#ffd700;--success-muted:rgba(255,215,0,0.18);--warning:#ffd700;--warning-muted:rgba(255,215,0,0.18);--danger:#ffd700;--danger-muted:rgba(255,215,0,0.18);--header-bg:#0a0a0a;--btn-text:#000;--input-bg:rgba(255,215,0,0.07);--shadow:none;--border-thickness:1.5px;--timer-circle-bg:rgba(255,215,0,0.2)}
-    :root[data-theme="anti-red"] .button-secondary{border-color:#ffd700!important;color:#ffd700!important;background:rgba(255,215,0,0.07)!important}
-    :root[data-theme="anti-red"] .restart-btn{background:rgba(255,215,0,0.07)!important;border-color:#ffd700!important;color:#ffd700!important}
-    :root[data-theme="anti-red"] .play-pause-btn{background:#ffd700!important;color:#000!important}
-    :root[data-theme="anti-red"] .timer-circle-progress{stroke:#ffd700!important}
-    :root[data-theme="anti-red"] .timer-circle-bg{stroke:rgba(255,215,0,0.2)!important}
-    :root[data-theme="anti-red"] .calendar-day-box.completed{background:#ffd700!important;color:#000!important;border-color:#ffd700!important}
-    :root[data-theme="anti-red"] .calendar-day-box.partial{background:rgba(255,215,0,0.15)!important;border-color:#ffd700!important;color:#ffd700!important}
-    :root[data-theme="anti-red"] .badge{background:rgba(255,215,0,0.15)!important;color:#ffd700!important;border-color:#ffd700!important}
-    :root[data-theme="anti-red"] .field{border-color:rgba(255,215,0,0.35)!important;color:#ffd700!important;background:rgba(255,215,0,0.05)!important}
-    :root[data-theme="anti-red"] .field:focus{border-color:#ffd700!important}
-    :root[data-theme="anti-red"] select.field option{background:#0a0a0a!important;color:#ffd700!important}
-    :root[data-theme="anti-red"] .exercise-cue-box{border-left-color:#ffd700!important;color:#c8a800!important}
-    :root[data-theme="anti-red"] .tab-btn.active{color:#ffd700!important}
-    .log-sticky{position:sticky;bottom:80px;background:var(--card-bg);border:2px solid var(--accent);z-index:80;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
-    .custom-tick{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--card-border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s,border-color 0.15s}
-    .custom-tick.checked{background:var(--accent);border-color:var(--accent)}
-    .custom-tick svg{display:none}
-    .custom-tick.checked svg{display:block}
+    :root[data-theme="anti-red"] {
+      --bg:#000;--card-bg:#0c0c0c;--card-border:#ffd700;--text:#ffd700;
+      --text-secondary:#e5c158;--accent:#ffd700;--accent-muted:rgba(255,215,0,0.15);
+      --accent-rgb:255,215,0;--success:#ffd700;--success-muted:rgba(255,215,0,0.1);
+      --warning:#ffd700;--warning-muted:rgba(255,215,0,0.1);--danger:#ffd700;
+      --danger-muted:rgba(255,215,0,0.1);--header-bg:#0c0c0c;--btn-text:#000;
+      --input-bg:rgba(255,215,0,0.05);--shadow:none;--border-thickness:1.5px;
+      --timer-circle-bg:rgba(255,215,0,0.15);
+    }
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;transition:background 0.25s,color 0.25s}
     body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;padding-bottom:calc(85px + env(safe-area-inset-bottom))}
@@ -128,9 +118,10 @@
     // FIX 1: fmtMin was called in StretchesTab but never defined
     const fmtMin = s => { const m = Math.floor(s/60); const rem = s%60; return rem > 0 ? `${m}m ${rem}s` : `${m} min`; };
     const uid = () => Math.random().toString(36).slice(2,9);
-    const getThemeColor = (rawColor, th) => {
-      const t = th || document.documentElement.getAttribute('data-theme');
-      return t === 'anti-red' ? 'var(--accent)' : rawColor;
+    const getThemeColor = (rawColor) => {
+      const isAR = document.documentElement.getAttribute('data-theme') === 'anti-red';
+      if (isAR) return 'var(--accent)';
+      return rawColor;
     };
     const store = {
       get:(k,d)=>{try{const v=localStorage.getItem(k);if(!v)return d;const p=JSON.parse(v);if(Array.isArray(d)&&!Array.isArray(p))return d;if(d&&typeof d==='object'&&!Array.isArray(d)){if(typeof p!=='object'||p===null||Array.isArray(p))return d;return{...d,...p};}return p;}catch{return d;}},
@@ -162,32 +153,19 @@
       else if (type==='beep-high')  playSynthTone([880],0.12,'sine',0.2);
     };
 
-    const SOUND_LIST = [
-      {key:'tick',label:'Tick',desc:'Rep count',f:[440],d:0.05,t:'triangle',v:0.15},
-      {key:'beep-high',label:'Beep',desc:'Side switch',f:[880],d:0.12,t:'sine',v:0.2},
-      {key:'rest-chime',label:'Rest',desc:'Rest start',f:[392,523.25],d:0.4,t:'sine',v:0.15},
-      {key:'chime',label:'Done',desc:'Set done',f:[523.25,659.25,783.99],d:0.6,t:'sine',v:0.2},
-    ];
-    const triggerSoundChecked = type => {
-      const active = store.get('workout_active_sounds',{tick:true,'rest-chime':true,chime:true,'beep-high':true});
-      if (!active[type]) return;
-      const s = SOUND_LIST.find(x=>x.key===type);
-      if (s) playSynthTone(s.f,s.d,s.t,s.v);
-    };
     function SoundConfigCard() {
-      const [sounds,setSounds] = useState(()=>store.get('workout_active_sounds',{tick:true,'rest-chime':true,chime:true,'beep-high':true}));
-      const toggle = key => { const u={...sounds,[key]:!sounds[key]}; setSounds(u); store.set('workout_active_sounds',u); };
       return (
         <div className="card">
-          <p className="font-bold" style={{marginBottom:"10px"}}>Sound Alerts</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-            {SOUND_LIST.map(({key,label,desc,f,d,t,v})=>(
-              <button key={key} onClick={()=>toggle(key)} style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",borderRadius:"10px",background:sounds[key]?"var(--accent-muted)":"var(--input-bg)",border:sounds[key]?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",color:sounds[key]?"var(--accent)":"var(--text-secondary)",textAlign:"left"}}>
-                <span style={{fontSize:"15px",width:"16px",flexShrink:0}}>{sounds[key]?"✓":"○"}</span>
-                <div style={{flex:1}}><div style={{fontWeight:"700",fontSize:"13px"}}>{label}</div><div style={{fontSize:"11px",opacity:0.7}}>{desc}</div></div>
-                <span style={{fontSize:"11px",opacity:0.5,padding:"2px 5px",borderRadius:"6px",background:"var(--input-bg)"}} onClick={e=>{e.stopPropagation();playSynthTone(f,d,t,v);}}>▶</span>
-              </button>
-            ))}
+          <div className="flex-between" style={{marginBottom:"12px"}}>
+            <div>
+              <p className="font-bold">Sound Synthesizer</p>
+              <p className="text-small">Built-in audio alerts — works offline</p>
+            </div>
+            <div style={{display:"flex",gap:"6px"}}>
+              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('tick')}>Tick</button>
+              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('rest-chime')}>Rest</button>
+              <button className="button-secondary" style={{padding:"6px 12px",fontSize:"12px",width:"auto"}} onClick={()=>triggerSound('chime')}>Alarm</button>
+            </div>
           </div>
         </div>
       );
@@ -300,14 +278,14 @@
             {name:"Calf Raise Iso — Mid Range",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20-25kg DB",rest:"90s",cue:"Stand on one leg at mid-calf position. Hold completely still. The stimulus is sustained tension — no movement."},
             {name:"Wall Sit",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",cue:"Back flat against wall, thighs parallel, knees at 90 degrees. Hold. Patellar tendon stimulus."},
             {name:"Calf Hold — Bottom Stretch",equip:"Single leg + DB",sets:2,reps:"6",hold:"20s",weight:"+15kg DB",rest:"60s",cue:"Heel dropped off a step as low as possible. Hold at the deepest Achilles stretch."},
-            {name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",weight:"Bodyweight",rest:"60s",single:true,cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through front of rear hip. Hold still."},
-            {name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",single:true,cue:"Press wrist into band and hold without moving. Three positions: neutral, flexion, extension."},
+            {name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",weight:"Bodyweight",rest:"60s",cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through front of rear hip. Hold still."},
+            {name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",cue:"Press wrist into band and hold without moving. Three positions: neutral, flexion, extension."},
           ]},
           {label:"Session B",day:"Combat + Glute/Ham",exercises:[
             {name:"Wall Sit — Progressed",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",cue:"Same as Session A, but add a slight heel raise at the bottom to load calves simultaneously."},
             {name:"Calf Raise Iso — Peak",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20kg DB",rest:"90s",cue:"Rise onto toes and hold at the very top. Different loading zone from Session A mid-range."},
-            {name:"Wrist Iso — Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",single:true,cue:"Forearm on a surface. Resist band pulling wrist into extension. Hold completely still."},
-            {name:"Wrist Iso — Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",single:true,cue:"Same position. Resist band pulling wrist into flexion. Separate set from extension."},
+            {name:"Wrist Iso — Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",cue:"Forearm on a surface. Resist band pulling wrist into extension. Hold completely still."},
+            {name:"Wrist Iso — Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",cue:"Same position. Resist band pulling wrist into flexion. Separate set from extension."},
             {name:"Glute Bridge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"30s",weight:"Bodyweight",rest:"60s",cue:"Hips fully extended, shoulders on floor. Hold at top. Hamstring and glute tendon stimulus."},
           ]},
         ]},
@@ -323,8 +301,8 @@
           {label:"Session B",day:"Calf + Wrist",exercises:[
             {name:"Single Leg Calf Raise B",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",cue:"Same as Session A. Emphasise extra time at the bottom stretch — pause a beat before driving up."},
             {name:"Weighted Wall Sit",equip:"Weight plate",sets:3,reps:"6",hold:"30s",weight:"+10kg plate",rest:"2 min",cue:"Phase 1 wall sit with a plate resting across your thighs. Hold 90 degrees."},
-            {name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"7.5kg",rest:"60s",single:true,cue:"Forearm fully supported, palm up. Wrist only. Three seconds down, one second pause, three seconds up."},
-            {name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"5kg",rest:"60s",single:true,cue:"Overhand grip. Same tempo. Wrist extensor tendon — critical for combat wrist stability."},
+            {name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"7.5kg",rest:"60s",cue:"Forearm fully supported, palm up. Wrist only. Three seconds down, one second pause, three seconds up."},
+            {name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"5kg",rest:"60s",cue:"Overhand grip. Same tempo. Wrist extensor tendon — critical for combat wrist stability."},
           ]},
         ]},
       p3:{label:"Phase 3",weeks:"Weeks 9-12",name:"Plyometric",color:"#bf5af2",
@@ -338,8 +316,8 @@
             {name:"Broad Jump",equip:"Bodyweight",sets:4,reps:"6",weight:"Bodyweight",rest:"2 min",cue:"Maximal horizontal jump. Drive arms. Land softly. Walk back between reps."},
           ]},
           {label:"Session B",day:"Horizontal + Combat",exercises:[
-            {name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",weight:"Bodyweight",rest:"90s",single:true,cue:"Progress from double-leg. If unstable, return to double first. Stiff ankle, quick contacts."},
-            {name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",weight:"Bodyweight",rest:"90s",single:true,cue:"Push laterally off one leg, land on the other, immediately bound back. Reactive landing."},
+            {name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",weight:"Bodyweight",rest:"90s",cue:"Progress from double-leg. If unstable, return to double first. Stiff ankle, quick contacts."},
+            {name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",weight:"Bodyweight",rest:"90s",cue:"Push laterally off one leg, land on the other, immediately bound back. Reactive landing."},
             {name:"Continuous Broad Jump",equip:"Bodyweight",sets:3,reps:"5 in a row",weight:"Bodyweight",rest:"2 min",cue:"Land and immediately jump again — five consecutive jumps."},
             {name:"Rotational Med Ball Slam",equip:"Med ball",sets:3,reps:"8",weight:"5-8kg ball",rest:"90s",cue:"Full hip rotation — drive from the hips, not the arms. Wrist snap at release."},
           ]},
@@ -501,20 +479,35 @@
       const startTimeRef=useRef(0);
       const accRef=useRef(0);
       const rafRef=useRef(null);
-      const [pendingAutoStart,setPendingAutoStart]=useState(null);
+      const autoStartRestRef=useRef(false);
+      const autoStartWorkRef=useRef(false);
 
       const setupTimer=()=>{
         accRef.current=0;
         if(mode==="work"){
-          let p=0;
-          if(activeEx.hold){const s=parseInt(activeEx.hold.replace(/[^\d]/g,''))||30;p=hasSides?Math.round(s/sideLabels.length):s;setTargetSeconds(p);setRemaining(p);}
-          else if(activeEx.totalSec){p=hasSides?Math.round(activeEx.totalSec/sideLabels.length):activeEx.totalSec;setTargetSeconds(p);setRemaining(p);}
+          let p = 0;
+          if(activeEx.hold){const s=parseInt(activeEx.hold.replace(/[^\d]/g,''))||30; p=hasSides?Math.round(s/sideLabels.length):s;setTargetSeconds(p);setRemaining(p);}
+          else if(activeEx.totalSec){const p=hasSides?Math.round(activeEx.totalSec/sideLabels.length):activeEx.totalSec;setTargetSeconds(p);setRemaining(p);}
           else{setTargetSeconds(0);setRemaining(0);}
-          setIsRunning(false);
+          
+          if(autoStartWorkRef.current && p > 0){
+            autoStartWorkRef.current=false;
+            startTimeRef.current=Date.now();
+            setIsRunning(true);
+          } else {
+            autoStartWorkRef.current=false;
+            setIsRunning(false);
+          }
         } else if(mode==="rest"){
           const rs=parseRestSec(activeEx.rest);
           setTargetSeconds(rs);setRemaining(rs);
-          setIsRunning(false);
+          if(autoStartRestRef.current){
+            autoStartRestRef.current=false;
+            startTimeRef.current=Date.now();
+            setIsRunning(true);
+          } else {
+            setIsRunning(false);
+          }
         } else if(mode==="split_transition"){
           setTargetSeconds(3);setRemaining(3);
           startTimeRef.current=Date.now();
@@ -522,16 +515,6 @@
         }
       };
       useEffect(()=>{setupTimer();},[exIdx,setIdx,mode,currentSideIdx]);
-      useEffect(()=>{
-        if(!pendingAutoStart)return;
-        if(pendingAutoStart==='rest'&&mode==='rest'){
-          setPendingAutoStart(null);accRef.current=0;startTimeRef.current=Date.now();setIsRunning(true);
-        } else if(pendingAutoStart==='work'&&mode==='work'){
-          const hasTimer=!!(activeEx.hold||activeEx.totalSec);
-          setPendingAutoStart(null);
-          if(hasTimer){accRef.current=0;startTimeRef.current=Date.now();setIsRunning(true);}
-        }
-      },[pendingAutoStart,mode,exIdx,setIdx]);
 
       const modeRef=useRef(mode);
       useEffect(()=>{modeRef.current=mode;},[mode]);
@@ -581,32 +564,25 @@
         const m=modeRef.current;
         if(m==="work"){
           if(hasSides&&currentSideIdx+1<sideLabels.length){
-            triggerSoundChecked('beep-high');
+            triggerSound('beep-high');
             setMode("split_transition");
           } else {
-            triggerSoundChecked('chime');
-            // Auto-log timed exercises when timer finishes
-            if((activeEx.hold||activeEx.totalSec)&&!alreadyLogged()){
-              const logId=uid();
-              const nextLogs={...setLogs,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,logged:true,logId}};
-              setSetLogs(nextLogs);
-              onLogSet(activeEx,{reps:actualReps,weight:actualWeight,seconds:actualSeconds},logId);
-            }
+            triggerSound('chime');
             if(activeEx.rest&&activeEx.rest!=="0s"){
-              setPendingAutoStart("rest");
+              autoStartRestRef.current=true;
               setMode("rest");
             } else {
-              setPendingAutoStart("work");
+              autoStartWorkRef.current=true;
               moveToNext();
             }
           }
         } else if(m==="rest"){
-          triggerSoundChecked('rest-chime');
-          setPendingAutoStart("work");
+          triggerSound('rest-chime');
+          autoStartWorkRef.current=true;
           moveToNext();
         }
         else if(m==="split_transition"){
-          setPendingAutoStart("work");
+          autoStartWorkRef.current=true;
           setCurrentSideIdx(currentSideIdx+1);
           setMode("work");
         }
@@ -650,36 +626,23 @@
         setIsRunning(false);
         if(mode==="work"){
           if(hasSides&&currentSideIdx+1<sideLabels.length){
-            setPendingAutoStart("work");
+            autoStartWorkRef.current=true;
             setMode("split_transition");
           } else {
             if(activeEx.rest&&activeEx.rest!=="0s"){
-              setPendingAutoStart("rest");
+              autoStartRestRef.current=true;
               setMode("rest");
             } else {
-              setPendingAutoStart("work");
+              autoStartWorkRef.current=true;
               moveToNext();
             }
           }
         } else {
-          setPendingAutoStart("work");
+          autoStartWorkRef.current=true;
           moveToNext();
         }
       };
-      const updateSetLog=patch=>{
-        setSetLogs(p=>{
-          const updated={...p,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,...p[setKey],...patch}};
-          // Propagate weight change to all future sets of this exercise
-          if(patch.weight!==undefined){
-            const maxSets=activeEx.sets||1;
-            for(let si=setIdx+1;si<maxSets;si++){
-              const sk=`${exIdx}-${si}`;
-              updated[sk]={...(p[sk]||{}),weight:patch.weight};
-            }
-          }
-          return updated;
-        });
-      };
+      const updateSetLog=patch=>setSetLogs(p=>({...p,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,...p[setKey],...patch}}));
       const logCurrentSet=()=>{
         const logId=uid();
         const nextLogs={...setLogs,[setKey]:{reps:actualReps,weight:actualWeight,seconds:actualSeconds,logged:true,logId}};
@@ -687,10 +650,10 @@
         setSetLogs(nextLogs);
         onLogSet(activeEx,{reps:actualReps,weight:actualWeight,seconds:actualSeconds},logId);
         if(activeEx.rest&&activeEx.rest!=="0s"){
-          setPendingAutoStart("rest");
+          autoStartRestRef.current=true;
           setMode("rest");
         } else {
-          setPendingAutoStart("work");
+          autoStartWorkRef.current=true;
           moveToNext(nextLogs);
         }
       };
@@ -820,28 +783,21 @@
                 {mode==="work"&&<div><div style={{fontSize:"52px",fontWeight:"900"}}>{activeEx.reps}</div><div className="timer-label" style={{fontSize:"14px"}}>Target Reps</div>{activeEx.weight&&<div className="badge" style={{marginTop:"12px",fontSize:"14px",padding:"6px 14px"}}>{activeEx.weight}</div>}</div>}
               </div>
             )}
-            {mode==="work"&&activeEx.cue&&(
-              <div className="exercise-cue-box" style={{width:"100%",maxHeight:"120px",overflowY:"auto"}}>
-                <strong style={{display:"block",fontSize:"11px",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"4px",color:"var(--text-secondary)"}}>Cue</strong>
-                {activeEx.cue}
+            {mode==="work"&&<div className="exercise-cue-box" style={{width:"100%",maxHeight:"110px",overflowY:"auto"}}><strong>Cue:</strong> {activeEx.cue}</div>}
+            {mode==="work"&&(
+              <div className="card" style={{width:"100%",padding:"12px",marginBottom:"0"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px"}}>
+                  <div><label className="field-label">Reps</label><input className="field" value={actualReps} onChange={e=>updateSetLog({reps:e.target.value})}/></div>
+                  <div><label className="field-label">Weight</label><input className="field" value={actualWeight} onChange={e=>updateSetLog({weight:e.target.value})}/></div>
+                  <div><label className="field-label">Seconds</label><input className="field" value={actualSeconds} onChange={e=>updateSetLog({seconds:e.target.value})}/></div>
+                </div>
               </div>
             )}
-            {mode==="work"&&!routineName.startsWith("Stretching")&&(()=>{
-              const isHold=!!(activeEx.hold||activeEx.totalSec);
-              const isBW=!!(activeEx.equip&&/bodyweight|bw/i.test(activeEx.equip));
-              const fields=[];
-              if(!isHold) fields.push(<div key="r"><label className="field-label">Reps</label><input className="field" value={actualReps} onChange={e=>updateSetLog({reps:e.target.value})}/></div>);
-              if(!isBW)   fields.push(<div key="w"><label className="field-label">Weight</label><input className="field" value={actualWeight} onChange={e=>updateSetLog({weight:e.target.value})}/></div>);
-              if(isHold)  fields.push(<div key="s"><label className="field-label">Seconds</label><input className="field" value={actualSeconds} onChange={e=>updateSetLog({seconds:e.target.value})}/></div>);
-              if(!fields.length)return null;
-              return <div className="card" style={{width:"100%",padding:"12px",marginBottom:"0"}}><div style={{display:"grid",gridTemplateColumns:`repeat(${fields.length},1fr)`,gap:"10px"}}>{fields}</div></div>;
-            })()}
             {mode==="rest"&&nextEx&&(
               <div className="card" style={{width:"100%",background:"var(--input-bg)"}}>
                 <p className="text-small font-bold" style={{textTransform:"uppercase",color:"var(--accent)"}}>Up Next</p>
                 <p className="font-bold" style={{fontSize:"16px",marginTop:"2px"}}>{nextEx.name}</p>
                 <p className="text-small" style={{fontSize:"12px"}}>{nextEx.equip} — {nextEx.sets} set{nextEx.sets>1?"s":""} — {nextEx.reps||nextEx.hold}</p>
-                {nextEx.cue&&<p className="text-small" style={{fontSize:"12px",marginTop:"6px",fontStyle:"italic",opacity:0.8,borderTop:"0.5px solid var(--card-border)",paddingTop:"6px"}}>{nextEx.cue}</p>}
               </div>
             )}
           </div>
@@ -854,16 +810,10 @@
                 <div style={{width:"52px"}}/>
               </div>
             )}
-            {mode==="rest"?(
-              <div style={{width:"100%",display:"flex",justifyContent:"center"}}>
-                <button className="button-secondary" style={{maxWidth:"260px",width:"100%"}} onClick={skipTimer}>Skip Rest</button>
-              </div>
-            ):(
-              <div style={{display:"grid",gridTemplateColumns:mode==="work"?"1fr 1fr":"1fr",gap:"10px",width:"100%"}}>
-                <button className="button-secondary" onClick={skipTimer}>Next No Log</button>
-                {mode==="work"&&<button className="button-primary" style={{opacity:alreadyLogged()?0.4:1}} disabled={alreadyLogged()} onClick={logCurrentSet}>{alreadyLogged()?"Logged ✓":"Log & Next"}</button>}
-              </div>
-            )}
+            <div style={{display:"grid",gridTemplateColumns:mode==="work"?"1fr 1fr":"1fr",gap:"10px",width:"100%"}}>
+              <button className="button-secondary" onClick={skipTimer}>{mode==="rest"?"Skip Rest":"Next No Log"}</button>
+              {mode==="work"&&<button className="button-primary" onClick={logCurrentSet}>Log & Next</button>}
+            </div>
           </div>
         </div>
       );
@@ -873,33 +823,38 @@
     function WorkoutsTab({workouts,setWorkouts,weights,saveWeight,customReps,saveReps,counts,setActiveRoutine,setModalContent,reloadLogs,theme}) {
       const [activeSection,setActiveSection]=useState(null);
       const [editMode,setEditMode]=useState(false);
-      const [draftNames,setDraftNames]=useState({});
       const [checkedExercises,setCheckedExercises]=useState({});
-      const [inlineEdit,setInlineEdit]=useState(null);
       const workoutSections=workouts.filter(s=>!(s.description||s.phases));
       
-      const saveW=u=>{setWorkouts(u);store.set("workout_sections_custom",u);};
-      const moveExercise=(secName,idx,dir)=>{
-        const sec=workouts.find(s=>s.section===secName);if(!sec)return;
-        const exs=[...sec.exercises];const ti=idx+dir;
-        if(ti<0||ti>=exs.length)return;[exs[idx],exs[ti]]=[exs[ti],exs[idx]];
-        saveW(workouts.map(s=>s.section===secName?{...s,exercises:exs}:s));
+      const moveExercise = (secName, idx, direction) => {
+        const sec = workouts.find(s => s.section === secName);
+        if (!sec) return;
+        const exercises = [...sec.exercises];
+        const targetIdx = idx + direction;
+        if (targetIdx < 0 || targetIdx >= exercises.length) return;
+        
+        const temp = exercises[idx];
+        exercises[idx] = exercises[targetIdx];
+        exercises[targetIdx] = temp;
+        
+        const u = workouts.map(s => s.section === secName ? { ...s, exercises } : s);
+        setWorkouts(u);
+        store.set("workout_sections_custom", u);
       };
-      const renameSection=(old,nw)=>{saveW(workouts.map(s=>s.section===old?{...s,section:nw}:s));if(activeSection===old)setActiveSection(nw);};
-      const deleteSection=secName=>{
-        if(!confirm(`Delete "${secName}" and all its exercises?`))return;
-        saveW(workouts.filter(s=>s.section!==secName));if(activeSection===secName)setActiveSection(null);
+
+      const updateExercise=(secName,idx,patch)=>{
+        const u=workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u);
       };
-      const addSection=()=>{const nm=prompt("New section name:");if(!nm)return;saveW([...workouts,{section:nm,exercises:[]}]);};
-      const moveExTo=(fromSec,exName,toSec)=>{
-        const ex=workouts.find(s=>s.section===fromSec)?.exercises.find(e=>e.name===exName);if(!ex)return;
-        saveW(workouts.map(s=>{if(s.section===fromSec)return{...s,exercises:s.exercises.filter(e=>e.name!==exName)};if(s.section===toSec)return{...s,exercises:[...s.exercises,ex]};return s;}));
+      const deleteExercise=(secName,exName)=>{
+        const u=workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.filter(e=>e.name!==exName)}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u);
       };
-      const updateExercise=(secName,idx,patch)=>saveW(workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s));
-      const deleteExercise=(secName,exName)=>saveW(workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.filter(e=>e.name!==exName)}:s));
       const handleAddExercise=secName=>{
-        const nm=prompt("New exercise name:");if(!nm)return;
-        saveW(workouts.map(s=>s.section===secName?{...s,exercises:[...s.exercises,{name:nm,equip:"Bodyweight",sets:1,reps:"10-12",rest:"90s",weight:"",cue:""}]}:s));
+        const nm=prompt("New exercise name:");
+        if(!nm) return;
+        const u=workouts.map(s=>s.section===secName?{...s,exercises:[...s.exercises,{name:nm,equip:"Bodyweight",sets:1,reps:"10-12",rest:"90s",weight:"",cue:""}]}:s);
+        setWorkouts(u); store.set("workout_sections_custom",u);
       };
       const launchSectionSession=sec=>{
         setActiveRoutine({name:`${sec.section} Workout`,exercises:sec.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
@@ -961,16 +916,7 @@
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><h2 className="font-bold" style={{fontSize:"20px"}}>Strength & Hypertrophy</h2><p className="text-small">Progressive overload tracking</p></div>
             <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-              <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>{
-                if(editMode){
-                  let u=[...workouts];
-                  Object.entries(draftNames).forEach(([oldName,draft])=>{
-                    const trimmed=draft.trim();
-                    if(trimmed&&trimmed!==oldName){u=u.map(s=>s.section===oldName?{...s,section:trimmed}:s);if(activeSection===oldName)setActiveSection(trimmed);}
-                  });
-                  setWorkouts(u);store.set("workout_sections_custom",u);setDraftNames({});setEditMode(false);
-                }else{setDraftNames({});setEditMode(true);}
-              }}>{editMode?"Done":"Edit"}</button>
+              <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
               <span className="badge" style={{background:theme==='anti-red'?`var(--accent-muted)`:`var(--success-muted)`,color:successColor,borderColor:successColor}}>{counts.workouts} Done</span>
             </div>
           </div>
@@ -986,68 +932,47 @@
           </div>
           {workoutSections.map((sec,si)=>{
             const isOpen=activeSection===sec.section;
-            const otherSecs=workoutSections.filter(s=>s.section!==sec.section).map(s=>s.section);
             return (
-              <div key={sec.section} className="card" style={{padding:"12px 16px"}}>
-                <div className="flex-between" style={{cursor:editMode?"default":"pointer"}} onClick={()=>!editMode&&setActiveSection(isOpen?null:sec.section)}>
-                  <div className="flex-row">
-                    {editMode?<input className="field" style={{marginBottom:0,fontWeight:"700",fontSize:"16px",padding:"6px 10px",width:"160px"}} value={draftNames[sec.section]!==undefined?draftNames[sec.section]:sec.section} onClick={e=>e.stopPropagation()} onChange={e=>setDraftNames(p=>({...p,[sec.section]:e.target.value}))}/>:<p className="font-bold" style={{fontSize:"17px"}}>{sec.section}</p>}
-                    <span className="exercise-count-badge">{sec.exercises.length}</span>
-                  </div>
-                  {editMode?<button onClick={e=>{e.stopPropagation();deleteSection(sec.section);}} style={{padding:"4px 10px",borderRadius:"8px",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"12px",fontWeight:"700"}}>Delete</button>:<span style={{fontSize:"18px",transition:"transform 0.2s",transform:isOpen?"rotate(90deg)":"none"}}>→</span>}
+              <div key={si} className="card" style={{padding:"12px 16px"}}>
+                <div className="flex-between" style={{cursor:"pointer"}} onClick={()=>setActiveSection(isOpen?null:sec.section)}>
+                  <div className="flex-row"><p className="font-bold" style={{fontSize:"17px"}}>{sec.section}</p><span className="exercise-count-badge">{sec.exercises.length}</span></div>
+                  <span style={{fontSize:"18px",transition:"transform 0.2s",transform:isOpen?"rotate(90deg)":"none"}}>→</span>
                 </div>
-                {(isOpen||editMode)&&(
+                {isOpen&&(
                   <div style={{marginTop:"16px",borderTop:"1px solid var(--card-border)",paddingTop:"12px"}}>
-                    {!editMode&&<button className="button-primary" style={{marginBottom:"16px",padding:"10px 14px",fontSize:"14px"}} onClick={()=>launchSectionSession(sec)}>Start Session</button>}
+                    <button className="button-primary" style={{marginBottom:"16px",padding:"10px 14px",fontSize:"14px"}} onClick={()=>launchSectionSession(sec)}>Start Session</button>
                     {sec.exercises.map((ex,ei)=>(
-                      <div key={ei} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none",gap:"8px",alignItems:"center"}}>
-                        {!editMode&&<button className={`custom-tick ${checkedExercises[ex.name]?"checked":""}`} onClick={()=>setCheckedExercises(prev=>({...prev,[ex.name]:!prev[ex.name]}))}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>}
+                      <div key={ei} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none",gap:"10px"}}>
+                        {!editMode && (
+                          <input type="checkbox" checked={!!checkedExercises[ex.name]} onChange={() => {
+                            setCheckedExercises(prev => ({ ...prev, [ex.name]: !prev[ex.name] }));
+                          }} style={{width:"20px",height:"20px",accentColor:"var(--accent)",cursor:"pointer"}}/>
+                        )}
                         {editMode?(
                           <div style={{flex:1,display:"flex",gap:"6px",alignItems:"center"}}>
                             <div style={{display:"flex",flexDirection:"column",gap:"2px"}}>
-                              <button onClick={()=>moveExercise(sec.section,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
-                              <button onClick={()=>moveExercise(sec.section,ei,1)} disabled={ei===sec.exercises.length-1} style={{opacity:ei===sec.exercises.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
+                              <button onClick={()=>moveExercise(sec.section,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▲</button>
+                              <button onClick={()=>moveExercise(sec.section,ei,1)} disabled={ei===sec.exercises.length-1} style={{opacity:ei===sec.exercises.length-1?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▼</button>
                             </div>
-                            <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 44px 60px",gap:"5px",alignItems:"center"}}>
-                              <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}/>
-                              <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(sec.section,ei,{sets:parseInt(e.target.value)||1})}/>
-                              <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.reps||""} onChange={e=>updateExercise(sec.section,ei,{reps:e.target.value})}/>
+                            <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                              <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}/>
+                              <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(sec.section,ei,{sets:parseInt(e.target.value)||1})}/>
+                              <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||""} onChange={e=>updateExercise(sec.section,ei,{reps:e.target.value})}/>
                             </div>
-                            {otherSecs.length>0&&<select className="field" style={{marginBottom:0,fontSize:"11px",padding:"5px",width:"68px",cursor:"pointer"}} value="" onChange={e=>{if(e.target.value)moveExTo(sec.section,ex.name,e.target.value);}}>
-                              <option value="">Move→</option>
-                              {otherSecs.map(s=><option key={s} value={s}>{s}</option>)}
-                            </select>}
-                            <button onClick={()=>deleteExercise(sec.section,ex.name)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>
                           </div>
                         ):(
-                          <div style={{flex:1,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px",minWidth:0}}>
+                          <div style={{flex:1,display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",minWidth:0}}>
                             <div style={{flex:1,minWidth:0}}>
-                              {inlineEdit?.secName===sec.section&&inlineEdit?.exIdx===ei&&inlineEdit?.field==="name"?(
-                                <input autoFocus className="field" style={{marginBottom:"4px",fontSize:"14px",padding:"6px 8px"}} value={ex.name}
-                                  onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}
-                                  onBlur={()=>setInlineEdit(null)} onKeyDown={e=>e.key==="Enter"&&setInlineEdit(null)}/>
-                              ):(
-                                <p className="font-bold" style={{fontSize:"14px",cursor:"text"}}
-                                  onDoubleClick={()=>setInlineEdit({secName:sec.section,exIdx:ei,field:"name"})}>{ex.name}</p>
-                              )}
+                              <p className="font-bold" style={{fontSize:"14px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ex.name}</p>
                               <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets</p>
-                              {inlineEdit?.secName===sec.section&&inlineEdit?.exIdx===ei&&inlineEdit?.field==="cue"?(
-                                <textarea autoFocus className="field" style={{marginBottom:0,fontSize:"12px",padding:"6px 8px",marginTop:"4px",minHeight:"60px",resize:"vertical"}} value={ex.cue||""}
-                                  onChange={e=>updateExercise(sec.section,ei,{cue:e.target.value})}
-                                  onBlur={()=>setInlineEdit(null)}/>
-                              ):(
-                                <p className="text-small" style={{fontSize:"12px",marginTop:"4px",fontStyle:"italic",opacity:0.75,cursor:"text",lineHeight:"1.35"}}
-                                  onDoubleClick={()=>setInlineEdit({secName:sec.section,exIdx:ei,field:"cue"})}>
-                                  {ex.cue?ex.cue:<span style={{opacity:0.4}}>Double-tap to add cue…</span>}
-                                </p>
-                              )}
                             </div>
-                            <div style={{display:"flex",gap:"6px",alignItems:"center",flexShrink:0,marginTop:"2px"}}>
+                            <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
                               <WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
                               <RepsChip exKey={ex.name} defaultReps={ex.reps} color="var(--accent)" reps={customReps} onSave={saveReps}/>
                             </div>
                           </div>
                         )}
+                        {editMode&&<button onClick={()=>deleteExercise(sec.section,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>}
                       </div>
                     ))}
                     {editMode&&<button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>}
@@ -1056,7 +981,6 @@
               </div>
             );
           })}
-          {editMode&&<button className="button-secondary" style={{padding:"12px",marginBottom:"16px",fontSize:"14px"}} onClick={addSection}>+ Add Section</button>}
           {checkedCount > 0 && (
             <div className="card" style={{position:"sticky",bottom:"80px",background:"var(--card-bg)",border:"2px solid var(--accent)",zIndex:80,display:"flex",flexDirection:"column",gap:"10px",boxShadow:"var(--shadow)"}}>
               <div className="flex-between">
@@ -1072,75 +996,60 @@
       );
     }
 
-        // ── TendonsTab ─────────────────────────────────────────────────────────────
-    function TendonsTab({weights,saveWeight,counts,setActiveRoutine,theme,reloadLogs}) {
+    // ── TendonsTab ─────────────────────────────────────────────────────────────
+    function TendonsTab({weights,saveWeight,counts,setActiveRoutine,theme}) {
       const [selectedPhase,setSelectedPhase]=useState("p1");
       const [editMode,setEditMode]=useState(false);
-      const [checked,setChecked]=useState({});
-      const [inlineEdit,setInlineEdit]=useState(null);
-      const toggleSingle=(sessLabel,exIdx,current)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.map((e,i)=>i===exIdx?{...e,single:!current}:e)}:s)}});
       const [tendonData,setTendonData]=useState(()=>store.get("tendon_custom",TENDON));
       const pd=tendonData[selectedPhase];
-      const pdColor=getThemeColor(pd.color,theme);
+      const pdColor = getThemeColor(pd.color);
       const saveTendon=u=>{setTendonData(u);store.set("tendon_custom",u);};
       const updatePhaseField=(field,value)=>saveTendon({...tendonData,[selectedPhase]:{...pd,[field]:value}});
-      const updateEx=(sessLabel,idx,patch)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s)}});
-      const deleteEx=(sessLabel,exName)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.filter(e=>e.name!==exName)}:s)}});
-      const moveEx=(sessLabel,idx,dir)=>{
-        const sess=pd.sessions.find(s=>s.label===sessLabel);if(!sess)return;
-        const exs=[...sess.exercises];const ti=idx+dir;
-        if(ti<0||ti>=exs.length)return;
-        [exs[idx],exs[ti]]=[exs[ti],exs[idx]];
-        saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:exs}:s)}});
+      const updateTendonEx=(sessLabel,idx,patch)=>{
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s)}};
+        saveTendon(u);
       };
-      const renameSess=(old,nw)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===old?{...s,label:nw}:s)}});
-      const addEx=sessLabel=>{
-        const nm=prompt("New exercise name:");if(!nm)return;
-        const ex={name:nm,equip:"Single leg",sets:1,reps:"6",hold:"30s",weight:"",rest:"90s",cue:"",single:true};
-        saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:[...s.exercises,ex]}:s)}});
+      const deleteTendonEx=(sessLabel,exName)=>{
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.filter(e=>e.name!==exName)}:s)}};
+        saveTendon(u);
       };
-      const launch=sess=>{
-        setActiveRoutine({name:`Tendon - ${pd.label} (${sess.label})`,exercises:sess.exercises.map(e=>{
-          const isSingle=e.single||/single|one.?leg|one.?arm|unilateral|lunge/i.test((e.equip||"")+" "+(e.name||""));
-          return {...e,weight:weights[e.name]||e.weight||"",sideLabels:isSingle?["Left","Right"]:[]};
-        })});
+      const addTendonEx=sessLabel=>{
+        const nm=prompt("New tendon exercise name:");
+        if(!nm)return;
+        const ex={name:nm,equip:"Bodyweight",sets:1,reps:"6",hold:"30s",weight:"",rest:"90s",cue:""};
+        const u={...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:[...s.exercises,ex]}:s)}};
+        saveTendon(u);
       };
-      const logChecked=()=>{
-        const names=Object.keys(checked).filter(n=>checked[n]);if(!names.length)return;
-        const today=new Date().toISOString().split("T")[0];
-        const prog=store.get("workout_progression",[]);
-        names.forEach(n=>{
-          let ex=null;for(const s of pd.sessions){ex=s.exercises.find(e=>e.name===n);if(ex)break;}
-          prog.push({id:uid(),date:today,exercise:n,weight:weights[n]||ex?.weight||"0",reps:ex?.reps||"",hold:ex?.hold||"0"});
-        });
-        store.set("workout_progression",prog);
-        const logs=store.get("workout_logs",[]);
-        logs.push({id:uid(),date:today,routine:`Tendon ${pd.label}`,total:names.length,completed:names.length,isPartial:false});
-        store.set("workout_logs",logs);
-        const cnt=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});cnt.tendons+=1;store.set("workout_completed_counts",cnt);
-        setChecked({});if(reloadLogs)reloadLogs();
-        alert(`Logged ${names.length} exercise${names.length>1?"s":""}!`);
+      const launchTendonSession=sess=>{
+        setActiveRoutine({name:`Tendon - ${pd.label} (${sess.label})`,exercises:sess.exercises.map(e=>({...e,weight:weights[e.name]||e.weight||""}))});
       };
-      const checkedCount=Object.values(checked).filter(Boolean).length;
       return (
         <div>
           <div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
             {Object.keys(tendonData).map(k=>{
-              const btnColor=getThemeColor(tendonData[k].color,theme);
-              return <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?btnColor:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>{tendonData[k].label}</button>;
+              const btnColor = getThemeColor(tendonData[k].color);
+              return (
+                <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?btnColor:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>
+                  {tendonData[k].label}
+                </button>
+              );
             })}
           </div>
           <div className="card">
             <div className="flex-between">
               <div style={{flex:1}}>
-                {editMode?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginRight:"8px"}}>
-                  <input className="field" style={{marginBottom:0}} value={pd.name} onChange={e=>updatePhaseField("name",e.target.value)}/>
-                  <input className="field" style={{marginBottom:0}} value={pd.weeks} onChange={e=>updatePhaseField("weeks",e.target.value)}/>
-                </div>:<><h2 className="font-bold" style={{fontSize:"20px",color:pdColor}}>{pd.name}</h2><p className="text-small">{pd.weeks}</p></>}
+                {editMode?(
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginRight:"8px"}}>
+                    <input className="field" style={{marginBottom:0}} value={pd.name} onChange={e=>updatePhaseField("name",e.target.value)}/>
+                    <input className="field" style={{marginBottom:0}} value={pd.weeks} onChange={e=>updatePhaseField("weeks",e.target.value)}/>
+                  </div>
+                ):(
+                  <><h2 className="font-bold" style={{fontSize:"20px",color:pdColor}}>{pd.name}</h2><p className="text-small">{pd.weeks}</p></>
+                )}
               </div>
               <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
                 <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?pdColor:"var(--card-border)",color:editMode?pdColor:"var(--text)"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"Done":"Edit"}</button>
-                <span className="badge" style={{background:theme==="anti-red"?"var(--accent-muted)":`${pdColor}20`,color:pdColor,borderColor:pdColor}}>{counts.tendons} Done</span>
+                <span className="badge" style={{background:theme==='anti-red'?'var(--accent-muted)':`${pdColor}20`,color:pdColor,borderColor:pdColor}}>{counts.tendons} Done</span>
               </div>
             </div>
             <p className="exercise-cue-box" style={{borderLeftColor:pdColor,marginTop:"14px"}}>{pd.meta}</p>
@@ -1148,110 +1057,42 @@
           {pd.sessions.map((sess,i)=>(
             <div key={i} className="card">
               <div className="flex-between" style={{marginBottom:"12px"}}>
-                <div style={{flex:1,marginRight:"8px"}}>
-                  {editMode?<input className="field" style={{marginBottom:"4px",fontWeight:"700",fontSize:"15px",padding:"6px 10px"}} value={sess.label} onChange={e=>renameSess(sess.label,e.target.value)}/>:<h3 className="font-bold" style={{fontSize:"17px"}}>{sess.label}</h3>}
-                  <p className="text-small">{sess.day}</p>
-                </div>
-                <button className="button-primary" style={{width:"auto",padding:"8px 16px",fontSize:"13px",background:pdColor,borderColor:pdColor}} onClick={()=>launch(sess)}>Start</button>
+                <div><h3 className="font-bold" style={{fontSize:"17px"}}>{sess.label}</h3><p className="text-small">{sess.day}</p></div>
+                <button className="button-primary" style={{width:"auto",padding:"8px 16px",fontSize:"13px",background:pdColor,borderColor:pdColor}} onClick={()=>launchTendonSession(sess)}>Start</button>
               </div>
               <div style={{borderTop:"1.5px solid var(--card-border)",paddingTop:"8px"}}>
                 {sess.exercises.map((ex,ei)=>(
-                  <div key={ei} className="flex-between" style={{padding:"8px 0",borderBottom:ei+1<sess.exercises.length?"0.5px solid var(--card-border)":"none",gap:"8px",alignItems:"center"}}>
+                  <div key={ei} className="flex-between" style={{padding:"8px 0",borderBottom:ei+1<sess.exercises.length?"0.5px solid var(--card-border)":"none"}}>
                     {editMode?(
-                      <>
-                        <div style={{display:"flex",flexDirection:"column",gap:"2px",flexShrink:0}}>
-                          <button onClick={()=>moveEx(sess.label,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
-                          <button onClick={()=>moveEx(sess.label,ei,1)} disabled={ei===sess.exercises.length-1} style={{opacity:ei===sess.exercises.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
-                        </div>
-                        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 44px 60px",gap:"5px",alignItems:"center"}}>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateEx(sess.label,ei,{name:e.target.value})}/>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
-                        </div>
-                        <button onClick={()=>updateEx(sess.label,ei,{single:!ex.single})} style={{padding:"4px 8px",borderRadius:"8px",fontSize:"11px",fontWeight:"700",background:ex.single?"var(--accent-muted)":"var(--input-bg)",border:ex.single?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",color:ex.single?"var(--accent)":"var(--text-secondary)",flexShrink:0}}>
-                          {ex.single?"L/R":"Both"}
-                        </button>
-                        <button onClick={()=>deleteEx(sess.label,ex.name)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>
-                      </>
+                      <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateTendonEx(sess.label,ei,{name:e.target.value})}/>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateTendonEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateTendonEx(sess.label,ei,{reps:e.target.value,hold:e.target.value})}/>
+                      </div>
                     ):(
-                      <>
-<button className={`custom-tick ${checked[ex.name]?"checked":""}`} onClick={()=>setChecked(p=>({...p,[ex.name]:!p[ex.name]}))}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>
-                        <div style={{flex:1,minWidth:0}}>
-                          {inlineEdit?.sessLabel===sess.label&&inlineEdit?.exIdx===ei&&inlineEdit?.field==="name"?(
-                            <input autoFocus className="field" style={{marginBottom:"4px",fontSize:"14px",padding:"6px 8px"}} value={ex.name}
-                              onChange={e=>updateEx(sess.label,ei,{name:e.target.value})}
-                              onBlur={()=>setInlineEdit(null)} onKeyDown={e=>e.key==="Enter"&&setInlineEdit(null)}/>
-                          ):(
-                            <p className="font-bold" style={{fontSize:"14px",cursor:"text"}}
-                              onDoubleClick={()=>setInlineEdit({sessLabel:sess.label,exIdx:ei,field:"name"})}>{ex.name}</p>
-                          )}
-                          <p className="text-small" style={{fontSize:"11px"}}>
-                            {ex.equip} — {ex.sets} sets — Hold {ex.hold}
-                            {(ex.single||/single|one.?leg|one.?arm|lunge/i.test((ex.equip||"")+" "+(ex.name||"")))&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
-                          </p>
-                          {inlineEdit?.sessLabel===sess.label&&inlineEdit?.exIdx===ei&&inlineEdit?.field==="cue"?(
-                            <textarea autoFocus className="field" style={{marginBottom:0,fontSize:"12px",padding:"6px 8px",marginTop:"4px",minHeight:"60px",resize:"vertical"}} value={ex.cue||""}
-                              onChange={e=>updateEx(sess.label,ei,{cue:e.target.value})}
-                              onBlur={()=>setInlineEdit(null)}/>
-                          ):(
-                            <p className="text-small" style={{fontSize:"12px",marginTop:"4px",fontStyle:"italic",opacity:0.75,cursor:"text",lineHeight:"1.35"}}
-                              onDoubleClick={()=>setInlineEdit({sessLabel:sess.label,exIdx:ei,field:"cue"})}>
-                              {ex.cue?ex.cue:<span style={{opacity:0.4}}>Double-tap to add cue…</span>}
-                            </p>
-                          )}
-                        </div>
-                        <div style={{display:"flex",flexDirection:"column",gap:"4px",alignItems:"center",flexShrink:0}}>
-                          <WeightChip exKey={ex.name} defaultWeight={ex.weight} color={pdColor} weights={weights} onSave={saveWeight}/>
-                          {(()=>{
-                            const isSingle=ex.single||/single|one.?leg|one.?arm|lunge/i.test((ex.equip||"")+" "+(ex.name||""));
-                            return <button onClick={()=>toggleSingle(sess.label,ei,ex.single)}
-                              style={{padding:"3px 8px",borderRadius:"20px",fontSize:"10px",fontWeight:"800",letterSpacing:"0.04em",
-                                background:isSingle?"var(--accent-muted)":"var(--input-bg)",
-                                border:isSingle?"1px solid var(--accent)":"1px solid var(--card-border)",
-                                color:isSingle?"var(--accent)":"var(--text-secondary)"}}>
-                              {isSingle?"L / R":"BOTH"}
-                            </button>;
-                          })()}
-                        </div>
-                      </>
+                      <div style={{maxWidth:"60%"}}><p className="font-bold" style={{fontSize:"14px"}}>{ex.name}</p><p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}</p></div>
                     )}
+                    {editMode?<button onClick={()=>deleteTendonEx(sess.label,ex.name)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:<WeightChip exKey={ex.name} defaultWeight={ex.weight} color={pdColor} weights={weights} onSave={saveWeight}/>}
                   </div>
                 ))}
-                {editMode&&<button className="button-secondary" style={{marginTop:"10px",padding:"8px",fontSize:"13px"}} onClick={()=>addEx(sess.label)}>+ Add Exercise</button>}
+                {editMode&&<button className="button-secondary" style={{marginTop:"10px",padding:"8px",fontSize:"13px"}} onClick={()=>addTendonEx(sess.label)}>+ Add Exercise</button>}
               </div>
             </div>
           ))}
-          {checkedCount>0&&(
-            <div className="card log-sticky">
-              <div className="flex-between"><p className="font-bold">Log Checked</p><span className="badge">{checkedCount} selected</span></div>
-              <button className="button-primary" onClick={logChecked}>Log Selected ({checkedCount})</button>
-            </div>
-          )}
         </div>
       );
     }
 
     // ── StretchesTab ───────────────────────────────────────────────────────────
-    function StretchesTab({counts,setActiveRoutine,theme,reloadLogs}) {
-      const [checked,setChecked]=useState({});
-      const [inlineEditStretch,setInlineEditStretch]=useState(null);
-      const [stretchOrder,setStretchOrder]=useState(()=>store.get("stretch_order",{}));
+    function StretchesTab({counts,setActiveRoutine,theme}) {
       const [selectedPhase,setSelectedPhase]=useState(1);
       const [editMode,setEditMode]=useState(false);
       const [customStretches,setCustomStretches]=useState(()=>store.get("stretch_custom",{}));
       const [hiddenStretches,setHiddenStretches]=useState(()=>store.get("stretch_hidden",{}));
       const phaseData=SPHASE[selectedPhase];
-      const phaseColor = getThemeColor(phaseData.color,theme);
+      const phaseColor = getThemeColor(phaseData.color);
       const baseList=getPhaseStretches(selectedPhase).filter(s=>!(hiddenStretches[selectedPhase]||[]).includes(s.name));
-      const rawList=[...baseList,...(customStretches[selectedPhase]||[])];
-      const saveOrder=u=>{setStretchOrder(u);store.set("stretch_order",u);};
-      const _ord=stretchOrder[selectedPhase];
-      const stretchList=_ord?_ord.map(n=>rawList.find(s=>s.name===n)).filter(Boolean).concat(rawList.filter(s=>!_ord.includes(s.name))):rawList;
-      const moveStretch=(name,dir)=>{
-        const names=stretchList.map(s=>s.name);const idx=names.indexOf(name);const ni=idx+dir;
-        if(ni<0||ni>=names.length)return;const arr=[...names];[arr[idx],arr[ni]]=[arr[ni],arr[idx]];
-        saveOrder({...stretchOrder,[selectedPhase]:arr});
-      };
+      const stretchList=[...baseList,...(customStretches[selectedPhase]||[])];
       const saveCustom=u=>{setCustomStretches(u);store.set("stretch_custom",u);};
       const saveHidden=u=>{setHiddenStretches(u);store.set("stretch_hidden",u);};
       const [phaseEdits,setPhaseEdits]=useState(()=>store.get("stretch_phase_edits",{}));
@@ -1275,14 +1116,14 @@
         saveCustom({...customStretches,[selectedPhase]:[...(customStretches[selectedPhase]||[]),item]});
       };
       const launchStretchSession=()=>{
-        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s",cue:s.phases?.[selectedPhase]?.how||s.phases?.[1]?.how||s.cue||""}))});
+        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s"}))});
       };
       return (
         <div>
           <div className="card" style={{padding:"8px",display:"flex",gap:"4px",marginBottom:"14px",overflowX:"auto"}}>
             {Object.keys(SPHASE).map(k=>{
               const a=selectedPhase===parseInt(k);
-              const btnColor = getThemeColor(SPHASE[k].color,theme);
+              const btnColor = getThemeColor(SPHASE[k].color);
               return(
                 <button key={k} onClick={()=>setSelectedPhase(parseInt(k))} style={{flex:"1 0 auto",padding:"8px 12px",borderRadius:"10px",background:a?btnColor:"transparent",color:a?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"12px"}}>
                   {phaseEdits[k]?.name||`Phase ${k}`}
@@ -1315,44 +1156,20 @@
           <div className="card" style={{padding:"12px 16px"}}>
             <h3 className="font-bold" style={{fontSize:"16px",marginBottom:"12px"}}>Exercises</h3>
             {stretchList.map((st,i)=>(
-              <div key={st.name+i} style={{padding:"10px 0",borderBottom:i+1<stretchList.length?"0.5px solid var(--card-border)":"none"}}>
-                <div className="flex-between" style={{gap:"8px",alignItems:"center"}}>
-                  {editMode&&<div style={{display:"flex",flexDirection:"column",gap:"2px",flexShrink:0}}>
-                    <button onClick={()=>moveStretch(st.name,-1)} disabled={i===0} style={{opacity:i===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
-                    <button onClick={()=>moveStretch(st.name,1)} disabled={i===stretchList.length-1} style={{opacity:i===stretchList.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
-                  </div>}
-{!editMode&&<button className={`custom-tick ${checked[st.name]?"checked":""}`} onClick={()=>setChecked(p=>({...p,[st.name]:!p[st.name]}))}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>}
-                  {editMode?<div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 68px",gap:"8px",alignItems:"center"}}>
-                    <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"7px"}} value={st.name} onChange={e=>updateStretch(i,{name:e.target.value})}/>
-                    <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"7px"}} type="number" min="10" value={st.totalSec} onChange={e=>updateStretch(i,{totalSec:parseInt(e.target.value)||60})}/>
-                  </div>:<p className="font-bold" style={{flex:1}}>{st.name}{st.isNew&&<span className="badge" style={{fontSize:"9px",marginLeft:"6px"}}>NEW</span>}</p>}
-                  {editMode?<button onClick={()=>deleteStretch(st.name)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>:<span className="text-small font-bold" style={{color:phaseColor,flexShrink:0}}>{st.totalSec}s</span>}
+              <div key={i} style={{padding:"10px 0",borderBottom:i+1<stretchList.length?"0.5px solid var(--card-border)":"none"}}>
+                <div className="flex-between">
+                  {editMode?<div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 72px 72px",gap:"8px",alignItems:"center"}}>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={st.name} onChange={e=>updateStretch(i,{name:e.target.value})}/>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={st.sets||1} onChange={e=>updateStretch(i,{sets:parseInt(e.target.value)||1})}/>
+                    <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={st.reps||st.hold||`${st.totalSec}s`} onChange={e=>updateStretch(i,{reps:e.target.value,hold:e.target.value})}/>
+                  </div>:<p className="font-bold">{st.name}{st.isNew&&<span className="badge" style={{fontSize:"9px"}}>NEW</span>}</p>}
+                  {editMode?<button onClick={()=>deleteStretch(st.name)} style={{width:"32px",height:"32px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"18px",fontWeight:"900"}}>×</button>:<span className="text-small font-bold" style={{color:phaseColor}}>{st.totalSec}s</span>}
                 </div>
-                {!editMode&&(inlineEditStretch===st.name?(
-                  <textarea autoFocus className="field" style={{marginBottom:0,fontSize:"12px",padding:"8px",marginTop:"4px",marginLeft:"28px",minHeight:"64px",resize:"vertical"}}
-                    value={st.phases?.[selectedPhase]?.how||st.phases?.[1]?.how||""}
-                    onChange={e=>{
-                      const phaseHasOwn=!!(st.phases?.[selectedPhase]);
-                      const basePhase=phaseHasOwn?selectedPhase:1;
-                      updateStretch(stretchList.indexOf(st),{phases:{...st.phases,[selectedPhase]:{...(st.phases?.[selectedPhase]||st.phases?.[1]||{}),how:e.target.value}}});
-                    }}
-                    onBlur={()=>setInlineEditStretch(null)}/>
-                ):(
-                  <p className="text-small" style={{fontSize:"12px",marginTop:"4px",marginLeft:"28px",cursor:"text",lineHeight:"1.4"}}
-                    onDoubleClick={()=>setInlineEditStretch(st.name)}>
-                    {st.phases?.[selectedPhase]?.how||st.phases?.[1]?.how||<span style={{opacity:0.4}}>Double-tap to add description…</span>}
-                  </p>
-                ))}
+                <p className="text-small" style={{fontSize:"12px",marginTop:"4px"}}>{st.phases[selectedPhase]?.how||st.phases[1]?.how}</p>
               </div>
             ))}
             {editMode&&<button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={addStretch}>+ Add Movement</button>}
           </div>
-          {Object.values(checked).some(Boolean)&&(
-            <div className="card log-sticky">
-              <div className="flex-between"><p className="font-bold">Log Checked Stretches</p><span className="badge">{Object.values(checked).filter(Boolean).length} selected</span></div>
-              <button className="button-primary" onClick={logChecked}>Log Selected ({Object.values(checked).filter(Boolean).length})</button>
-            </div>
-          )}
         </div>
       );
     }
@@ -1464,9 +1281,10 @@
       const [phaseIdx,setPhaseIdx]=useState(0);
       const phases=split.phases&&split.phases.length?split.phases:["Phase 1"];
       const splitKey=split.id||split.section;
+      const stableId=split.id||splitKey;
       const saveSplit=patch=>{
         setWorkouts(prev=>{
-          const u=prev.map(s=>(s.id||s.section)===splitKey?{...s,...patch}:s);
+          const u=prev.map(s=>(s.id||s.section)===splitKey?{...s,id:stableId,...patch}:s);
           store.set("workout_sections_custom",u);
           return u;
         });
@@ -1535,11 +1353,7 @@
                     </div>
                   </div>
                 ):(
-                  <div>
-                    <p className="font-bold">{ex.name}</p>
-                    <p className="text-small">{ex.sets} sets — {ex.reps||ex.hold}</p>
-                    {ex.cue&&<p className="text-small" style={{fontSize:"12px",marginTop:"3px",fontStyle:"italic",opacity:0.7,lineHeight:"1.35"}}>{ex.cue}</p>}
-                  </div>
+                  <div><p className="font-bold">{ex.name}</p><p className="text-small">{ex.sets} sets — {ex.reps||ex.hold}</p></div>
                 )}
                 {editMode?<button onClick={()=>deleteExercise(i)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:<WeightChip exKey={ex.name} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>}
               </div>
@@ -1553,11 +1367,7 @@
     // ── App ────────────────────────────────────────────────────────────────────
     function App() {
       const [activeTab,setActiveTab]=useState("home");
-      const [theme,setTheme]=useState(()=>{
-        const t=store.get("workout_theme","dark");
-        document.documentElement.setAttribute('data-theme',t);
-        return t;
-      });
+      const [theme,setTheme]=useState(()=>store.get("workout_theme","dark"));
       const [username,setUsername]=useState(()=>store.get("workout_username","Abiram"));
       const [editingName,setEditingName]=useState(false);
       const [hiddenTabs,setHiddenTabs]=useState(()=>store.get("workout_hidden_tabs",[]));
@@ -1569,6 +1379,14 @@
       const [counts,setCounts]=useState(()=>store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));
       const [activeRoutine,setActiveRoutine]=useState(null);
       const [modalContent,setModalContent]=useState(null);
+      useEffect(()=>{
+        let changed=false;
+        const normalized=workouts.map(s=>{
+          if((s.description||s.phases)&&!s.id){changed=true;return {...s,id:uid()};}
+          return s;
+        });
+        if(changed){setWorkouts(normalized);store.set("workout_sections_custom",normalized);}
+      },[]);
       const customSplits=workouts.filter(s=>s.description||s.phases);
       const activeCustomSplit=customSplits.find(s=>`split-${s.id||s.section}`===activeTab);
 
@@ -1629,9 +1447,9 @@
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:"20px"}}>
               {homeTiles.map(tile=>(
-                <button key={tile.id} onClick={()=>tile.custom?setActiveTab(`split-${tile.id}`):setActiveTab(tile.id)} style={{minHeight:"150px",borderRadius:"20px",background:"var(--card-bg)",border:`1.5px solid ${getThemeColor(tile.color,theme)}`,padding:"22px",textAlign:"left",position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                <button key={tile.id} onClick={()=>tile.custom?setActiveTab(`split-${tile.id}`):setActiveTab(tile.id)} style={{minHeight:"150px",borderRadius:"20px",background:"var(--card-bg)",border:`1.5px solid ${getThemeColor(tile.color)}`,padding:"22px",textAlign:"left",position:"relative",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
                   <span onClick={e=>{e.stopPropagation();deleteHomeSplit(tile.id);}} style={{position:"absolute",top:"20px",right:"20px",width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",fontWeight:"900"}}>×</span>
-                  <span style={{color:getThemeColor(tile.color,theme)}}><tile.Icon/></span>
+                  <span style={{color:getThemeColor(tile.color)}}><tile.Icon/></span>
                   <span style={{fontSize:"23px",fontWeight:"900"}}>{tile.label}</span>
                 </button>
               ))}
@@ -1744,8 +1562,8 @@
           <div className="container">
             {activeTab==="home"&&renderHome()}
             {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} customReps={customReps} saveReps={saveReps} counts={counts} setActiveRoutine={setActiveRoutine} setModalContent={setModalContent} reloadLogs={reloadLogs} theme={theme}/>}
-            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs}/>}
-            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs}/>}
+            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine}/>}
+            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine}/>}
             {activeTab==="progression"&&<ProgressionTab reloadLogs={reloadLogs}/>}
             {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine}/>}
           </div>
