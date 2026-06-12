@@ -16,7 +16,9 @@
       --input-bg:rgba(0,0,0,0.03);--shadow:0 8px 24px rgba(0,0,0,0.05);--border-thickness:1px;
       --timer-circle-bg:rgba(0,0,0,0.06);--pr-gold:#b8860b;--pr-gold-muted:rgba(184,134,11,0.12);
     }
-    :root[data-theme="anti-red"]{--bg:#000;--card-bg:#0a0a0a;--card-border:#ffd700;--text:#ffd700;--text-secondary:#c8a800;--accent:#ffd700;--accent-muted:rgba(255,215,0,0.18);--accent-rgb:255,215,0;--success:#ffd700;--success-muted:rgba(255,215,0,0.18);--warning:#ffd700;--warning-muted:rgba(255,215,0,0.18);--danger:#ffd700;--danger-muted:rgba(255,215,0,0.18);--header-bg:#0a0a0a;--btn-text:#000;--input-bg:rgba(255,215,0,0.07);--shadow:none;--border-thickness:1.5px;--timer-circle-bg:rgba(255,215,0,0.2);--pr-gold:#ffd700;--pr-gold-muted:rgba(255,215,0,0.18)}
+    :root[data-theme="anti-red"]{--bg:#000;--card-bg:#0a0a0a;--card-border:#ffd700;--text:#ffd700;--text-secondary:#e5c158;--accent:#ffd700;--accent-muted:rgba(255,215,0,0.18);--accent-rgb:255,215,0;--success:#ffd700;--success-muted:rgba(255,215,0,0.18);--warning:#ffd700;--warning-muted:rgba(255,215,0,0.18);--danger:#ffd700;--danger-muted:rgba(255,215,0,0.18);--header-bg:#0a0a0a;--btn-text:#000;--input-bg:rgba(255,215,0,0.07);--shadow:none;--border-thickness:1.5px;--timer-circle-bg:rgba(255,215,0,0.2);--pr-gold:#ffd700;--pr-gold-muted:rgba(255,215,0,0.18)}
+    :root[data-theme="anti-red"] .streak-card{background:rgba(255,215,0,0.08)!important;border-color:#ffd700!important}
+    :root[data-theme="anti-red"] .set-done-btn.done{background:#ffd700!important;border-color:#ffd700!important;color:#000!important}
     :root[data-theme="anti-red"] .button-secondary{border-color:#ffd700!important;color:#ffd700!important;background:rgba(255,215,0,0.07)!important}
     :root[data-theme="anti-red"] .restart-btn{background:rgba(255,215,0,0.07)!important;border-color:#ffd700!important;color:#ffd700!important}
     :root[data-theme="anti-red"] .play-pause-btn{background:#ffd700!important;color:#000!important}
@@ -28,7 +30,7 @@
     :root[data-theme="anti-red"] .field{border-color:rgba(255,215,0,0.35)!important;color:#ffd700!important;background:rgba(255,215,0,0.05)!important}
     :root[data-theme="anti-red"] .field:focus{border-color:#ffd700!important}
     :root[data-theme="anti-red"] select.field option{background:#0a0a0a!important;color:#ffd700!important}
-    :root[data-theme="anti-red"] .exercise-cue-box{border-left-color:#ffd700!important;color:#c8a800!important}
+    :root[data-theme="anti-red"] .exercise-cue-box{border-left-color:#ffd700!important;color:#e5c158!important}
     :root[data-theme="anti-red"] .tab-btn.active{color:#ffd700!important}
     .log-sticky{position:sticky;bottom:calc(95px + env(safe-area-inset-bottom));background:var(--card-bg);border:2px solid var(--accent);z-index:80;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
     .custom-tick{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--card-border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s,border-color 0.15s}
