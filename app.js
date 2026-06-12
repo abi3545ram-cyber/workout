@@ -179,24 +179,74 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     };
 
     // ── Audio ──────────────────────────────────────────────────────────────────
-    let synthCtx = null;
-    // iOS 16.4+: 'transient' lets short cues mix with (briefly duck) background music
-    // instead of being silenced or pausing the music entirely.
-    const applyAudioSession = () => {
-      try { if (navigator.audioSession) navigator.audioSession.type = 'transient'; } catch {}
+    // Primary path: pre-rendered WAV tones via HTMLAudio — reliable on iOS and
+    // mixes OVER background music instead of pausing it. WebAudio synth kept as fallback.
+    try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch {}
+    const TONES = {
+      'tick':       {f:[440],d:0.05,t:'triangle',v:0.15},
+      'beep-high':  {f:[880],d:0.12,t:'sine',v:0.2},
+      'rest-chime': {f:[392,523.25],d:0.4,t:'sine',v:0.15},
+      'chime':      {f:[523.25,659.25,783.99],d:0.6,t:'sine',v:0.2},
+      'pr-fanfare': {f:[523.25,659.25,783.99,1046.5],d:0.8,t:'sine',v:0.25},
     };
-    applyAudioSession();
+    const renderWav = ({f,d,t,v}) => {
+      const sr=22050;
+      const total=Math.ceil(((f.length-1)*0.1+d+0.05)*sr);
+      const data=new Float32Array(total);
+      f.forEach((freq,idx)=>{
+        const start=Math.floor(idx*0.1*sr), len=Math.floor(d*sr);
+        for(let i=0;i<len&&start+i<total;i++){
+          const tt=i/sr;
+          const phase=2*Math.PI*freq*tt;
+          const wave=t==='triangle'?(2/Math.PI)*Math.asin(Math.sin(phase)):Math.sin(phase);
+          const gain=v*Math.pow(0.0001/v,tt/d);
+          data[start+i]+=wave*gain;
+        }
+      });
+      const buf=new ArrayBuffer(44+total*2); const dv=new DataView(buf);
+      const ws=(o,s)=>{for(let i=0;i<s.length;i++)dv.setUint8(o+i,s.charCodeAt(i));};
+      ws(0,'RIFF');dv.setUint32(4,36+total*2,true);ws(8,'WAVE');ws(12,'fmt ');
+      dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);
+      dv.setUint32(24,sr,true);dv.setUint32(28,sr*2,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);
+      ws(36,'data');dv.setUint32(40,total*2,true);
+      for(let i=0;i<total;i++){const s=Math.max(-1,Math.min(1,data[i]));dv.setInt16(44+i*2,s<0?s*0x8000:s*0x7FFF,true);}
+      let bin='';const bytes=new Uint8Array(buf);
+      for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));
+      return 'data:audio/wav;base64,'+btoa(bin);
+    };
+    const toneAudio = {};
+    const getToneAudio = key => {
+      if (!TONES[key]) return null;
+      if (!toneAudio[key]) {
+        try { const a = new Audio(renderWav(TONES[key])); a.preload = 'auto'; toneAudio[key] = a; } catch { return null; }
+      }
+      return toneAudio[key];
+    };
+    let audioUnlocked = false;
+    const unlockAudio = () => {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      Object.keys(TONES).forEach(k => {
+        const a = getToneAudio(k);
+        if (!a) return;
+        try {
+          a.muted = true;
+          const p = a.play();
+          if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; audioUnlocked = false; });
+        } catch { a.muted = false; audioUnlocked = false; }
+      });
+    };
+
+    // WebAudio fallback synth
+    let synthCtx = null;
     const freshCtx = () => {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return null;
         if (synthCtx && synthCtx.state !== 'closed') return synthCtx;
-        applyAudioSession();
         synthCtx = new AC();
         try {
           synthCtx.onstatechange = () => {
-            // iOS sets the context to 'interrupted' when other media takes over —
-            // resume as soon as we notice instead of staying silent.
             if (synthCtx && (synthCtx.state === 'suspended' || synthCtx.state === 'interrupted')) synthCtx.resume().catch(()=>{});
           };
         } catch {}
@@ -204,6 +254,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       } catch { return null; }
     };
     const unlockSynth = () => {
+      unlockAudio();
       try {
         const ctx = freshCtx();
         if (ctx && ctx.state !== 'running') ctx.resume().catch(()=>{});
@@ -227,7 +278,6 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         osc.stop(at + duration);
       });
       const rebuildAndPlay = () => {
-        // Context got stuck (e.g. interrupted by background media) — rebuild and retry once.
         try { if (synthCtx) synthCtx.close().catch(()=>{}); } catch {}
         synthCtx = null;
         const c2 = freshCtx();
@@ -245,13 +295,24 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         }).catch(rebuildAndPlay);
       } catch {}
     };
+    // Play a named tone: HTMLAudio first, synth fallback if it refuses
+    const playTone = key => {
+      const a = getToneAudio(key);
+      if (a) {
+        try {
+          const inst = (a.paused || a.ended) ? a : a.cloneNode();
+          inst.currentTime = 0;
+          const p = inst.play();
+          if (p && p.catch) p.catch(() => { const s = TONES[key]; if (s) playSynthTone(s.f, s.d, s.t, s.v); });
+          return;
+        } catch {}
+      }
+      const s = TONES[key];
+      if (s) playSynthTone(s.f, s.d, s.t, s.v);
+    };
     const triggerSound = type => {
       unlockSynth();
-      if (type==='tick')        playSynthTone([440],0.05,'triangle',0.15);
-      else if (type==='chime')  playSynthTone([523.25,659.25,783.99],0.6,'sine',0.2);
-      else if (type==='rest-chime') playSynthTone([392,523.25],0.4,'sine',0.15);
-      else if (type==='beep-high')  playSynthTone([880],0.12,'sine',0.2);
-      else if (type==='pr-fanfare') playSynthTone([523.25,659.25,783.99,1046.5],0.8,'sine',0.25);
+      playTone(type);
     };
     const SOUND_LIST = [
       {key:'tick',label:'Tick',desc:'Rep count',f:[440],d:0.05,t:'triangle',v:0.15},
@@ -263,9 +324,23 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       unlockSynth();
       const active = store.get('workout_active_sounds',{tick:true,'rest-chime':true,chime:true,'beep-high':true});
       if (!active[type]) return;
-      const s = SOUND_LIST.find(x=>x.key===type);
-      if (s) playSynthTone(s.f,s.d,s.t,s.v);
+      playTone(type);
     };
+
+    function TimerConfigCard() {
+      const [trans,setTrans]=useState(()=>String(store.get('workout_transition_sec',3)));
+      const save=v=>{setTrans(v);const n=Math.max(1,Math.min(60,parseInt(v)||3));store.set('workout_transition_sec',n);};
+      return (
+        <div className="card">
+          <p className="font-bold" style={{marginBottom:"2px"}}>Side-Switch Transition</p>
+          <p className="text-small" style={{marginBottom:"10px"}}>Countdown between left/right sides</p>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <input className="field" type="number" min="1" max="60" style={{marginBottom:0,width:"90px"}} value={trans} onChange={e=>save(e.target.value)}/>
+            <span className="text-small">seconds</span>
+          </div>
+        </div>
+      );
+    }
 
     function SoundConfigCard() {
       const [sounds,setSounds] = useState(()=>store.get('workout_active_sounds',{tick:true,'rest-chime':true,chime:true,'beep-high':true}));
@@ -278,7 +353,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               <button key={key} onClick={()=>toggle(key)} style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",borderRadius:"10px",background:sounds[key]?"var(--accent-muted)":"var(--input-bg)",border:sounds[key]?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",color:sounds[key]?"var(--accent)":"var(--text-secondary)",textAlign:"left"}}>
                 <span style={{fontSize:"15px",width:"16px",flexShrink:0}}>{sounds[key]?"✓":"○"}</span>
                 <div style={{flex:1}}><div style={{fontWeight:"700",fontSize:"13px"}}>{label}</div><div style={{fontSize:"11px",opacity:0.7}}>{desc}</div></div>
-                <span style={{fontSize:"11px",opacity:0.5,padding:"2px 5px",borderRadius:"6px",background:"var(--input-bg)"}} onClick={e=>{e.stopPropagation();playSynthTone(f,d,t,v);}}>▶</span>
+                <span style={{fontSize:"11px",opacity:0.5,padding:"2px 5px",borderRadius:"6px",background:"var(--input-bg)"}} onClick={e=>{e.stopPropagation();unlockSynth();playTone(key);}}>▶</span>
               </button>
             ))}
           </div>
@@ -499,15 +574,25 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const phases = stretch.phases || {};
       return phases[phase]?.how || phases[1]?.how || Object.values(phases).find(p=>p?.how)?.how || stretch.cue || "";
     };
-    const withTendonSides = ex => {
+    // Explicit per-exercise preference: ex.unilateral === true/false overrides auto-detection
+    const applySidePref = (ex, detected) => {
+      if (ex.unilateral === false) return {...ex, sideLabels: []};
+      if (ex.unilateral === true) {
+        if (detected.sideLabels && detected.sideLabels.length) return detected;
+        return {...ex, sideLabels: ["right side","left side"]};
+      }
+      return detected;
+    };
+    const _tendonSidesAuto = ex => {
       if (ex.sideLabels && ex.sideLabels.length) return ex;
       const text = `${ex.name||""} ${ex.equip||""} ${ex.reps||""} ${ex.cue||""}`.toLowerCase();
       if (/wrist|forearm/.test(text)) return {...ex, sideLabels:["right arm","left arm"]};
       if (ex.single || /single|one.?leg|one.?arm|unilateral|each|lunge|calf|hip flexor|lateral bound/.test(text)) return {...ex, sideLabels:["right leg","left leg"]};
       return ex;
     };
+    const withTendonSides = ex => applySidePref(ex, _tendonSidesAuto(ex));
     // Generic unilateral detection for ALL routines (workouts, splits) — not just tendons.
-    const withSides = ex => {
+    const _sidesAuto = ex => {
       if (ex.sideLabels && ex.sideLabels.length) return ex;
       const text = `${ex.name||""} ${ex.equip||""} ${ex.reps||""} ${ex.cue||""}`.toLowerCase();
       if (ex.single || /single|one.?arm|one.?leg|unilateral|each side|each leg|each arm|\beach\b|lunge|split squat|pistol|step.?up|cable single/.test(text)) {
@@ -516,7 +601,22 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       }
       return ex;
     };
+    const withSides = ex => applySidePref(ex, _sidesAuto(ex));
     const exerciseHasSides = ex => !!(withSides(ex).sideLabels && withSides(ex).sideLabels.length);
+    const tendonExHasSides = ex => !!(withTendonSides(ex).sideLabels && withTendonSides(ex).sideLabels.length);
+    // Small edit-mode toggle: decide unilateral (L/R) vs bilateral for any exercise
+    function SideToggle({ex,onChange,detector}) {
+      const uni = !!(((detector||withSides)(ex)).sideLabels||[]).length;
+      return (
+        <button onClick={e=>{e.stopPropagation();onChange(!uni);}} title="Unilateral (L/R) or bilateral"
+          style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
+            border:`1.5px solid ${uni?"var(--accent)":"var(--card-border)"}`,
+            color:uni?"var(--accent)":"var(--text-secondary)",
+            background:uni?"var(--accent-muted)":"var(--input-bg)"}}>
+          {uni?"L/R":"Both"}
+        </button>
+      );
+    }
 
     // ── Icons ──────────────────────────────────────────────────────────────────
     const Icons = {
@@ -805,6 +905,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const pushHistory=()=>{
         setHistoryStack(p=>[...p,{exIdx,setIdx:currentSetIdx,mode,sideIdx:currentSideIdx}]);
       };
+      const [skipModal,setSkipModal]=useState(false);
+      // Last set of the last exercise → no point resting afterwards
+      const isFinalStep = si => (exIdx+1>=orderedExercises.length) && ((si!==undefined?si:currentSetIdx)+1>=maxSets);
 
       const setupTimer=()=>{
         accRef.current=0;
@@ -819,7 +922,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           setTargetSeconds(rs);setRemaining(rs);
           setIsRunning(false);
         } else if(mode==="split_transition"){
-          setTargetSeconds(3);setRemaining(3);
+          const ts=Math.max(1,parseInt(store.get('workout_transition_sec',3))||3);
+          setTargetSeconds(ts);setRemaining(ts);
           timerStartRef.current=Date.now();
           setIsRunning(true);
         }
@@ -889,7 +993,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             if((activeEx.hold||activeEx.totalSec)&&!currentLog.logged){
               logSet(currentSetIdx);
             }
-            if(activeEx.rest&&activeEx.rest!=="0s"){
+            if(activeEx.rest&&activeEx.rest!=="0s"&&!isFinalStep(currentSetIdx)){
               setPendingAutoStart("rest");
               setMode("rest");
             } else {
@@ -940,6 +1044,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         timerStartRef.current=Date.now();
         if(isRunning) rafRef.current=requestAnimationFrame(()=>tick.current());
       };
+      // Adjust the running rest/transition timer on the fly (±seconds)
+      const adjustTimer=d=>{
+        setTargetSeconds(t=>Math.max(5,t+d));
+        if(!isRunning) setRemaining(r=>Math.max(0,r+d));
+      };
 
       const logSet = (si) => {
         const sk = `${exIdx}-${si}`;
@@ -982,13 +1091,15 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
       const handleCompleteSet = (si) => {
         const sk = `${exIdx}-${si}`;
+        setIsRunning(false);
         pushHistory();
         if (setLogs[sk]?.logged) {
           // Already logged, just advance
-          if (activeEx.rest && activeEx.rest !== "0s") {
+          if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(si)) {
             setPendingAutoStart("rest");
             setMode("rest");
           } else {
+            setPendingAutoStart("work");
             advanceSet();
           }
           return;
@@ -996,35 +1107,45 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         logSet(si);
         try { navigator.vibrate?.(50); } catch {}
         // Auto-start rest timer
-        if (activeEx.rest && activeEx.rest !== "0s") {
+        if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(si)) {
           setPendingAutoStart("rest");
           setMode("rest");
         } else {
           // Move to next set
           if (si === currentSetIdx) {
+            setPendingAutoStart("work");
             advanceSet();
           }
         }
       };
 
-      const skipToNext = () => {
+      // Skip the current set without logging (used by the skip modal)
+      const doSkipSet = () => {
         setIsRunning(false);
         pushHistory();
-        if (mode === "work") {
-          if (hasSides && (activeEx.hold||activeEx.totalSec) && currentSideIdx + 1 < sideLabels.length) {
-            setPendingAutoStart("work");
-            setMode("split_transition");
-          } else if (activeEx.rest && activeEx.rest !== "0s") {
-            setPendingAutoStart("rest");
-            setMode("rest");
-          } else {
-            setPendingAutoStart("work");
-            advanceSet();
-          }
+        if (hasSides && (activeEx.hold||activeEx.totalSec) && currentSideIdx + 1 < sideLabels.length) {
+          setPendingAutoStart("work");
+          setMode("split_transition");
+        } else if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(currentSetIdx)) {
+          setPendingAutoStart("rest");
+          setMode("rest");
         } else {
           setPendingAutoStart("work");
           advanceSet();
         }
+      };
+
+      const skipToNext = () => {
+        if (mode === "work") {
+          // Ask whether to log the set as done or skip without logging
+          setSkipModal(true);
+          return;
+        }
+        // Skipping rest needs no confirmation
+        setIsRunning(false);
+        pushHistory();
+        setPendingAutoStart("work");
+        advanceSet();
       };
 
       // Skip the whole exercise without logging anything
@@ -1135,8 +1256,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           <div className="timer-overlay" style={{justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px"}}>
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",maxWidth:"400px",width:"100%"}}>
               <div style={{fontSize:"64px",marginBottom:"20px"}}>🎉</div>
-              <h1 style={{fontSize:"30px",fontWeight:"900",lineHeight:"1.15",marginBottom:"8px"}}>Workout Complete</h1>
-              <p style={{fontSize:"17px",color:"var(--text-secondary)",marginBottom:"24px"}}>{routineName}</p>
+              <h1 style={{fontSize:"30px",fontWeight:"900",lineHeight:"1.15",marginBottom:"8px"}}>Congratulations!</h1>
+              <p style={{fontSize:"17px",color:"var(--text-secondary)",marginBottom:"24px"}}>You finished {routineName}!</p>
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",width:"100%",marginBottom:"16px"}}>
                 <div className="card summary-stat"><div className="stat-value text-accent">{loggedSets}</div><div className="stat-label">Sets</div></div>
@@ -1324,26 +1445,38 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 <div style={{width:"52px"}}/>
               </div>
             )}
+            {mode==="rest"&&(
+              <div style={{display:"flex",gap:"10px",justifyContent:"center"}}>
+                <button className="button-secondary" style={{width:"auto",padding:"8px 16px",fontSize:"13px"}} onClick={()=>adjustTimer(-15)}>−15s</button>
+                <button className="button-secondary" style={{width:"auto",padding:"8px 16px",fontSize:"13px"}} onClick={()=>adjustTimer(15)}>+15s</button>
+              </div>
+            )}
             {mode==="rest"?(
               <button className="button-secondary" style={{maxWidth:"260px",width:"100%"}} onClick={skipToNext}>Skip Rest</button>
             ):(
-              <>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",width:"100%"}}>
-                  <button className="button-secondary" onClick={skipToNext}>Skip →</button>
-                  {(mode==="work"&&!(activeEx.hold||activeEx.totalSec))?(
-                    <button className="button-primary" onClick={() => handleCompleteSet(currentSetIdx)} disabled={setLogs[setKey]?.logged} style={{opacity:setLogs[setKey]?.logged?0.4:1}}>
-                      {setLogs[setKey]?.logged ? "Logged ✓" : "Complete Set"}
-                    </button>
-                  ):(
-                    <button className="button-secondary" onClick={skipExercise}>Skip Exercise ⇥</button>
-                  )}
-                </div>
-                {mode==="work"&&!(activeEx.hold||activeEx.totalSec)&&(
-                  <button onClick={skipExercise} style={{fontSize:"13px",fontWeight:"700",color:"var(--text-secondary)",padding:"2px 12px"}}>Skip exercise without logging ⇥</button>
-                )}
-              </>
+              <div style={{display:"grid",gridTemplateColumns:(mode==="work"&&!(activeEx.hold||activeEx.totalSec))?"1fr 1fr":"1fr",gap:"10px",width:"100%"}}>
+                <button className="button-secondary" onClick={skipToNext}>Skip →</button>
+                {mode==="work"&&!(activeEx.hold||activeEx.totalSec)&&<button className="button-primary" onClick={() => handleCompleteSet(currentSetIdx)} disabled={setLogs[setKey]?.logged} style={{opacity:setLogs[setKey]?.logged?0.4:1}}>
+                  {setLogs[setKey]?.logged ? "Logged ✓" : "Complete Set"}
+                </button>}
+              </div>
             )}
           </div>
+
+          {/* Skip choice modal */}
+          {skipModal&&(
+            <div className="modal-bg" style={{zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)setSkipModal(false);}}>
+              <div className="modal-body">
+                <div className="drag-bar"/>
+                <h3 className="font-bold" style={{fontSize:"19px",marginBottom:"4px"}}>Skip — {activeEx.name}</h3>
+                <p className="text-small" style={{marginBottom:"16px"}}>Set {currentSetIdx+1} of {maxSets}</p>
+                <button className="button-primary" onClick={()=>{setSkipModal(false);handleCompleteSet(currentSetIdx);}}>Log set as done & skip</button>
+                <button className="button-secondary" style={{marginTop:"10px"}} onClick={()=>{setSkipModal(false);doSkipSet();}}>Skip set without logging</button>
+                <button className="button-secondary" style={{marginTop:"10px"}} onClick={()=>{setSkipModal(false);skipExercise();}}>Skip whole exercise (no log)</button>
+                <button style={{marginTop:"14px",width:"100%",padding:"10px",fontWeight:"700",color:"var(--text-secondary)"}} onClick={()=>setSkipModal(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -1463,20 +1596,27 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                       <div key={exKey} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none",gap:"8px",alignItems:"flex-start"}}>
                         {!editMode&&<button className={`custom-tick ${checkedExercises[exKey]?"checked":""}`} onClick={()=>setCheckedExercises(prev=>({...prev,[exKey]:!prev[exKey]}))} style={{marginTop:"4px"}}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>}
                         {editMode?(
-                          <div style={{flex:1,display:"flex",gap:"6px",alignItems:"center"}}>
+                          <div style={{flex:1,display:"flex",gap:"6px",alignItems:"flex-start"}}>
                             <div style={{display:"flex",flexDirection:"column",gap:"2px"}}>
                               <button onClick={()=>moveExercise(sec.section,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
                               <button onClick={()=>moveExercise(sec.section,ei,1)} disabled={ei===sec.exercises.length-1} style={{opacity:ei===sec.exercises.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
                             </div>
-                            <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 44px 60px",gap:"5px",alignItems:"center"}}>
-                              <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}/>
-                              <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(sec.section,ei,{sets:parseInt(e.target.value)||1})}/>
-                              <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.reps||""} onChange={e=>updateExercise(sec.section,ei,{reps:e.target.value})}/>
+                            <div style={{flex:1,display:"flex",flexDirection:"column",gap:"5px"}}>
+                              <div style={{display:"grid",gridTemplateColumns:"1fr 44px 60px",gap:"5px",alignItems:"center"}}>
+                                <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateExercise(sec.section,ei,{name:e.target.value})}/>
+                                <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(sec.section,ei,{sets:parseInt(e.target.value)||1})}/>
+                                <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.reps||""} onChange={e=>updateExercise(sec.section,ei,{reps:e.target.value})}/>
+                              </div>
+                              <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                                <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
+                                <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"72px"}} value={ex.rest||""} placeholder="90s" onChange={e=>updateExercise(sec.section,ei,{rest:e.target.value})}/>
+                                <SideToggle ex={ex} onChange={v=>updateExercise(sec.section,ei,{unilateral:v})}/>
+                                {otherSecs.length>0&&<select className="field" style={{marginBottom:0,fontSize:"11px",padding:"5px",width:"68px",cursor:"pointer"}} value="" onChange={e=>{if(e.target.value)moveExTo(sec.section,exKey,e.target.value);}}>
+                                  <option value="">Move→</option>
+                                  {otherSecs.map(s=><option key={s} value={s}>{s}</option>)}
+                                </select>}
+                              </div>
                             </div>
-                            {otherSecs.length>0&&<select className="field" style={{marginBottom:0,fontSize:"11px",padding:"5px",width:"68px",cursor:"pointer"}} value="" onChange={e=>{if(e.target.value)moveExTo(sec.section,exKey,e.target.value);}}>
-                              <option value="">Move→</option>
-                              {otherSecs.map(s=><option key={s} value={s}>{s}</option>)}
-                            </select>}
                             <button onClick={()=>deleteExercise(sec.section,exKey)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>
                           </div>
                         ):(
@@ -1499,7 +1639,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                         )}
                       </div>
                     );})}
-                    {editMode&&<button className="button-secondary" style={{marginTop:"12px",padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>}
+                    {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+                      <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>
+                      <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>{
+                        const v=prompt(`Rest time for ALL exercises in "${sec.section}" (e.g. 90s or 2 min):`);
+                        if(!v)return;
+                        saveW(workouts.map(s=>s.section===sec.section?{...s,exercises:s.exercises.map(e=>({...e,rest:v.trim()}))}:s));
+                      }}>⏱ Rest for all</button>
+                    </div>}
                   </div>
                 )}
               </div>
@@ -1604,10 +1751,17 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                           <button onClick={()=>moveEx(sess.label,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
                           <button onClick={()=>moveEx(sess.label,ei,1)} disabled={ei===sess.exercises.length-1} style={{opacity:ei===sess.exercises.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
                         </div>
-                        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 44px 60px",gap:"5px",alignItems:"center"}}>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateEx(sess.label,ei,{name:e.target.value})}/>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
+                        <div style={{flex:1,display:"flex",flexDirection:"column",gap:"5px"}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 44px 60px",gap:"5px",alignItems:"center"}}>
+                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateEx(sess.label,ei,{name:e.target.value})}/>
+                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
+                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
+                          </div>
+                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                            <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
+                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"72px"}} value={ex.rest||""} placeholder="90s" onChange={e=>updateEx(sess.label,ei,{rest:e.target.value})}/>
+                            <SideToggle ex={ex} detector={withTendonSides} onChange={v=>updateEx(sess.label,ei,{unilateral:v})}/>
+                          </div>
                         </div>
                         <button onClick={()=>deleteEx(sess.label,exKey)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>
                       </>
@@ -1617,7 +1771,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                         <div style={{flex:1,minWidth:0}}>
                           <Editable as="p" className="font-bold" style={{fontSize:"14px"}} value={ex.name} onSave={t=>updateEx(sess.label,ei,{name:t})} singleAction={()=>setHistoryModal({id:exKey,name:ex.name})}/>
                           <p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}
-                            {(ex.single||/single|one.?leg|one.?arm|lunge/i.test((ex.equip||"")+" "+(ex.name||"")))&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
+                            {tendonExHasSides(ex)&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
                           </p>
                           <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
                           <Editable as="p" multiline className="text-small" style={{fontSize:"12px",marginTop:"4px",fontStyle:"italic",opacity:0.85,lineHeight:"1.35"}} value={ex.cue||""} placeholder="Double-tap to add cue…" onSave={t=>updateEx(sess.label,ei,{cue:t})}/>
@@ -1630,7 +1784,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                     )}
                   </div>
                 );})}
-                {editMode&&<button className="button-secondary" style={{marginTop:"10px",padding:"8px",fontSize:"13px"}} onClick={()=>addEx(sess.label)}>+ Add Exercise</button>}
+                {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"10px"}}>
+                  <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>addEx(sess.label)}>+ Add Exercise</button>
+                  <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>{
+                    const v=prompt(`Rest time for ALL exercises in "${sess.label}" (e.g. 90s or 2 min):`);
+                    if(!v)return;
+                    saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sess.label?{...s,exercises:s.exercises.map(e=>({...e,rest:v.trim()}))}:s)}});
+                  }}>⏱ Rest for all</button>
+                </div>}
               </div>
             </div>
           ))}
@@ -1692,8 +1853,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const cnt=store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0});cnt.stretches+=1;store.set("workout_completed_counts",cnt);
         setChecked({});if(reloadLogs)reloadLogs();alert(`Logged ${names.length} stretch${names.length>1?"es":""}!`);
       };
+      const [stretchRest,setStretchRest]=useState(()=>String(store.get("stretch_rest_sec",30)));
+      const saveStretchRest=v=>{setStretchRest(v);const n=Math.max(0,Math.min(300,parseInt(v)||0));store.set("stretch_rest_sec",n);};
       const launchStretchSession=()=>{
-        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>({...s,sets:1,hold:`${s.totalSec}s`,rest:"30s",cue:getStretchCue(s,selectedPhase)}))});
+        const rs=Math.max(0,parseInt(store.get("stretch_rest_sec",30))||0);
+        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>withSides({...s,sets:1,hold:`${s.totalSec}s`,rest:rs>0?`${rs}s`:"0s",cue:getStretchCue(s,selectedPhase)}))});
       };
       return (
         <div>
@@ -1716,7 +1880,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             </div>
             <Editable as="p" multiline className="text-small" style={{marginTop:"8px"}} value={displayPhase.desc} placeholder="Add description…" onSave={t=>savePhaseEdit({desc:t})}/>
             {editMode&&<ColorPalette value={displayPhase.color} onPick={c=>savePhaseEdit({color:c})}/>}
-            <button className="button-primary" style={{marginTop:"16px",background:phaseColor,borderColor:phaseColor}} onClick={launchStretchSession}>Start — {fmtMin(getPhaseTotalSec(selectedPhase))}</button>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"14px"}}>
+              <span className="text-small" style={{fontSize:"11px",textTransform:"uppercase",fontWeight:"700"}}>Rest between stretches</span>
+              <input className="field" type="number" min="0" max="300" style={{marginBottom:0,width:"72px",padding:"8px"}} value={stretchRest} onChange={e=>saveStretchRest(e.target.value)}/>
+              <span className="text-small">sec</span>
+            </div>
+            <button className="button-primary" style={{marginTop:"12px",background:phaseColor,borderColor:phaseColor}} onClick={launchStretchSession}>Start — {fmtMin(getPhaseTotalSec(selectedPhase))}</button>
           </div>
           <div className="card" style={{padding:"12px 16px"}}>
             <h3 className="font-bold" style={{fontSize:"16px",marginBottom:"12px"}}>Exercises</h3>
@@ -1728,9 +1897,10 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                     <button onClick={()=>moveStretch(st.name,1)} disabled={i===stretchList.length-1} style={{opacity:i===stretchList.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
                   </div>}
                   {!editMode&&<button className={`custom-tick ${checked[st.name]?"checked":""}`} onClick={()=>setChecked(p=>({...p,[st.name]:!p[st.name]}))}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>}
-                  {editMode?<div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 68px",gap:"8px",alignItems:"center"}}>
+                  {editMode?<div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 56px 52px",gap:"6px",alignItems:"center"}}>
                     <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"7px"}} value={st.name} onChange={e=>updateStretch(i,{name:e.target.value})}/>
                     <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"7px"}} type="number" min="10" value={st.totalSec} onChange={e=>updateStretch(i,{totalSec:parseInt(e.target.value)||60})}/>
+                    <SideToggle ex={st} onChange={v=>updateStretch(i,{unilateral:v})}/>
                   </div>:<p className="font-bold" style={{flex:1}}><Editable value={st.name} onSave={t=>updateStretch(i,{name:t})}/>{st.isNew&&<span className="badge" style={{fontSize:"9px",marginLeft:"6px"}}>NEW</span>}</p>}
                   {editMode?<button onClick={()=>deleteStretch(st.name)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>:<span className="text-small font-bold" style={{color:phaseColor,flexShrink:0}}>{st.totalSec}s</span>}
                 </div>
@@ -1904,15 +2074,22 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               return (
               <div key={exKey} className="flex-between" style={{padding:"10px 0",borderBottom:i+1<split.exercises.length?"0.5px solid var(--card-border)":"none",gap:"10px"}}>
                 {editMode?(
-                  <div style={{flex:1,display:"flex",gap:"6px",alignItems:"center"}}>
+                  <div style={{flex:1,display:"flex",gap:"6px",alignItems:"flex-start"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:"2px"}}>
                       <button onClick={()=>moveExercise(i,-1)} disabled={i===0} style={{opacity:i===0?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▲</button>
                       <button onClick={()=>moveExercise(i,1)} disabled={i===split.exercises.length-1} style={{opacity:i===split.exercises.length-1?0.3:1,padding:"2px 6px",fontSize:"12px"}}>▼</button>
                     </div>
-                    <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
-                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(i,{name:e.target.value})}/>
-                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(i,{sets:parseInt(e.target.value)||1})}/>
-                      <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateExercise(i,{reps:e.target.value})}/>
+                    <div style={{flex:1,display:"flex",flexDirection:"column",gap:"6px"}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 58px 72px",gap:"8px",alignItems:"center"}}>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.name} onChange={e=>updateExercise(i,{name:e.target.value})}/>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} type="number" min="1" value={ex.sets} onChange={e=>updateExercise(i,{sets:parseInt(e.target.value)||1})}/>
+                        <input className="field" style={{marginBottom:0,fontSize:"14px",padding:"8px"}} value={ex.reps||ex.hold||""} onChange={e=>updateExercise(i,{reps:e.target.value})}/>
+                      </div>
+                      <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+                        <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
+                        <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"7px",width:"78px"}} value={ex.rest||""} placeholder="90s" onChange={e=>updateExercise(i,{rest:e.target.value})}/>
+                        <SideToggle ex={ex} onChange={v=>updateExercise(i,{unilateral:v})}/>
+                      </div>
                     </div>
                   </div>
                 ):(
@@ -1933,7 +2110,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 )}
               </div>
             );})}
-            {editMode&&<button className="button-secondary" style={{marginTop:"12px"}} onClick={addExercise}>+ Add Exercise</button>}
+            {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+              <button className="button-secondary" onClick={addExercise}>+ Add Exercise</button>
+              <button className="button-secondary" onClick={()=>{
+                const v=prompt("Rest time for ALL exercises in this split (e.g. 90s or 2 min):");
+                if(!v)return;
+                saveSplit({exercises:split.exercises.map(e=>({...e,rest:v.trim()}))});
+              }}>⏱ Rest for all</button>
+            </div>}
           </div>
         </div>
       );
@@ -2117,6 +2301,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               </div>
             </div>
             <SoundConfigCard/>
+            <TimerConfigCard/>
             <WakeLockToggle/>
           </div>
         );
