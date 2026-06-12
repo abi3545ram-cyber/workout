@@ -19,6 +19,24 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const t = th || document.documentElement.getAttribute('data-theme');
       return t === 'anti-red' ? 'var(--accent)' : rawColor;
     };
+    // Hex → "r,g,b" for rgba() construction
+    const hexToRgbStr = hex => {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||"");
+      return m ? `${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)}` : null;
+    };
+    // CSS-variable override: everything inside a container (badges, chips, chevrons,
+    // checkboxes, charts…) follows the custom accent for true colour consistency.
+    const accentVars = color => {
+      if (!color || typeof color !== "string" || color.startsWith("var(")) return {};
+      const rgb = hexToRgbStr(color);
+      const v = {"--accent":color};
+      if (rgb) {
+        v["--accent-muted"]=`rgba(${rgb},0.15)`;
+        v["--accent-rgb"]=rgb;
+        v["--timer-circle-bg"]=`rgba(${rgb},0.18)`;
+      }
+      return v;
+    };
     const store = {
       get:(k,d)=>{try{const v=localStorage.getItem(k);if(!v)return d;const p=JSON.parse(v);if(Array.isArray(d)&&!Array.isArray(p))return d;if(d&&typeof d==='object'&&!Array.isArray(d)){if(typeof p!=='object'||p===null||Array.isArray(p))return d;return{...d,...p};}return p;}catch{return d;}},
       set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
@@ -618,6 +636,100 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       );
     }
 
+    // ── Exercise Library (Hevy/Tracked-style database) ─────────────────────────
+    const EXERCISE_DB = [
+      {group:"Chest",items:[["Bench Press","Barbell"],["Incline Bench Press","Barbell"],["Dumbbell Bench Press","Dumbbell"],["Incline Dumbbell Press","Dumbbell"],["Chest Press","Machine"],["Chest Fly","Machine"],["Cable Crossover","Cable"],["Push Up","Bodyweight"],["Dips","Bodyweight"]]},
+      {group:"Back",items:[["Deadlift","Barbell"],["Pull Up","Bodyweight"],["Chin Up","Bodyweight"],["Lat Pulldown","Cable"],["Seated Cable Row","Cable"],["Bent Over Row","Barbell"],["T-Bar Row","Machine"],["One Arm Dumbbell Row","Dumbbell"],["Face Pull","Cable"],["Straight Arm Pulldown","Cable"],["Back Extension","Bodyweight"]]},
+      {group:"Shoulders",items:[["Overhead Press","Barbell"],["Shoulder Press","Machine"],["Arnold Press","Dumbbell"],["Lateral Raise","Dumbbell"],["One Arm Lateral Raise","Cable Single"],["Front Raise","Dumbbell"],["Rear Delt Fly","Machine"],["Upright Row","Barbell"],["Shrug","Dumbbell"]]},
+      {group:"Arms",items:[["Bicep Curl","Dumbbell"],["Hammer Curl","Dumbbell"],["Preacher Curl","Machine"],["Cable Curl","Cable"],["Concentration Curl","Dumbbell"],["Tricep Pushdown","Cable"],["Overhead Tricep Extension","Cable"],["Skull Crusher","Barbell"],["Close Grip Bench Press","Barbell"],["Wrist Curl","Dumbbell"],["Reverse Wrist Curl","Dumbbell"]]},
+      {group:"Legs",items:[["Squat","Barbell"],["Front Squat","Barbell"],["Hack Squat","Machine"],["Leg Press","Machine"],["Bulgarian Split Squat","Dumbbell"],["Walking Lunge","Dumbbell"],["Romanian Deadlift","Barbell"],["Leg Extension","Machine"],["Seated Leg Curl","Machine"],["Lying Leg Curl","Machine"],["Hip Thrust","Barbell"],["Standing Calf Raise","Machine"],["Seated Calf Raise","Machine"],["Calf Press","Machine"],["Hip Abduction","Machine"],["Hip Adduction","Machine"],["Step Up","Dumbbell"],["Single Leg RDL","Dumbbell"]]},
+      {group:"Core",items:[["Plank","Bodyweight"],["Side Plank","Bodyweight"],["Crunch","Bodyweight"],["Cable Crunch","Cable"],["Ab Crunch","Machine"],["Hanging Leg Raise","Bodyweight"],["Russian Twist","Bodyweight"],["Ab Wheel Rollout","Bodyweight"],["Dead Bug","Bodyweight"],["Pallof Press","Cable"]]},
+      {group:"Power & Plyo",items:[["Power Clean","Barbell"],["Push Press","Barbell"],["Kettlebell Swing","Kettlebell"],["Box Jump","Bodyweight"],["Broad Jump","Bodyweight"],["Pogo Jumps","Bodyweight"],["Ankle Hops","Bodyweight"],["Jump Rope","Bodyweight"]]},
+    ];
+
+    // Searchable multi-select list of your exercises + the built-in library
+    function ExercisePickList({sections,picked,setPicked,query,setQuery}) {
+      const yourGroups=(sections||[]).map(s=>({group:`★ ${s.section} — yours`,items:s.exercises.map(e=>({key:`y-${e.id||e.name}`,name:e.name,equip:e.equip||"",src:e}))}));
+      const libGroups=EXERCISE_DB.map(g=>({group:g.group,items:g.items.map(([n,eq])=>({key:`l-${g.group}-${n}`,name:n,equip:eq}))}));
+      const q=(query||"").trim().toLowerCase();
+      const groups=[...yourGroups,...libGroups].map(g=>({...g,items:g.items.filter(it=>!q||it.name.toLowerCase().includes(q)||(it.equip||"").toLowerCase().includes(q))})).filter(g=>g.items.length);
+      const toggle=it=>setPicked(p=>{const u={...p};if(u[it.key])delete u[it.key];else u[it.key]=it;return u;});
+      return (
+        <div>
+          <input className="field" placeholder="Search exercises…" value={query} onChange={e=>setQuery(e.target.value)} style={{marginBottom:"10px"}}/>
+          <div style={{maxHeight:"38vh",overflowY:"auto",border:"1px solid var(--card-border)",borderRadius:"12px",padding:"6px 10px"}}>
+            {groups.length===0&&<p className="text-small" style={{padding:"14px",textAlign:"center"}}>No matches</p>}
+            {groups.map(g=>(
+              <div key={g.group} style={{marginBottom:"6px"}}>
+                <p className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"800",letterSpacing:"0.5px",margin:"8px 0 4px"}}>{g.group}</p>
+                {g.items.map(it=>(
+                  <label key={it.key} style={{display:"flex",alignItems:"center",gap:"10px",padding:"7px 2px",cursor:"pointer"}}>
+                    <input type="checkbox" checked={!!picked[it.key]} onChange={()=>toggle(it)} style={{width:"17px",height:"17px",accentColor:"var(--accent)",flexShrink:0}}/>
+                    <span style={{flex:1,fontSize:"14px",fontWeight:"600"}}>{it.name}</span>
+                    <span className="text-small" style={{fontSize:"11px"}}>{it.equip}</span>
+                  </label>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    const pickedToExercises = picked => Object.values(picked).map(it =>
+      it.src ? {...it.src, id: uid()} : {id:uid(),name:it.name,equip:it.equip,sets:3,reps:"8-12",hold:"",rest:"90s",weight:"",cue:""}
+    );
+
+    // Tracked-style plate calculator + warm-up ramp
+    function PlateCalcModal({initialWeight,onClose}) {
+      const [target,setTarget]=useState(String(parseWeight(initialWeight)||""));
+      const [bar,setBar]=useState(()=>String(store.get("plate_bar_kg",20)));
+      const t=parseFloat(target)||0, b=parseFloat(bar)||20;
+      const perSide=Math.max(0,(t-b)/2);
+      const plates=[];let r=perSide;
+      [25,20,15,10,5,2.5,1.25].forEach(p=>{while(r>=p-1e-9){plates.push(p);r-=p;}});
+      const leftover=Math.round(r*100)/100;
+      const warm=[[40,10],[60,6],[80,3]].map(([pc,reps])=>({pc,reps,w:Math.max(b,Math.round(t*pc/100/2.5)*2.5)}));
+      return (
+        <div className="modal-bg" style={{zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+          <div className="modal-body">
+            <div className="drag-bar"/>
+            <h3 className="font-bold" style={{fontSize:"19px",marginBottom:"12px"}}>🏋️ Plate Calculator</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+              <div><label className="field-label">Target (kg)</label><input className="field" type="number" inputMode="decimal" value={target} onChange={e=>setTarget(e.target.value)}/></div>
+              <div><label className="field-label">Bar (kg)</label>
+                <select className="field" value={bar} onChange={e=>{setBar(e.target.value);store.set("plate_bar_kg",parseFloat(e.target.value)||20);}}>
+                  {["20","15","10","7.5"].map(o=><option key={o} value={o}>{o} kg</option>)}
+                </select>
+              </div>
+            </div>
+            {t>0&&(
+              <div className="card" style={{marginBottom:"12px"}}>
+                <p className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"800",marginBottom:"6px"}}>Per side</p>
+                {t<b?<p className="text-small">Target is below the bar weight</p>:plates.length===0?<p className="text-small">Empty bar</p>:(
+                  <div style={{display:"flex",gap:"6px",flexWrap:"wrap",alignItems:"center"}}>
+                    {plates.map((p,i)=><span key={i} className="badge" style={{fontSize:"13px",fontWeight:"800",padding:"6px 10px"}}>{p}</span>)}
+                    {leftover>0&&<span className="text-small">+{leftover}kg unmatched</span>}
+                  </div>
+                )}
+              </div>
+            )}
+            {t>0&&(
+              <div className="card" style={{marginBottom:"12px"}}>
+                <p className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"800",marginBottom:"6px"}}>Warm-up ramp</p>
+                {warm.map(w=>(
+                  <div key={w.pc} style={{display:"flex",justifyContent:"space-between",padding:"4px 0"}}>
+                    <span className="text-small">{w.pc}% × {w.reps} reps</span>
+                    <span className="font-bold" style={{color:"var(--accent)"}}>{w.w} kg</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button className="button-secondary" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      );
+    }
+
     // ── Icons ──────────────────────────────────────────────────────────────────
     const Icons = {
       Home:()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
@@ -865,7 +977,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     }
 
     // ── SessionPlayer ──────────────────────────────────────────────────────────
-    function SessionPlayer({routineName,exercises,onFinish,onCancel,allWeights,allNotes}) {
+    function SessionPlayer({routineName,routineColor,exercises,onFinish,onCancel,allWeights,allNotes}) {
       const [exIdx,setExIdx]=useState(0);
       const [mode,setMode]=useState("work");
       const [sessionPRs,setSessionPRs]=useState([]);
@@ -906,6 +1018,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         setHistoryStack(p=>[...p,{exIdx,setIdx:currentSetIdx,mode,sideIdx:currentSideIdx}]);
       };
       const [skipModal,setSkipModal]=useState(false);
+      const [plateCalc,setPlateCalc]=useState(false);
       // Last set of the last exercise → no point resting afterwards
       const isFinalStep = si => (exIdx+1>=orderedExercises.length) && ((si!==undefined?si:currentSetIdx)+1>=maxSets);
 
@@ -949,6 +1062,17 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       // Get set key and current values
       const setKey = `${exIdx}-${currentSetIdx}`;
       const currentLog = setLogs[setKey] || {};
+      // Hevy-style "previous" column: matching sets from the most recent session
+      const prevSets = useMemo(() => {
+        if (!activeEx) return {};
+        let h = getExerciseHistory(activeEx.id);
+        if (!h.length) h = getExerciseHistory(activeEx.name);
+        if (!h.length) return {};
+        const latestDate = h[0].date;
+        const m = {};
+        h.filter(x => x.date === latestDate).forEach(x => { if (x.setNumber) m[x.setNumber] = x; });
+        return m;
+      }, [exIdx]);
       const getSetWeight = (si) => {
         const sk = `${exIdx}-${si}`;
         if (setLogs[sk]?.weight !== undefined) return setLogs[sk].weight;
@@ -1222,7 +1346,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       // ── Reorder Mode ──
       if (reorderMode) {
         return (
-          <div className="timer-overlay">
+          <div className="timer-overlay" style={accentVars(routineColor)}>
             <div className="flex-between" style={{marginBottom:"16px"}}>
               <h2 className="font-bold" style={{fontSize:"20px"}}>Reorder Exercises</h2>
               <button className="button-secondary" style={{width:"auto",padding:"8px 16px"}} onClick={() => setReorderMode(false)}>Done</button>
@@ -1253,7 +1377,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       if(isFinishedScreen){
         const streaks = calculateStreaks();
         return (
-          <div className="timer-overlay" style={{justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px"}}>
+          <div className="timer-overlay" style={{...accentVars(routineColor),justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px"}}>
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",maxWidth:"400px",width:"100%"}}>
               <div style={{fontSize:"64px",marginBottom:"20px"}}>🎉</div>
               <h1 style={{fontSize:"30px",fontWeight:"900",lineHeight:"1.15",marginBottom:"8px"}}>Congratulations!</h1>
@@ -1305,7 +1429,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
       // ── Active Workout ──
       return (
-        <div className="timer-overlay">
+        <div className="timer-overlay" style={accentVars(routineColor)}>
           <div className="flex-between" style={{width:"100%",marginBottom:"10px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
               <div>
@@ -1315,6 +1439,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             </div>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
               {historyStack.length>0&&<button onClick={goBack} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 12px",fontSize:"13px",fontWeight:"800"}}>← Back</button>}
+              {!(activeEx.hold||activeEx.totalSec)&&<button onClick={()=>setPlateCalc(true)} title="Plate calculator" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>🏋️</button>}
               <button onClick={() => setReorderMode(true)} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>⇅</button>
               <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 14px",fontSize:"13px",fontWeight:"800",textTransform:"uppercase"}} onClick={()=>setIsFinishedScreen(true)}>Finish</button>
             </div>
@@ -1400,6 +1525,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                             <td>
                               {isDone ? <span className="font-bold">{sw}</span> :
                                 <input className="set-input" value={sw} onChange={e => updateSetLog(si, {weight: e.target.value})} placeholder="kg"/>}
+                              {!isDone && prevSets[si+1] && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].weight&&prevSets[si+1].weight!=="0"?fmtWeight(prevSets[si+1].weight):"BW"}{prevSets[si+1].reps?` × ${prevSets[si+1].reps}`:""}</div>}
                             </td>
                           )}
                           {!isHold ? (
@@ -1411,6 +1537,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                             <td>
                               {isDone ? <span className="font-bold">{ss}s</span> :
                                 <input className="set-input" value={ss} onChange={e => updateSetLog(si, {seconds: e.target.value})} placeholder="sec" style={{width:"50px"}}/>}
+                              {!isDone && prevSets[si+1] && prevSets[si+1].hold && prevSets[si+1].hold!=="0" && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].hold}</div>}
                             </td>
                           )}
                           <td>
@@ -1464,6 +1591,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           </div>
 
           {/* Skip choice modal */}
+          {plateCalc&&<PlateCalcModal initialWeight={currentLog.weight!==undefined?currentLog.weight:getSetWeight(currentSetIdx)} onClose={()=>setPlateCalc(false)}/>}
           {skipModal&&(
             <div className="modal-bg" style={{zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)setSkipModal(false);}}>
               <div className="modal-body">
@@ -1515,7 +1643,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         saveW(workouts.map(s=>s.section===secName?{...s,exercises:[...s.exercises,{id:uid(),name:nm,equip:"Bodyweight",sets:1,reps:"10-12",rest:"90s",weight:"",cue:""}]}:s));
       };
       const launchSectionSession=sec=>{
-        setActiveRoutine({name:`${sec.section} Workout`,exercises:sec.exercises.map(e=>withSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});
+        setActiveRoutine({name:`${sec.section} Workout`,color:tileColor,exercises:sec.exercises.map(e=>withSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});
       };
 
       const logCheckedExercises = () => {
@@ -1544,12 +1672,17 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const checkedCount = Object.keys(checkedExercises).filter(id => checkedExercises[id]).length;
       const accent = tileColor || "var(--accent)";
       const successColor = tileColor || (theme === 'anti-red' ? 'var(--accent)' : 'var(--success)');
+      // Renameable tab heading and Full Body workout name
+      const [heading,setHeading]=useState(()=>store.get("workouts_heading","Strength & Hypertrophy"));
+      const saveHeading=t=>{const v=(t||"").trim()||"Strength & Hypertrophy";setHeading(v);store.set("workouts_heading",v);};
+      const [fbName,setFbName]=useState(()=>store.get("workouts_fullbody_name","Full Body"));
+      const saveFbName=t=>{const v=(t||"").trim()||"Full Body";setFbName(v);store.set("workouts_fullbody_name",v);};
 
       return (
-        <div>
+        <div style={accentVars(tileColor)}>
           {historyModal && <ExerciseHistoryModal exerciseId={historyModal.id} exerciseName={historyModal.name} onClose={() => setHistoryModal(null)}/>}
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><h2 className="font-bold" style={{fontSize:"20px"}}>Strength & Hypertrophy</h2><p className="text-small">Progressive overload tracking</p></div>
+            <div><h2 className="font-bold" style={{fontSize:"20px"}}><Editable value={heading} onSave={saveHeading}/></h2><p className="text-small">Progressive overload tracking</p></div>
             <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
               <button className="button-secondary" style={{width:"auto",padding:"8px 12px",fontSize:"12px",borderColor:editMode?"var(--accent)":"var(--card-border)",color:editMode?"var(--accent)":"var(--text)"}} onClick={()=>{
                 if(editMode){
@@ -1566,11 +1699,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           </div>
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderColor:accent,borderWidth:"1.5px"}}>
             <div>
-              <p className="font-bold" style={{fontSize:"16px"}}>Full Body</p>
+              <p className="font-bold" style={{fontSize:"16px"}}><Editable value={fbName} onSave={saveFbName}/></p>
               <p className="text-small">{workoutSections.reduce((a,s)=>a+s.exercises.length,0)} exercises — all sections</p>
             </div>
             <button className="button-primary" style={{width:"auto",padding:"10px 20px",fontSize:"14px",background:accent,borderColor:accent}}
-              onClick={()=>setActiveRoutine({name:"Full Body Workout",exercises:workoutSections.flatMap(s=>s.exercises.map(e=>withSides({...e,section:s.section,weight:weights[e.id||e.name]||e.weight||""})))})}>
+              onClick={()=>setActiveRoutine({name:`${fbName} Workout`,color:tileColor,exercises:workoutSections.flatMap(s=>s.exercises.map(e=>withSides({...e,section:s.section,weight:weights[e.id||e.name]||e.weight||""})))})}>
               Start
             </button>
           </div>
@@ -1690,7 +1823,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:[...s.exercises,ex]}:s)}});
       };
       const launch=sess=>{
-        setActiveRoutine({name:`Tendon - ${pd.label} (${sess.label})`,exercises:sess.exercises.map(e=>withTendonSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});
+        setActiveRoutine({name:`Tendon - ${pd.label} (${sess.label})`,color:pdColor,exercises:sess.exercises.map(e=>withTendonSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});
       };
       const logChecked=()=>{
         const ids=Object.keys(checked).filter(id=>checked[id]);if(!ids.length)return;
@@ -1707,7 +1840,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       };
       const checkedCount=Object.values(checked).filter(Boolean).length;
       return (
-        <div>
+        <div style={accentVars(tileColor)}>
           {historyModal && <ExerciseHistoryModal exerciseId={historyModal.id} exerciseName={historyModal.name} onClose={() => setHistoryModal(null)}/>}
           <div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
             {Object.keys(tendonData).map(k=>{
@@ -1857,10 +1990,10 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const saveStretchRest=v=>{setStretchRest(v);const n=Math.max(0,Math.min(300,parseInt(v)||0));store.set("stretch_rest_sec",n);};
       const launchStretchSession=()=>{
         const rs=Math.max(0,parseInt(store.get("stretch_rest_sec",30))||0);
-        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,exercises:stretchList.map(s=>withSides({...s,sets:1,hold:`${s.totalSec}s`,rest:rs>0?`${rs}s`:"0s",cue:getStretchCue(s,selectedPhase)}))});
+        setActiveRoutine({name:`Stretching Phase ${selectedPhase} - ${phaseData.name}`,color:phaseColor,exercises:stretchList.map(s=>withSides({...s,sets:1,hold:`${s.totalSec}s`,rest:rs>0?`${rs}s`:"0s",cue:getStretchCue(s,selectedPhase)}))});
       };
       return (
-        <div>
+        <div style={accentVars(tileColor)}>
           <div className="card" style={{padding:"8px",display:"flex",gap:"4px",marginBottom:"14px",overflowX:"auto"}}>
             {Object.keys(SPHASE).map(k=>{
               const a=selectedPhase===parseInt(k);
@@ -1978,33 +2111,40 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       );
     }
 
-    function SplitBuilderModal({onSave,onClose}) {
+    function SplitBuilderModal({onSave,onClose,sections}) {
+      const [name,setName]=useState("");
       const [phaseCount,setPhaseCount]=useState("1");
-      const [exerciseCount,setExerciseCount]=useState("3");
-      const n=Math.max(1,Math.min(20,parseInt(exerciseCount)||1));
+      const [picked,setPicked]=useState({});
+      const [query,setQuery]=useState("");
+      const count=Object.keys(picked).length;
       const save=()=>{
         const pCount=Math.max(1,Math.min(8,parseInt(phaseCount)||1));
         const phases=Array.from({length:pCount},(_,i)=>`Phase ${i+1}`);
-        const exercises=Array.from({length:n},(_,i)=>({id:uid(),name:`Exercise ${i+1}`,equip:"Bodyweight",sets:1,reps:"8-12",hold:"",rest:"90s",weight:"",cue:""}));
-        onSave({id:uid(),section:"New Split",description:"",phases,exercises});
+        let exercises=pickedToExercises(picked);
+        if(exercises.length===0)exercises=[{id:uid(),name:"Exercise 1",equip:"Bodyweight",sets:1,reps:"8-12",hold:"",rest:"90s",weight:"",cue:""}];
+        onSave({id:uid(),section:name.trim()||"New Split",description:"",phases,exercises});
       };
       return (
         <TapModal isOpen onClose={onClose}>
           <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Create Split</h2>
-          <p className="text-small" style={{marginBottom:"16px"}}>Choose structure first. Add details in Edit mode.</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+          <p className="text-small" style={{marginBottom:"14px"}}>Group up your existing exercises (e.g. "Upper" from Arms + Push + Pull) or pick from the library.</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 80px",gap:"10px"}}>
+            <div><label className="field-label">Split name</label><input className="field" placeholder="e.g. Upper" value={name} onChange={e=>setName(e.target.value)}/></div>
             <div><label className="field-label">Phases</label><input className="field" type="number" min="1" max="8" value={phaseCount} onChange={e=>setPhaseCount(e.target.value)}/></div>
-            <div><label className="field-label">Exercises</label><input className="field" type="number" min="1" max="20" value={exerciseCount} onChange={e=>setExerciseCount(e.target.value)}/></div>
           </div>
-          <button className="button-primary" onClick={save}>Create Split</button>
+          <ExercisePickList sections={sections} picked={picked} setPicked={setPicked} query={query} setQuery={setQuery}/>
+          <button className="button-primary" style={{marginTop:"14px"}} onClick={save}>{count>0?`Create "${name.trim()||"New Split"}" — ${count} exercise${count>1?"s":""}`:"Create blank split"}</button>
           <button className="button-secondary" style={{marginTop:"10px"}} onClick={onClose}>Cancel</button>
         </TapModal>
       );
     }
 
-    function CustomSplitTab({split,setWorkouts,weights,saveWeight,setActiveRoutine,notes,saveNote,tileColor}) {
+    function CustomSplitTab({split,setWorkouts,weights,saveWeight,setActiveRoutine,notes,saveNote,tileColor,allSections}) {
       const [editMode,setEditMode]=useState(false);
       const [phaseIdx,setPhaseIdx]=useState(0);
+      const [pickerOpen,setPickerOpen]=useState(false);
+      const [picked,setPicked]=useState({});
+      const [pickQuery,setPickQuery]=useState("");
       const accent=tileColor||"var(--accent)";
       const phases=split.phases&&split.phases.length?split.phases:["Phase 1"];
       const splitKey=split.id||split.section;
@@ -2027,7 +2167,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const updatePhase=(idx,value)=>saveSplit({phases:phases.map((p,i)=>i===idx?value:p)});
       const addPhase=()=>saveSplit({phases:[...phases,`Phase ${phases.length+1}`]});
       const deletePhase=idx=>saveSplit({phases:phases.filter((_,i)=>i!==idx)});
-      const launch=()=>setActiveRoutine({name:`${split.section} Workout`,exercises:split.exercises.map(e=>withSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});
+      const launch=()=>setActiveRoutine({name:`${split.section} Workout`,color:tileColor,exercises:split.exercises.map(e=>withSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});
       const duplicateSplit = () => {
         const newSplit = { ...split, id: uid(), section: `${split.section} (Copy)` };
         setWorkouts(prev => { const u = [...prev, newSplit]; store.set("workout_sections_custom", u); return u; });
@@ -2039,7 +2179,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         });
       };
       return (
-        <div>
+        <div style={accentVars(tileColor)}>
           <div className="card">
             <div className="flex-between">
               <div style={{flex:1}}>
@@ -2110,14 +2250,27 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 )}
               </div>
             );})}
-            {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+            {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"12px",flexWrap:"wrap"}}>
               <button className="button-secondary" onClick={addExercise}>+ Add Exercise</button>
+              <button className="button-secondary" onClick={()=>setPickerOpen(true)}>📚 From Library</button>
               <button className="button-secondary" onClick={()=>{
                 const v=prompt("Rest time for ALL exercises in this split (e.g. 90s or 2 min):");
                 if(!v)return;
                 saveSplit({exercises:split.exercises.map(e=>({...e,rest:v.trim()}))});
               }}>⏱ Rest for all</button>
             </div>}
+            {pickerOpen&&(
+              <TapModal isOpen onClose={()=>{setPickerOpen(false);setPicked({});setPickQuery("");}}>
+                <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Add Exercises</h2>
+                <p className="text-small" style={{marginBottom:"14px"}}>Pick from your sections or the library — settings (weight, reps, L/R) are copied across.</p>
+                <ExercisePickList sections={allSections} picked={picked} setPicked={setPicked} query={pickQuery} setQuery={setPickQuery}/>
+                <button className="button-primary" style={{marginTop:"14px"}} disabled={!Object.keys(picked).length} onClick={()=>{
+                  saveSplit({exercises:[...split.exercises,...pickedToExercises(picked)]});
+                  setPickerOpen(false);setPicked({});setPickQuery("");
+                }}>Add {Object.keys(picked).length||""} to {split.section}</button>
+                <button className="button-secondary" style={{marginTop:"10px"}} onClick={()=>{setPickerOpen(false);setPicked({});setPickQuery("");}}>Cancel</button>
+              </TapModal>
+            )}
           </div>
         </div>
       );
@@ -2353,7 +2506,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           return (<TapModal isOpen onClose={()=>setModalContent(null)}><EditModal ex={modalContent.data.ex} onSave={handleEditSave} onDelete={handleEditDelete} onClose={()=>setModalContent(null)}/></TapModal>);
         }
         if(modalContent.type==="split_builder"){
-          return <SplitBuilderModal onSave={addSplit} onClose={()=>setModalContent(null)}/>;
+          return <SplitBuilderModal sections={workouts} onSave={addSplit} onClose={()=>setModalContent(null)}/>;
         }
         return null;
       };
@@ -2368,7 +2521,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           </header>
 
           {activeRoutine&&(
-            <SessionPlayer routineName={activeRoutine.name} exercises={activeRoutine.exercises}
+            <SessionPlayer routineName={activeRoutine.name} routineColor={activeRoutine.color} exercises={activeRoutine.exercises}
               onFinish={()=>{setActiveRoutine(null);reloadLogs();}}
               onCancel={()=>setActiveRoutine(null)}
               allWeights={weights}
@@ -2381,7 +2534,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} notes={notes} saveNote={saveNote} tileColor={tileColorFor("tendons")}/>}
             {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} tileColor={tileColorFor("stretches")}/>}
             {activeTab==="progression"&&<ProgressionTab reloadLogs={reloadLogs}/>}
-            {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine} notes={notes} saveNote={saveNote} tileColor={tileColorFor(activeCustomSplit.id||activeCustomSplit.section)}/>}
+            {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine} notes={notes} saveNote={saveNote} tileColor={tileColorFor(activeCustomSplit.id||activeCustomSplit.section)} allSections={workouts}/>}
           </div>
 
           {renderModal()}
@@ -2398,11 +2551,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           )}
 
           <div className="tab-bar">
-            {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:tileLabelFor("workouts","Workouts"),Icon:Icons.Dumbbell},{id:"tendons",label:tileLabelFor("tendons","Tendons"),Icon:Icons.Tendon},{id:"stretches",label:tileLabelFor("stretches","Stretch"),Icon:Icons.Stretch},{id:"progression",label:"Progress",Icon:Icons.Chart},...customSplits.map(s=>({id:`split-${s.id||s.section}`,label:tileLabelFor(s.id||s.section,s.section),Icon:Icons.Dumbbell}))].filter(t=>t.id==="home"||t.id==="progression"||t.id.startsWith("split-")||!hiddenTabs.includes(t.id)).map(({id,label,Icon})=>(
-              <button key={id} className={`tab-btn ${activeTab===id?"active":""}`} style={{width:"auto",flex:"1 1 0",minWidth:"48px"}} onClick={()=>setActiveTab(id)}>
-                <Icon/><span>{label}</span>
-              </button>
-            ))}
+            {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:tileLabelFor("workouts","Workouts"),Icon:Icons.Dumbbell,tile:"workouts"},{id:"tendons",label:tileLabelFor("tendons","Tendons"),Icon:Icons.Tendon,tile:"tendons"},{id:"stretches",label:tileLabelFor("stretches","Stretch"),Icon:Icons.Stretch,tile:"stretches"},{id:"progression",label:"Progress",Icon:Icons.Chart},...customSplits.map(s=>({id:`split-${s.id||s.section}`,label:tileLabelFor(s.id||s.section,s.section),Icon:Icons.Dumbbell,tile:s.id||s.section}))].filter(t=>t.id==="home"||t.id==="progression"||t.id.startsWith("split-")||!hiddenTabs.includes(t.id)).map(({id,label,Icon,tile})=>{
+              const tc = activeTab===id && tile ? tileColorFor(tile) : null;
+              return (
+                <button key={id} className={`tab-btn ${activeTab===id?"active":""}`} style={{width:"auto",flex:"1 1 0",minWidth:"48px",...(tc?{color:tc}:{})}} onClick={()=>setActiveTab(id)}>
+                  <Icon/><span>{label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       );
