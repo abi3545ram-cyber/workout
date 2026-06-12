@@ -1,4 +1,4 @@
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // ── Utilities ──────────────────────────────────────────────────────────────
     const parseRestSec = r => {
@@ -37,10 +37,47 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       }
       return v;
     };
+    // IndexedDB mirror — second copy of every write, restored if localStorage is wiped
+    const idb = {
+      db: null,
+      open(){return new Promise(res=>{try{const r=indexedDB.open('workout_flow',1);r.onupgradeneeded=()=>{try{r.result.createObjectStore('kv');}catch{}};r.onsuccess=()=>{idb.db=r.result;res(r.result);};r.onerror=()=>res(null);}catch{res(null);}});},
+      set(k,v){try{if(!idb.db)return;idb.db.transaction('kv','readwrite').objectStore('kv').put(v,k);}catch{}},
+      remove(k){try{if(!idb.db)return;idb.db.transaction('kv','readwrite').objectStore('kv').delete(k);}catch{}},
+      getAll(){return new Promise(res=>{try{if(!idb.db)return res({});const st=idb.db.transaction('kv','readonly').objectStore('kv');const out={};const req=st.openCursor();req.onsuccess=e=>{const c=e.target.result;if(c){out[c.key]=c.value;c.continue();}else res(out);};req.onerror=()=>res({});}catch{res({});}});}
+    };
     const store = {
       get:(k,d)=>{try{const v=localStorage.getItem(k);if(!v)return d;const p=JSON.parse(v);if(Array.isArray(d)&&!Array.isArray(p))return d;if(d&&typeof d==='object'&&!Array.isArray(d)){if(typeof p!=='object'||p===null||Array.isArray(p))return d;return{...d,...p};}return p;}catch{return d;}},
-      set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
+      set:(k,v)=>{try{const s=JSON.stringify(v);localStorage.setItem(k,s);idb.set(k,s);}catch{}},
     };
+    // Full backup: every key in one JSON file
+    const exportAllData = () => {
+      try {
+        const data = {};
+        for (let i=0;i<localStorage.length;i++){const k=localStorage.key(i);data[k]=localStorage.getItem(k);}
+        const blob = new Blob([JSON.stringify({app:"workout-flow",exported:new Date().toISOString(),data},null,2)],{type:"application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `workout-backup-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+        store.set('backup_meta',{last:new Date().toISOString(),sinceWorkouts:0});
+        return true;
+      } catch { return false; }
+    };
+    const importAllData = json => {
+      try {
+        const parsed = JSON.parse(json);
+        const data = parsed && parsed.data ? parsed.data : parsed;
+        if (!data || typeof data !== 'object') return false;
+        Object.keys(data).forEach(k=>{try{const v=typeof data[k]==='string'?data[k]:JSON.stringify(data[k]);localStorage.setItem(k,v);idb.set(k,v);}catch{}});
+        return true;
+      } catch { return false; }
+    };
+    const bumpBackupCounter = () => {
+      const m = store.get('backup_meta',{last:null,sinceWorkouts:0});
+      store.set('backup_meta',{...m,sinceWorkouts:(m.sinceWorkouts||0)+1});
+    };
+    const numOnly = v => String(v??"").replace(/[^\d]/g, '');
+    const decOnly = v => { let s = String(v??"").replace(/[^\d.]/g, ''); const i = s.indexOf('.'); return i < 0 ? s : s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, ''); };
     const parseWeight = str => { if (!str) return 0; const n = parseFloat(String(str).replace(/[^\d.]/g, '')); return isNaN(n) ? 0 : n; };
     const parseReps = str => { if (!str) return 0; const n = parseInt(String(str).replace(/[^\d]/g, '')); return isNaN(n) ? 0 : n; };
     const parseRepRange = str => {
@@ -344,6 +381,54 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       if (!active[type]) return;
       playTone(type);
     };
+    // Best-effort local notification when rest ends with the screen away
+    const notifyRestEnd = () => {
+      try {
+        if (document.visibilityState === 'visible') return;
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg=>reg.showNotification('Rest over',{body:'Time for your next set',tag:'rest-end'})).catch(()=>{});
+        } else {
+          new Notification('Rest over',{body:'Time for your next set'});
+        }
+      } catch {}
+    };
+
+    function DataBackupCard() {
+      const [meta,setMeta]=useState(()=>store.get('backup_meta',{last:null,sinceWorkouts:0}));
+      const fileRef=useRef(null);
+      const daysSince=meta.last?Math.floor((Date.now()-new Date(meta.last).getTime())/86400000):null;
+      const due=meta.last===null||(meta.sinceWorkouts||0)>=5||daysSince>7;
+      const doExport=()=>{if(exportAllData())setMeta(store.get('backup_meta',{last:null,sinceWorkouts:0}));};
+      const doImport=e=>{
+        const f=e.target.files&&e.target.files[0];
+        if(!f)return;
+        const reader=new FileReader();
+        reader.onload=()=>{
+          if(!confirm("Restore backup? This overwrites current data."))return;
+          if(importAllData(reader.result)){alert("Backup restored — reloading.");location.reload();}
+          else alert("Could not read that backup file.");
+        };
+        reader.readAsText(f);
+        e.target.value="";
+      };
+      return (
+        <div className="card" style={due?{borderColor:"var(--warning)"}:{}}>
+          <div className="flex-between">
+            <p className="font-bold">Backups</p>
+            {due&&<span className="badge" style={{background:"var(--warning-muted)",color:"var(--warning)",borderColor:"var(--warning)"}}>Backup due</span>}
+          </div>
+          <p className="text-small" style={{margin:"4px 0 10px"}}>
+            {meta.last?`Last backup ${daysSince===0?"today":`${daysSince}d ago`} — ${meta.sinceWorkouts||0} workout${(meta.sinceWorkouts||0)===1?"":"s"} since`:"Never backed up. Phone storage can be wiped by the OS — keep a copy."}
+          </p>
+          <div style={{display:"flex",gap:"8px"}}>
+            <button className="button-secondary" style={{padding:"9px",fontSize:"13px"}} onClick={doExport}>⬇ Export backup</button>
+            <button className="button-secondary" style={{padding:"9px",fontSize:"13px"}} onClick={()=>fileRef.current&&fileRef.current.click()}>⬆ Restore</button>
+            <input ref={fileRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={doImport}/>
+          </div>
+        </div>
+      );
+    }
 
     function TimerConfigCard() {
       const [trans,setTrans]=useState(()=>String(store.get('workout_transition_sec',3)));
@@ -356,6 +441,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             <input className="field" type="number" min="1" max="60" style={{marginBottom:0,width:"90px"}} value={trans} onChange={e=>save(e.target.value)}/>
             <span className="text-small">seconds</span>
           </div>
+          <button className="button-secondary" style={{marginTop:"12px",padding:"9px",fontSize:"13px"}} onClick={()=>{
+            try{
+              if(!('Notification' in window)){alert('Notifications not supported on this device/browser.');return;}
+              if(Notification.permission==='granted'){alert('Rest-end notifications are on (when the app is in the background).');return;}
+              Notification.requestPermission();
+            }catch{}
+          }}>🔔 Notify when rest ends</button>
         </div>
       );
     }
@@ -638,35 +730,149 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // ── Exercise Library (Hevy/Tracked-style database) ─────────────────────────
     const EXERCISE_DB = [
-      {group:"Chest",items:[["Bench Press","Barbell"],["Incline Bench Press","Barbell"],["Dumbbell Bench Press","Dumbbell"],["Incline Dumbbell Press","Dumbbell"],["Chest Press","Machine"],["Chest Fly","Machine"],["Cable Crossover","Cable"],["Push Up","Bodyweight"],["Dips","Bodyweight"]]},
-      {group:"Back",items:[["Deadlift","Barbell"],["Pull Up","Bodyweight"],["Chin Up","Bodyweight"],["Lat Pulldown","Cable"],["Seated Cable Row","Cable"],["Bent Over Row","Barbell"],["T-Bar Row","Machine"],["One Arm Dumbbell Row","Dumbbell"],["Face Pull","Cable"],["Straight Arm Pulldown","Cable"],["Back Extension","Bodyweight"]]},
-      {group:"Shoulders",items:[["Overhead Press","Barbell"],["Shoulder Press","Machine"],["Arnold Press","Dumbbell"],["Lateral Raise","Dumbbell"],["One Arm Lateral Raise","Cable Single"],["Front Raise","Dumbbell"],["Rear Delt Fly","Machine"],["Upright Row","Barbell"],["Shrug","Dumbbell"]]},
-      {group:"Arms",items:[["Bicep Curl","Dumbbell"],["Hammer Curl","Dumbbell"],["Preacher Curl","Machine"],["Cable Curl","Cable"],["Concentration Curl","Dumbbell"],["Tricep Pushdown","Cable"],["Overhead Tricep Extension","Cable"],["Skull Crusher","Barbell"],["Close Grip Bench Press","Barbell"],["Wrist Curl","Dumbbell"],["Reverse Wrist Curl","Dumbbell"]]},
-      {group:"Legs",items:[["Squat","Barbell"],["Front Squat","Barbell"],["Hack Squat","Machine"],["Leg Press","Machine"],["Bulgarian Split Squat","Dumbbell"],["Walking Lunge","Dumbbell"],["Romanian Deadlift","Barbell"],["Leg Extension","Machine"],["Seated Leg Curl","Machine"],["Lying Leg Curl","Machine"],["Hip Thrust","Barbell"],["Standing Calf Raise","Machine"],["Seated Calf Raise","Machine"],["Calf Press","Machine"],["Hip Abduction","Machine"],["Hip Adduction","Machine"],["Step Up","Dumbbell"],["Single Leg RDL","Dumbbell"]]},
-      {group:"Core",items:[["Plank","Bodyweight"],["Side Plank","Bodyweight"],["Crunch","Bodyweight"],["Cable Crunch","Cable"],["Ab Crunch","Machine"],["Hanging Leg Raise","Bodyweight"],["Russian Twist","Bodyweight"],["Ab Wheel Rollout","Bodyweight"],["Dead Bug","Bodyweight"],["Pallof Press","Cable"]]},
-      {group:"Power & Plyo",items:[["Power Clean","Barbell"],["Push Press","Barbell"],["Kettlebell Swing","Kettlebell"],["Box Jump","Bodyweight"],["Broad Jump","Bodyweight"],["Pogo Jumps","Bodyweight"],["Ankle Hops","Bodyweight"],["Jump Rope","Bodyweight"]]},
+      {group:"Chest",items:[
+        ["Bench Press","Barbell","Shoulder blades pinned, feet planted, bar to mid-chest, press up and slightly back"],
+        ["Incline Bench Press","Barbell","30-45° bench, bar to upper chest, elbows ~45° from torso"],
+        ["Dumbbell Bench Press","Dumbbell","Deep stretch at the bottom, press up and slightly in"],
+        ["Incline Dumbbell Press","Dumbbell","Upper-chest focus — don't let the dumbbells drift over your face"],
+        ["Chest Press","Machine","Handles level with mid-chest, squeeze at lockout without slamming"],
+        ["Chest Fly","Machine","Slight elbow bend held constant, hug-a-tree arc, stretch under control"],
+        ["Cable Crossover","Cable","Step forward split stance, sweep down and in, squeeze 1s"],
+        ["Push Up","Bodyweight","Rigid plank, hands under shoulders, chest to floor"],
+        ["Dips","Bodyweight","Lean forward for chest, elbows track back, shoulder-depth only"]]},
+      {group:"Back",items:[
+        ["Deadlift","Barbell","Bar over mid-foot, brace hard, push the floor away, hips and chest rise together"],
+        ["Pull Up","Bodyweight","Dead hang start, drive elbows to ribs, chest to bar"],
+        ["Chin Up","Bodyweight","Underhand grip, lead with the chest, control the descent"],
+        ["Lat Pulldown","Cable","Slight lean back, pull to upper chest, elbows down and in"],
+        ["Seated Cable Row","Cable","Chest tall, pull to belly button, squeeze shoulder blades"],
+        ["Bent Over Row","Barbell","Hinge ~45°, flat back, row to lower ribs"],
+        ["T-Bar Row","Machine","Chest on pad or hinged, drive elbows back, no jerking"],
+        ["One Arm Dumbbell Row","Dumbbell","Square hips, row to hip pocket, full stretch at the bottom"],
+        ["Face Pull","Cable","Rope at face height, pull apart to ears, thumbs back"],
+        ["Straight Arm Pulldown","Cable","Arms long, sweep bar to thighs using lats only"],
+        ["Back Extension","Bodyweight","Hinge at hips, squeeze glutes at the top, don't hyperextend"]]},
+      {group:"Shoulders",items:[
+        ["Overhead Press","Barbell","Glutes tight, bar path close to face, head through at lockout"],
+        ["Shoulder Press","Machine","Back flat on pad, press without shrugging"],
+        ["Arnold Press","Dumbbell","Rotate palms out as you press, full range"],
+        ["Lateral Raise","Dumbbell","Lead with elbows, pour-the-jug tilt, stop at shoulder height"],
+        ["One Arm Lateral Raise","Cable Single","Cable behind body, constant tension, strict tempo"],
+        ["Front Raise","Dumbbell","Raise to eye level, no swing, control down"],
+        ["Rear Delt Fly","Machine","Arms slightly bent, sweep back, squeeze rear delts not traps"],
+        ["Upright Row","Barbell","Wide grip, elbows lead, bar to lower chest"],
+        ["Shrug","Dumbbell","Straight up to ears, 1s hold at the top, no rolling"]]},
+      {group:"Arms",items:[
+        ["Bicep Curl","Dumbbell","Elbows pinned to sides, full stretch at bottom, no swing"],
+        ["Hammer Curl","Dumbbell","Neutral grip, curls brachialis — keep wrists locked"],
+        ["Preacher Curl","Machine","Armpits on pad, stretch fully at the bottom, no bounce"],
+        ["Cable Curl","Cable","Constant tension, step back slightly, squeeze hard at the top"],
+        ["Concentration Curl","Dumbbell","Elbow braced on inner thigh, slow negative"],
+        ["Tricep Pushdown","Cable","Elbows glued to sides, full lockout, control up"],
+        ["Overhead Tricep Extension","Cable","Elbows tucked by ears, deep stretch behind the head"],
+        ["Skull Crusher","Barbell","Lower to forehead/behind head, elbows still, press to lockout"],
+        ["Close Grip Bench Press","Barbell","Hands shoulder-width, elbows tucked, bar to lower chest"],
+        ["Wrist Curl","Dumbbell","Forearm supported, full roll down to fingers, curl up"],
+        ["Reverse Wrist Curl","Dumbbell","Palms down, lift the back of the hand, light weight strict form"]]},
+      {group:"Legs",items:[
+        ["Squat","Barbell","Brace, sit between the hips, knees track over toes, drive up"],
+        ["Front Squat","Barbell","Elbows high, upright torso, full depth"],
+        ["Hack Squat","Machine","Back flat on pad, feet mid-platform, deep controlled reps"],
+        ["Leg Press","Machine","Don't lock knees hard, lower until hips begin to tuck"],
+        ["Bulgarian Split Squat","Dumbbell","Rear foot elevated, drop straight down, front heel drives"],
+        ["Walking Lunge","Dumbbell","Long stride, knee kisses floor, push through front heel"],
+        ["Romanian Deadlift","Barbell","Soft knees, push hips back, bar slides down thighs, hamstring stretch"],
+        ["Leg Extension","Machine","Pause 1s at the top, control the negative"],
+        ["Seated Leg Curl","Machine","Hips pinned, full squeeze, slow eccentric"],
+        ["Lying Leg Curl","Machine","Hips down on the pad, curl to glutes, 3s negative"],
+        ["Hip Thrust","Barbell","Shoulders on bench, chin tucked, squeeze glutes to full lockout"],
+        ["Standing Calf Raise","Machine","Full stretch at the bottom, pause, drive to tiptoe"],
+        ["Seated Calf Raise","Machine","Soleus focus — slow, deep stretch each rep"],
+        ["Calf Press","Machine","On leg press — full range, no bouncing"],
+        ["Hip Abduction","Machine","Tall posture, push out with control, pause at the widest point"],
+        ["Hip Adduction","Machine","Squeeze in smoothly, resist the return"],
+        ["Step Up","Dumbbell","Whole foot on box, drive through heel, no push-off from back leg"],
+        ["Single Leg RDL","Dumbbell","Hips square, hinge until hamstring stretch, slow return"]]},
+      {group:"Core",items:[
+        ["Plank","Bodyweight","Glutes and abs squeezed, straight line ear to ankle"],
+        ["Side Plank","Bodyweight","Stacked feet, hips high, straight line"],
+        ["Crunch","Bodyweight","Ribs to hips, exhale at the top, no neck pulling"],
+        ["Cable Crunch","Cable","Kneel, crunch ribs toward pelvis, hips stay still"],
+        ["Ab Crunch","Machine","Controlled flexion, full stretch at the top of each rep"],
+        ["Hanging Leg Raise","Bodyweight","Posterior tilt first, raise legs without swinging"],
+        ["Russian Twist","Bodyweight","Lean back 45°, rotate from the torso not the arms"],
+        ["Ab Wheel Rollout","Bodyweight","Hollow body, roll out only as far as you can control"],
+        ["Dead Bug","Bodyweight","Lower back glued to floor, opposite arm/leg, slow"],
+        ["Pallof Press","Cable","Press out and resist rotation, breathe steadily"]]},
+      {group:"Power",items:[
+        ["Power Clean","Barbell","Explosive triple extension, fast elbows, catch in quarter squat"],
+        ["Push Press","Barbell","Shallow dip, violent leg drive, punch overhead"],
+        ["Kettlebell Swing","Kettlebell","Hip hinge snap, bell floats to chest, glutes finish"],
+        ["Box Jump","Bodyweight","Full hip extension in the air, land soft and quiet"],
+        ["Broad Jump","Bodyweight","Big arm swing, explode forward, stick the landing"],
+        ["Pogo Jumps","Bodyweight","Stiff ankles, bounce off the ground fast, minimal knee bend"],
+        ["Ankle Hops","Bodyweight","Small fast hops, calves and ankles do the work"],
+        ["Jump Rope","Bodyweight","Wrists spin the rope, stay tall, small bounces"]]},
     ];
 
-    // Searchable multi-select list of your exercises + the built-in library
-    function ExercisePickList({sections,picked,setPicked,query,setQuery}) {
-      const yourGroups=(sections||[]).map(s=>({group:`★ ${s.section} — yours`,items:s.exercises.map(e=>({key:`y-${e.id||e.name}`,name:e.name,equip:e.equip||"",src:e}))}));
-      const libGroups=EXERCISE_DB.map(g=>({group:g.group,items:g.items.map(([n,eq])=>({key:`l-${g.group}-${n}`,name:n,equip:eq}))}));
+    // Map any exercise name to a body part (library lookup first, then keywords)
+    const MUSCLE_LOOKUP = (() => { const m={}; EXERCISE_DB.forEach(g=>g.items.forEach(([n])=>{m[n.toLowerCase()]=g.group;})); return m; })();
+    const muscleGroupOf = name => {
+      const n = (name||"").toLowerCase();
+      if (MUSCLE_LOOKUP[n]) return MUSCLE_LOOKUP[n];
+      if (/bench|chest|fly|crossover|push.?up|dip\b|pec/.test(n)) return "Chest";
+      if (/row|pulldown|pull.?up|chin.?up|deadlift|lat\b|face pull|back ext/.test(n)) return "Back";
+      if (/shoulder|lateral raise|front raise|rear delt|overhead press|shrug|upright|delt/.test(n)) return "Shoulders";
+      if (/curl|tricep|extension|skull|pushdown|wrist|forearm|bicep/.test(n)) return "Arms";
+      if (/squat|leg|lunge|calf|hip|glute|rdl|thigh|hamstring|quad|adduct|abduct|step.?up|thrust/.test(n)) return "Legs";
+      if (/ab\b|abs|crunch|plank|core|twist|dead bug|pallof|hollow/.test(n)) return "Core";
+      if (/jump|hop|clean|snatch|swing|pogo|sprint|bound/.test(n)) return "Power";
+      return "Other";
+    };
+    // Searchable picker: body-part tabs across the top (Tracked-style), cue under each name
+    function ExercisePickList({sections,picked,setPicked,query,setQuery,single}) {
+      const [tab,setTab]=useState("All");
+      const hasYours=!!(sections&&sections.length);
+      const tabs=["All",...(hasYours?["★ Yours"]:[]),...EXERCISE_DB.map(g=>g.group)];
+      const yourGroups=hasYours?sections.map(s=>({group:`★ ${s.section}`,yours:true,items:s.exercises.map(e=>({key:`y-${e.id||e.name}`,name:e.name,equip:e.equip||"",cue:e.cue||"",src:e}))})):[];
+      const libGroups=EXERCISE_DB.map(g=>({group:g.group,items:g.items.map(([n,eq,cue])=>({key:`l-${g.group}-${n}`,name:n,equip:eq,cue:cue||"",muscle:g.group}))}));
       const q=(query||"").trim().toLowerCase();
-      const groups=[...yourGroups,...libGroups].map(g=>({...g,items:g.items.filter(it=>!q||it.name.toLowerCase().includes(q)||(it.equip||"").toLowerCase().includes(q))})).filter(g=>g.items.length);
-      const toggle=it=>setPicked(p=>{const u={...p};if(u[it.key])delete u[it.key];else u[it.key]=it;return u;});
+      let groups=[...yourGroups,...libGroups];
+      if(!q){
+        if(tab==="★ Yours")groups=yourGroups;
+        else if(tab!=="All")groups=libGroups.filter(g=>g.group===tab);
+      }
+      groups=groups.map(g=>({...g,items:g.items.filter(it=>!q||it.name.toLowerCase().includes(q)||(it.equip||"").toLowerCase().includes(q))})).filter(g=>g.items.length);
+      const toggle=it=>setPicked(p=>{
+        if(single)return p[it.key]?{}:{[it.key]:it};
+        const u={...p};if(u[it.key])delete u[it.key];else u[it.key]=it;return u;
+      });
       return (
         <div>
-          <input className="field" placeholder="Search exercises…" value={query} onChange={e=>setQuery(e.target.value)} style={{marginBottom:"10px"}}/>
-          <div style={{maxHeight:"38vh",overflowY:"auto",border:"1px solid var(--card-border)",borderRadius:"12px",padding:"6px 10px"}}>
+          <input className="field" placeholder="Search all exercises…" value={query} onChange={e=>setQuery(e.target.value)} style={{marginBottom:"8px"}}/>
+          <div style={{display:"flex",gap:"6px",overflowX:"auto",paddingBottom:"8px",WebkitOverflowScrolling:"touch"}}>
+            {tabs.map(t=>(
+              <button key={t} onClick={()=>setTab(t)} style={{flexShrink:0,padding:"7px 12px",borderRadius:"999px",fontSize:"12px",fontWeight:"800",whiteSpace:"nowrap",
+                border:`1.5px solid ${tab===t&&!q?"var(--accent)":"var(--card-border)"}`,
+                background:tab===t&&!q?"var(--accent-muted)":"transparent",
+                color:tab===t&&!q?"var(--accent)":"var(--text-secondary)"}}>{t}</button>
+            ))}
+          </div>
+          <div style={{maxHeight:"36vh",overflowY:"auto",border:"1px solid var(--card-border)",borderRadius:"12px",padding:"6px 10px"}}>
             {groups.length===0&&<p className="text-small" style={{padding:"14px",textAlign:"center"}}>No matches</p>}
             {groups.map(g=>(
               <div key={g.group} style={{marginBottom:"6px"}}>
                 <p className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"800",letterSpacing:"0.5px",margin:"8px 0 4px"}}>{g.group}</p>
                 {g.items.map(it=>(
-                  <label key={it.key} style={{display:"flex",alignItems:"center",gap:"10px",padding:"7px 2px",cursor:"pointer"}}>
-                    <input type="checkbox" checked={!!picked[it.key]} onChange={()=>toggle(it)} style={{width:"17px",height:"17px",accentColor:"var(--accent)",flexShrink:0}}/>
-                    <span style={{flex:1,fontSize:"14px",fontWeight:"600"}}>{it.name}</span>
-                    <span className="text-small" style={{fontSize:"11px"}}>{it.equip}</span>
+                  <label key={it.key} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"8px 2px",cursor:"pointer",borderBottom:"0.5px solid var(--card-border)"}}>
+                    <input type={single?"radio":"checkbox"} checked={!!picked[it.key]} onChange={()=>toggle(it)} style={{width:"17px",height:"17px",accentColor:"var(--accent)",flexShrink:0,marginTop:"2px"}}/>
+                    <span style={{flex:1}}>
+                      <span style={{display:"flex",justifyContent:"space-between",gap:"8px"}}>
+                        <span style={{fontSize:"14px",fontWeight:"700"}}>{it.name}</span>
+                        <span className="text-small" style={{fontSize:"11px",flexShrink:0}}>{it.equip}</span>
+                      </span>
+                      {it.cue&&<span className="text-small" style={{display:"block",fontSize:"11px",marginTop:"2px",lineHeight:"1.35"}}>{it.cue}</span>}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -676,7 +882,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       );
     }
     const pickedToExercises = picked => Object.values(picked).map(it =>
-      it.src ? {...it.src, id: uid()} : {id:uid(),name:it.name,equip:it.equip,sets:3,reps:"8-12",hold:"",rest:"90s",weight:"",cue:""}
+      it.src ? {...it.src, id: uid()} : {id:uid(),name:it.name,equip:it.equip,sets:3,reps:"8-12",hold:"",rest:"90s",weight:"",cue:it.cue||""}
     );
 
     // Tracked-style plate calculator + warm-up ramp
@@ -751,9 +957,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const stored=weights[exKey];
       const val=stored!==undefined?stored:(defaultWeight||"");
       const [draft,setDraft]=useState(val);
-      const startEdit=e=>{e.stopPropagation();setDraft(val);setEditing(true);setTimeout(()=>{if(ref.current){ref.current.focus();ref.current.select();}},50);};
-      const commit=()=>{onSave(exKey,draft.trim());setEditing(false);};
-      if(editing) return <input ref={ref} value={draft} onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} onClick={e=>e.stopPropagation()} placeholder="e.g. 35kg" style={{background:"var(--accent-muted)",border:"1.5px solid var(--accent)",borderRadius:"8px",color:"var(--text)",fontSize:"13px",fontWeight:"700",padding:"6px 10px",width:"85px",textAlign:"center"}}/>;
+      const startEdit=e=>{e.stopPropagation();setDraft(String(val).replace(/[^\d.]/g,''));setEditing(true);setTimeout(()=>{if(ref.current){ref.current.focus();ref.current.select();}},50);};
+      const commit=()=>{const d=draft.trim();onSave(exKey,d?`${d}kg`:"");setEditing(false);};
+      if(editing) return <input ref={ref} inputMode="decimal" value={draft} onChange={e=>setDraft(decOnly(e.target.value))} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} onClick={e=>e.stopPropagation()} placeholder="kg" style={{background:"var(--accent-muted)",border:"1.5px solid var(--accent)",borderRadius:"8px",color:"var(--text)",fontSize:"13px",fontWeight:"700",padding:"6px 10px",width:"85px",textAlign:"center"}}/>;
       return <button onClick={startEdit} style={{background:val?"var(--accent-muted)":"var(--input-bg)",border:val?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",borderRadius:"8px",color:val?"var(--accent)":"var(--text-secondary)",fontSize:"13px",fontWeight:"700",padding:"6px 12px"}}>{val||"Set Weight"}</button>;
     }
 
@@ -765,7 +971,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [draft,setDraft]=useState(val);
       const startEdit=e=>{e.stopPropagation();setDraft(val);setEditing(true);setTimeout(()=>{if(ref.current){ref.current.focus();ref.current.select();}},50);};
       const commit=()=>{onSave(exKey,draft.trim());setEditing(false);};
-      if(editing) return <input ref={ref} value={draft} onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} onClick={e=>e.stopPropagation()} placeholder="e.g. 10" style={{background:"var(--accent-muted)",border:"1.5px solid var(--accent)",borderRadius:"8px",color:"var(--text)",fontSize:"13px",fontWeight:"700",padding:"6px 10px",width:"75px",textAlign:"center"}}/>;
+      if(editing) return <input ref={ref} inputMode="numeric" value={draft} onChange={e=>setDraft(numOnly(e.target.value))} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")setEditing(false);}} onClick={e=>e.stopPropagation()} placeholder="e.g. 10" style={{background:"var(--accent-muted)",border:"1.5px solid var(--accent)",borderRadius:"8px",color:"var(--text)",fontSize:"13px",fontWeight:"700",padding:"6px 10px",width:"75px",textAlign:"center"}}/>;
       return <button onClick={startEdit} style={{background:val?"var(--accent-muted)":"var(--input-bg)",border:val?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",borderRadius:"8px",color:val?"var(--accent)":"var(--text-secondary)",fontSize:"13px",fontWeight:"700",padding:"6px 12px"}}>{val||"Reps"}</button>;
     }
 
@@ -889,6 +1095,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     }
 
     function ExerciseHistoryModal({exerciseId, exerciseName, onClose}) {
+      const [histMode,setHistMode]=useState("weight");
       const history = useMemo(() => getExerciseHistory(exerciseId).length > 0 ? getExerciseHistory(exerciseId) : getExerciseHistory(exerciseName), [exerciseId, exerciseName]);
       const best = getBestPerformance(exerciseId, exerciseName);
       return (
@@ -902,7 +1109,15 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               {best.best1RM && <div className="session-badge" style={{borderColor:"var(--pr-gold)"}}><span>🏆 Est 1RM:</span><span className="font-bold" style={{color:"var(--pr-gold)"}}>{calc1RM(best.best1RM.weight, best.best1RM.reps)}kg</span></div>}
             </div>
           )}
-          <ProgressionChart data={history} selectedExercise={exerciseName}/>
+          <div style={{display:"flex",gap:"4px",justifyContent:"flex-end",marginBottom:"4px"}}>
+            {[["weight","Weight"],["1rm","Est 1RM"]].map(([m,lab])=>(
+              <button key={m} onClick={()=>setHistMode(m)} style={{padding:"5px 10px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",
+                border:`1.5px solid ${histMode===m?"var(--accent)":"var(--card-border)"}`,
+                color:histMode===m?"var(--accent)":"var(--text-secondary)",
+                background:histMode===m?"var(--accent-muted)":"transparent"}}>{lab}</button>
+            ))}
+          </div>
+          <ProgressionChart data={history} selectedExercise={exerciseName} mode={histMode}/>
           <div style={{marginTop:"16px"}}>
             {history.length === 0 ? (
               <p className="text-small" style={{textAlign:"center",padding:"20px"}}>No history yet</p>
@@ -919,16 +1134,18 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       );
     }
 
-    function ProgressionChart({data,selectedExercise}) {
+    function ProgressionChart({data,selectedExercise,mode}) {
       const canvasRef=useRef(null);
       useEffect(()=>{
         if(!canvasRef.current||!data||data.length<2) return;
         const canvas=canvasRef.current;
         const ctx=canvas.getContext('2d');
+        if(!ctx) return;
         const rect=canvas.getBoundingClientRect();
         canvas.width=rect.width*2; canvas.height=rect.height*2; ctx.scale(2,2);
         const w=rect.width,h=rect.height,pad=35;
-        const pts=data.map(d=>({date:new Date(d.date),weight:parseWeight(d.weight),label:d.weight||"0"})).sort((a,b)=>a.date-b.date);
+        const val=d=>mode==='1rm'?(calc1RM(d.weight,d.reps)||parseWeight(d.weight)):parseWeight(d.weight);
+        const pts=data.map(d=>({date:new Date(d.date),weight:val(d),label:d.weight||"0"})).sort((a,b)=>a.date-b.date);
         const wts=pts.map(p=>p.weight),minW=Math.min(...wts)*0.9,maxW=Math.max(...wts)*1.1||10,rng=maxW-minW||10;
         ctx.clearRect(0,0,w,h);
         const isAR=document.documentElement.getAttribute('data-theme')==='anti-red';
@@ -941,7 +1158,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         ctx.stroke();
         if(!isAR){ctx.fillStyle='rgba(191,90,242,0.1)';ctx.beginPath();ctx.moveTo(gx(0),h-pad);pts.forEach((p,i)=>ctx.lineTo(gx(i),gy(p.weight)));ctx.lineTo(gx(pts.length-1),h-pad);ctx.closePath();ctx.fill();}
         pts.forEach((p,i)=>{const x=gx(i),y=gy(p.weight);ctx.fillStyle=sc;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle=isAR?'#ffd700':'#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillText(p.label,x,y-8);ctx.fillStyle=tc;ctx.font='8px sans-serif';ctx.fillText(`${p.date.getMonth()+1}/${p.date.getDate()}`,x,h-pad+14);});
-      },[data,selectedExercise]);
+      },[data,selectedExercise,mode]);
       if(!data||data.length<2) return <div className="chart-container" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-secondary)",fontSize:"14px"}}>Complete this exercise twice to start tracking progression</div>;
       return <div className="chart-container"><canvas ref={canvasRef} className="chart-svg" style={{width:"100%",height:"100%"}}/></div>;
     }
@@ -984,7 +1201,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const startTimeRef=useRef(Date.now());
       const [reorderMode,setReorderMode]=useState(false);
       const [exerciseOrder,setExerciseOrder]=useState(exercises.map((_,i)=>i));
-      const orderedExercises = exerciseOrder.map(i => exercises[i]);
+      const [exOverrides,setExOverrides]=useState({});
+      const orderedExercises = exerciseOrder.map(i => exOverrides[i] || exercises[i]);
+      // Superset chains: exercises flagged supersetWithNext link to the one below
+      const chainStart=i=>{let x=i;while(x>0&&orderedExercises[x-1]&&orderedExercises[x-1].supersetWithNext)x--;return x;};
+      const chainEnd=i=>{let x=i;while(orderedExercises[x]&&orderedExercises[x].supersetWithNext&&x+1<orderedExercises.length)x++;return x;};
 
       // Set-by-set logging state
       const [setLogs,setSetLogs]=useState({}); // { "exIdx-setIdx": { weight, reps, seconds, logged, logId, prs } }
@@ -1019,8 +1240,27 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       };
       const [skipModal,setSkipModal]=useState(false);
       const [plateCalc,setPlateCalc]=useState(false);
-      // Last set of the last exercise → no point resting afterwards
-      const isFinalStep = si => (exIdx+1>=orderedExercises.length) && ((si!==undefined?si:currentSetIdx)+1>=maxSets);
+      const [swapOpen,setSwapOpen]=useState(false);
+      const [swapPicked,setSwapPicked]=useState({});
+      const [swapQuery,setSwapQuery]=useState("");
+      // Live workout duration in the header
+      const [elapsedMin,setElapsedMin]=useState(0);
+      useEffect(()=>{
+        const t=setInterval(()=>setElapsedMin(Math.floor((Date.now()-startTimeRef.current)/60000)),15000);
+        return ()=>clearInterval(t);
+      },[]);
+      // Last set of the last exercise → no point resting afterwards (chain-aware)
+      const isFinalStep = si => {
+        const s = si!==undefined?si:currentSetIdx;
+        const cs=chainStart(exIdx), ce=chainEnd(exIdx);
+        if (ce>cs) {
+          const maxRounds=Math.max(...orderedExercises.slice(cs,ce+1).map(e=>e.sets||1));
+          return exIdx===ce && ce+1>=orderedExercises.length && s+1>=maxRounds;
+        }
+        return (exIdx+1>=orderedExercises.length) && (s+1>=maxSets);
+      };
+      // In a superset, rest only after the LAST exercise of the chain
+      const restHereOK = chainEnd(exIdx)===chainStart(exIdx) || exIdx===chainEnd(exIdx);
 
       const setupTimer=()=>{
         accRef.current=0;
@@ -1072,7 +1312,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const m = {};
         h.filter(x => x.date === latestDate).forEach(x => { if (x.setNumber) m[x.setNumber] = x; });
         return m;
-      }, [exIdx]);
+      }, [exIdx, activeEx && activeEx.id, activeEx && activeEx.name]);
       const getSetWeight = (si) => {
         const sk = `${exIdx}-${si}`;
         if (setLogs[sk]?.weight !== undefined) return setLogs[sk].weight;
@@ -1095,7 +1335,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       // Stats
       const totalSets = orderedExercises.reduce((a,e)=>a+(parseInt(e.sets)||1),0);
       const loggedSets = Object.values(setLogs).filter(l=>l.logged).length;
-      const totalVolume = Object.values(setLogs).filter(l=>l.logged).reduce((acc, l) => acc + parseWeight(l.weight) * parseReps(l.reps), 0);
+      const totalVolume = Object.values(setLogs).filter(l=>l.logged&&l.setType!=='warmup').reduce((acc, l) => acc + parseWeight(l.weight) * parseReps(l.reps), 0);
       const duration = Math.round((Date.now() - startTimeRef.current) / 60000);
 
       const updateSetLog = (si, patch) => {
@@ -1117,7 +1357,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             if((activeEx.hold||activeEx.totalSec)&&!currentLog.logged){
               logSet(currentSetIdx);
             }
-            if(activeEx.rest&&activeEx.rest!=="0s"&&!isFinalStep(currentSetIdx)){
+            if(activeEx.rest&&activeEx.rest!=="0s"&&!isFinalStep(currentSetIdx)&&restHereOK){
               setPendingAutoStart("rest");
               setMode("rest");
             } else {
@@ -1127,6 +1367,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           }
         } else if(m==="rest"){
           triggerSoundChecked('rest-chime');
+          notifyRestEnd();
           setPendingAutoStart("work");
           advanceSet();
         } else if(m==="split_transition"){
@@ -1182,23 +1423,46 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const r = setLogs[sk]?.reps !== undefined ? setLogs[sk].reps : getSetReps(si);
         const s = setLogs[sk]?.seconds !== undefined ? setLogs[sk].seconds : actualSeconds;
 
-        // Check PRs
-        const prs = checkForPRs(activeEx.id, activeEx.name, w, r);
+        const setType = setLogs[sk]?.setType;
+        const rir = setLogs[sk]?.rir;
+        // Check PRs — warm-up sets never count
+        const prs = setType==='warmup' ? [] : checkForPRs(activeEx.id, activeEx.name, w, r);
         if (prs.length > 0 && !prs.includes('first')) {
           triggerSound('pr-fanfare');
           try { navigator.vibrate?.([50, 30, 50]); } catch {}
           setSessionPRs(prev => [...prev, { exercise: activeEx.name, exerciseId: activeEx.id, prs, weight: w, reps: r }]);
         }
 
-        setSetLogs(p => ({...p, [sk]: { weight: w, reps: r, seconds: s, logged: true, logId, prs }}));
+        setSetLogs(p => ({...p, [sk]: { ...(p[sk]||{}), weight: w, reps: r, seconds: s, logged: true, logId, prs }}));
         // Save to progression
         const prog = store.get("workout_progression", []);
-        prog.push({ id: logId, date: todayStr(), exercise: activeEx.name, exerciseId: activeEx.id, weight: w, reps: r, hold: s || "0", setNumber: si + 1 });
+        prog.push({ id: logId, date: todayStr(), exercise: activeEx.name, exerciseId: activeEx.id, weight: w, reps: r, hold: s || "0", setNumber: si + 1, setType: setType||"normal", rir: rir!==undefined&&rir!==""?rir:undefined });
         store.set("workout_progression", prog);
       };
 
       const advanceSet = () => {
         setCurrentSideIdx(0);
+        const cs=chainStart(exIdx), ce=chainEnd(exIdx);
+        if (ce>cs) {
+          // Superset round: A → B → … → rest → back to A, next round
+          if (exIdx < ce) {
+            const ni=exIdx+1;
+            setExIdx(ni);
+            setCurrentSetIdx(Math.min(currentSetIdx,(orderedExercises[ni].sets||1)-1));
+            setMode("work");
+            return;
+          }
+          const maxRounds=Math.max(...orderedExercises.slice(cs,ce+1).map(e=>e.sets||1));
+          if (currentSetIdx+1 < maxRounds) {
+            setExIdx(cs);
+            setCurrentSetIdx(currentSetIdx+1);
+            setMode("work");
+            return;
+          }
+          if (ce+1 < orderedExercises.length) { setExIdx(ce+1); setCurrentSetIdx(0); setMode("work"); }
+          else setIsFinishedScreen(true);
+          return;
+        }
         if (currentSetIdx + 1 < maxSets) {
           setCurrentSetIdx(currentSetIdx + 1);
           setMode("work");
@@ -1219,7 +1483,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         pushHistory();
         if (setLogs[sk]?.logged) {
           // Already logged, just advance
-          if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(si)) {
+          if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(si) && restHereOK) {
             setPendingAutoStart("rest");
             setMode("rest");
           } else {
@@ -1231,7 +1495,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         logSet(si);
         try { navigator.vibrate?.(50); } catch {}
         // Auto-start rest timer
-        if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(si)) {
+        if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(si) && restHereOK) {
           setPendingAutoStart("rest");
           setMode("rest");
         } else {
@@ -1250,7 +1514,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         if (hasSides && (activeEx.hold||activeEx.totalSec) && currentSideIdx + 1 < sideLabels.length) {
           setPendingAutoStart("work");
           setMode("split_transition");
-        } else if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(currentSetIdx)) {
+        } else if (activeEx.rest && activeEx.rest !== "0s" && !isFinalStep(currentSetIdx) && restHereOK) {
           setPendingAutoStart("rest");
           setMode("rest");
         } else {
@@ -1327,6 +1591,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const onFinishSession = () => {
         const logs = store.get("workout_logs", []);
         logs.push({ id: uid(), date: todayStr(), routine: routineName, total: totalSets, completed: loggedSets, isPartial: loggedSets < totalSets, duration, volume: totalVolume });
+        store.set('workout_last_routine',{name:routineName,color:routineColor||null,exercises,date:todayStr()});
+        bumpBackupCounter();
         store.set("workout_logs", logs);
         const c = store.get("workout_completed_counts", { workouts: 0, tendons: 0, stretches: 0 });
         if (loggedSets > 0) {
@@ -1434,12 +1700,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
               <div>
                 <span className="badge" style={{marginLeft:"0"}}>{routineName}</span>
-                <p className="text-small" style={{marginTop:"4px"}}>Ex {exIdx+1}/{orderedExercises.length} — Set {currentSetIdx+1}/{maxSets} — {loggedSets}/{totalSets} logged</p>
+                <p className="text-small" style={{marginTop:"4px"}}>Ex {exIdx+1}/{orderedExercises.length} — Set {currentSetIdx+1}/{maxSets} — {loggedSets}/{totalSets} logged — ⏱ {elapsedMin}m{chainEnd(exIdx)>chainStart(exIdx)?" — ⛓ superset":""}</p>
               </div>
             </div>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
               {historyStack.length>0&&<button onClick={goBack} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 12px",fontSize:"13px",fontWeight:"800"}}>← Back</button>}
               {!(activeEx.hold||activeEx.totalSec)&&<button onClick={()=>setPlateCalc(true)} title="Plate calculator" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>🏋️</button>}
+              <button onClick={()=>setSwapOpen(true)} title="Swap exercise" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>⇄</button>
               <button onClick={() => setReorderMode(true)} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>⇅</button>
               <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 14px",fontSize:"13px",fontWeight:"800",textTransform:"uppercase"}} onClick={()=>setIsFinishedScreen(true)}>Finish</button>
             </div>
@@ -1504,6 +1771,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                       <th style={{width:"40px"}}>Set</th>
                       {!(activeEx.hold||activeEx.totalSec) && <th>Weight</th>}
                       {!(activeEx.hold||activeEx.totalSec) ? <th>Reps</th> : <th>Seconds</th>}
+                      {!(activeEx.hold||activeEx.totalSec) && <th style={{width:"44px"}}>RIR</th>}
                       <th style={{width:"50px"}}>Done</th>
                     </tr>
                   </thead>
@@ -1520,24 +1788,41 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                       const ss = log.seconds !== undefined ? log.seconds : actualSeconds;
                       return (
                         <tr key={si} className={isActive ? "active-set" : isDone ? "completed-set" : ""}>
-                          <td style={{fontWeight:"700"}}>{si + 1}</td>
+                          <td>
+                            <button onClick={()=>{ if(isDone) return; const cycle=[undefined,'warmup','drop','failure']; const cur=cycle.indexOf(log.setType); updateSetLog(si,{setType:cycle[(cur+1)%cycle.length]}); }}
+                              title="Tap: Warm-up / Drop / Failure"
+                              style={{fontWeight:"800",minWidth:"26px",padding:"4px 6px",borderRadius:"8px",
+                                color:log.setType==='warmup'?"var(--warning)":log.setType==='drop'?"var(--accent)":log.setType==='failure'?"var(--danger)":"var(--text)",
+                                background:log.setType?"var(--input-bg)":"transparent"}}>
+                              {log.setType==='warmup'?'W':log.setType==='drop'?'D':log.setType==='failure'?'F':si+1}
+                            </button>
+                          </td>
                           {!isHold && (
                             <td>
                               {isDone ? <span className="font-bold">{sw}</span> :
-                                <input className="set-input" value={sw} onChange={e => updateSetLog(si, {weight: e.target.value})} placeholder="kg"/>}
+                                <input className="set-input" inputMode="decimal" value={sw} onChange={e => updateSetLog(si, {weight: decOnly(e.target.value)})} placeholder="kg"/>}
                               {!isDone && prevSets[si+1] && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].weight&&prevSets[si+1].weight!=="0"?fmtWeight(prevSets[si+1].weight):"BW"}{prevSets[si+1].reps?` × ${prevSets[si+1].reps}`:""}</div>}
                             </td>
                           )}
                           {!isHold ? (
                             <td>
                               {isDone ? <span className="font-bold">{sr}</span> :
-                                <input className="set-input" value={sr} onChange={e => updateSetLog(si, {reps: e.target.value})} placeholder="reps" style={{width:"50px"}}/>}
+                                <input className="set-input" inputMode="numeric" value={sr} onChange={e => updateSetLog(si, {reps: numOnly(e.target.value)})} placeholder="reps" style={{width:"50px"}}/>}
                             </td>
                           ) : (
                             <td>
                               {isDone ? <span className="font-bold">{ss}s</span> :
-                                <input className="set-input" value={ss} onChange={e => updateSetLog(si, {seconds: e.target.value})} placeholder="sec" style={{width:"50px"}}/>}
+                                <input className="set-input" inputMode="numeric" value={ss} onChange={e => updateSetLog(si, {seconds: numOnly(e.target.value)})} placeholder="sec" style={{width:"50px"}}/>}
                               {!isDone && prevSets[si+1] && prevSets[si+1].hold && prevSets[si+1].hold!=="0" && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].hold}</div>}
+                            </td>
+                          )}
+                          {!isHold && (
+                            <td>
+                              {isDone ? <span className="text-small" style={{fontWeight:"700"}}>{log.rir!==undefined&&log.rir!==""?log.rir:"—"}</span> :
+                                <select className="set-input" style={{width:"40px",padding:"4px 2px"}} value={log.rir??""} onChange={e=>updateSetLog(si,{rir:e.target.value})}>
+                                  <option value="">—</option>
+                                  {["0","1","2","3","4","5"].map(o=><option key={o} value={o}>{o}</option>)}
+                                </select>}
                             </td>
                           )}
                           <td>
@@ -1590,6 +1875,28 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             )}
           </div>
 
+          {/* Swap exercise (machine taken, etc.) */}
+          {swapOpen&&(
+            <div className="modal-bg" style={{zIndex:200}} onClick={e=>{if(e.target===e.currentTarget){setSwapOpen(false);setSwapPicked({});setSwapQuery("");}}}>
+              <div className="modal-body">
+                <div className="drag-bar"/>
+                <h3 className="font-bold" style={{fontSize:"19px",marginBottom:"4px"}}>Swap "{activeEx.name}"</h3>
+                <p className="text-small" style={{marginBottom:"12px"}}>Pick a replacement — its sets stay at {maxSets}. Logged sets for this slot are cleared.</p>
+                <ExercisePickList sections={null} picked={swapPicked} setPicked={setSwapPicked} query={swapQuery} setQuery={setSwapQuery} single/>
+                <button className="button-primary" style={{marginTop:"12px"}} disabled={!Object.keys(swapPicked).length} onClick={()=>{
+                  const it=Object.values(swapPicked)[0];
+                  if(!it)return;
+                  const base=it.src?{...it.src}:{id:uid(),name:it.name,equip:it.equip,reps:activeEx.reps||"8-12",hold:activeEx.hold||"",rest:activeEx.rest||"90s",weight:"",cue:it.cue||""};
+                  const underlying=exerciseOrder[exIdx];
+                  setExOverrides(o=>({...o,[underlying]:withSides({...base,id:uid(),sets:activeEx.sets||base.sets||3})}));
+                  setSetLogs(p=>{const u={...p};Object.keys(u).forEach(k=>{if(k.startsWith(`${exIdx}-`))delete u[k];});return u;});
+                  setIsRunning(false);setCurrentSideIdx(0);setCurrentSetIdx(0);setMode("work");
+                  setSwapOpen(false);setSwapPicked({});setSwapQuery("");
+                }}>Swap in</button>
+                <button className="button-secondary" style={{marginTop:"10px"}} onClick={()=>{setSwapOpen(false);setSwapPicked({});setSwapQuery("");}}>Cancel</button>
+              </div>
+            </div>
+          )}
           {/* Skip choice modal */}
           {plateCalc&&<PlateCalcModal initialWeight={currentLog.weight!==undefined?currentLog.weight:getSetWeight(currentSetIdx)} onClose={()=>setPlateCalc(false)}/>}
           {skipModal&&(
@@ -1677,10 +1984,26 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const saveHeading=t=>{const v=(t||"").trim()||"Strength & Hypertrophy";setHeading(v);store.set("workouts_heading",v);};
       const [fbName,setFbName]=useState(()=>store.get("workouts_fullbody_name","Full Body"));
       const saveFbName=t=>{const v=(t||"").trim()||"Full Body";setFbName(v);store.set("workouts_fullbody_name",v);};
+      const [libFor,setLibFor]=useState(null);
+      const [libPicked,setLibPicked]=useState({});
+      const [libQuery,setLibQuery]=useState("");
+      const closeLib=()=>{setLibFor(null);setLibPicked({});setLibQuery("");};
 
       return (
         <div style={accentVars(tileColor)}>
           {historyModal && <ExerciseHistoryModal exerciseId={historyModal.id} exerciseName={historyModal.name} onClose={() => setHistoryModal(null)}/>}
+          {libFor&&(
+            <TapModal isOpen onClose={closeLib}>
+              <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Add to {libFor}</h2>
+              <p className="text-small" style={{marginBottom:"12px"}}>Browse by body part or search — cues come included.</p>
+              <ExercisePickList sections={workoutSections} picked={libPicked} setPicked={setLibPicked} query={libQuery} setQuery={setLibQuery}/>
+              <button className="button-primary" style={{marginTop:"14px"}} disabled={!Object.keys(libPicked).length} onClick={()=>{
+                saveW(workouts.map(s=>s.section===libFor?{...s,exercises:[...s.exercises,...pickedToExercises(libPicked)]}:s));
+                closeLib();
+              }}>Add {Object.keys(libPicked).length||""} exercise{Object.keys(libPicked).length===1?"":"s"}</button>
+              <button className="button-secondary" style={{marginTop:"10px"}} onClick={closeLib}>Cancel</button>
+            </TapModal>
+          )}
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><h2 className="font-bold" style={{fontSize:"20px"}}><Editable value={heading} onSave={saveHeading}/></h2><p className="text-small">Progressive overload tracking</p></div>
             <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
@@ -1744,6 +2067,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                                 <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
                                 <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"72px"}} value={ex.rest||""} placeholder="90s" onChange={e=>updateExercise(sec.section,ei,{rest:e.target.value})}/>
                                 <SideToggle ex={ex} onChange={v=>updateExercise(sec.section,ei,{unilateral:v})}/>
+                                {ei<sec.exercises.length-1&&<button onClick={()=>updateExercise(sec.section,ei,{supersetWithNext:!ex.supersetWithNext})} title="Superset with the next exercise"
+                                  style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
+                                    border:`1.5px solid ${ex.supersetWithNext?"var(--accent)":"var(--card-border)"}`,
+                                    color:ex.supersetWithNext?"var(--accent)":"var(--text-secondary)",
+                                    background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)"}}>⛓ SS</button>}
                                 {otherSecs.length>0&&<select className="field" style={{marginBottom:0,fontSize:"11px",padding:"5px",width:"68px",cursor:"pointer"}} value="" onChange={e=>{if(e.target.value)moveExTo(sec.section,exKey,e.target.value);}}>
                                   <option value="">Move→</option>
                                   {otherSecs.map(s=><option key={s} value={s}>{s}</option>)}
@@ -1758,6 +2086,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                               <Editable as="p" className="font-bold" style={{fontSize:"14px"}} value={ex.name} onSave={t=>updateExercise(sec.section,ei,{name:t})} singleAction={()=>setHistoryModal({id:exKey,name:ex.name})}/>
                               <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets
                                 {exerciseHasSides(ex)&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
+                                {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>⛓ SS↓</span>}
+                                <span className="badge" style={{fontSize:"9px",marginLeft:"4px",opacity:0.75}}>{muscleGroupOf(ex.name)}</span>
                               </p>
                               <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
                               {suggestion && <span className={`suggestion-badge ${suggestion.type}`}>{suggestion.msg}</span>}
@@ -1772,8 +2102,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                         )}
                       </div>
                     );})}
-                    {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
-                      <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Add Exercise</button>
+                    {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"12px",flexWrap:"wrap"}}>
+                      <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>setLibFor(sec.section)}>+ Add Exercise</button>
+                      <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>handleAddExercise(sec.section)}>+ Blank</button>
                       <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>{
                         const v=prompt(`Rest time for ALL exercises in "${sec.section}" (e.g. 90s or 2 min):`);
                         if(!v)return;
@@ -1805,6 +2136,10 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [tendonData,setTendonData]=useState(()=>store.get("tendon_custom",TENDON));
       const pd=tendonData[selectedPhase];
       const pdColor=tileColor||getThemeColor(pd.color,theme);
+      const [libFor,setLibFor]=useState(null);
+      const [libPicked,setLibPicked]=useState({});
+      const [libQuery,setLibQuery]=useState("");
+      const closeLib=()=>{setLibFor(null);setLibPicked({});setLibQuery("");};
       const saveTendon=u=>{setTendonData(u);store.set("tendon_custom",u);};
       const updatePhaseField=(field,value)=>saveTendon({...tendonData,[selectedPhase]:{...pd,[field]:value}});
       const updateSession=(sessLabel,patch)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,...patch}:s)}});
@@ -1842,6 +2177,19 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       return (
         <div style={accentVars(tileColor)}>
           {historyModal && <ExerciseHistoryModal exerciseId={historyModal.id} exerciseName={historyModal.name} onClose={() => setHistoryModal(null)}/>}
+          {libFor&&(
+            <TapModal isOpen onClose={closeLib}>
+              <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Add to {libFor}</h2>
+              <p className="text-small" style={{marginBottom:"12px"}}>Picked exercises convert to timed holds — adjust in edit mode.</p>
+              <ExercisePickList picked={libPicked} setPicked={setLibPicked} query={libQuery} setQuery={setLibQuery}/>
+              <button className="button-primary" style={{marginTop:"14px"}} disabled={!Object.keys(libPicked).length} onClick={()=>{
+                const added=pickedToExercises(libPicked).map(e=>({...e,hold:e.hold||"30s",reps:"",sets:e.sets||3,rest:e.rest||"90s"}));
+                saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===libFor?{...s,exercises:[...s.exercises,...added]}:s)}});
+                closeLib();
+              }}>Add {Object.keys(libPicked).length||""}</button>
+              <button className="button-secondary" style={{marginTop:"10px"}} onClick={closeLib}>Cancel</button>
+            </TapModal>
+          )}
           <div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
             {Object.keys(tendonData).map(k=>{
               const btnColor=tileColor||getThemeColor(tendonData[k].color,theme);
@@ -1894,6 +2242,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                             <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
                             <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"72px"}} value={ex.rest||""} placeholder="90s" onChange={e=>updateEx(sess.label,ei,{rest:e.target.value})}/>
                             <SideToggle ex={ex} detector={withTendonSides} onChange={v=>updateEx(sess.label,ei,{unilateral:v})}/>
+                            {ei<sess.exercises.length-1&&<button onClick={()=>updateEx(sess.label,ei,{supersetWithNext:!ex.supersetWithNext})} title="Superset with the next exercise"
+                              style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
+                                border:`1.5px solid ${ex.supersetWithNext?"var(--accent)":"var(--card-border)"}`,
+                                color:ex.supersetWithNext?"var(--accent)":"var(--text-secondary)",
+                                background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)"}}>⛓ SS</button>}
                           </div>
                         </div>
                         <button onClick={()=>deleteEx(sess.label,exKey)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>
@@ -1917,8 +2270,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                     )}
                   </div>
                 );})}
-                {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"10px"}}>
-                  <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>addEx(sess.label)}>+ Add Exercise</button>
+                {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"10px",flexWrap:"wrap"}}>
+                  <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>setLibFor(sess.label)}>+ Add Exercise</button>
+                  <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>addEx(sess.label)}>+ Blank</button>
                   <button className="button-secondary" style={{padding:"8px",fontSize:"13px"}} onClick={()=>{
                     const v=prompt(`Rest time for ALL exercises in "${sess.label}" (e.g. 90s or 2 min):`);
                     if(!v)return;
@@ -2057,7 +2411,43 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [trackedPts, setTrackedPts] = useState(() => store.get("workout_progression", []));
       const uniqueEx = [...new Set(trackedPts.map(p => p.exercise))];
       const [selectedEx, setSelectedEx] = useState(uniqueEx[0] || "");
+      const [chartMode, setChartMode] = useState("weight");
       const filtered = trackedPts.filter(p => p.exercise === selectedEx);
+      // ── Analytics (warm-up sets excluded) ──
+      const working = trackedPts.filter(p => p.setType !== 'warmup');
+      const dayMs = 86400000;
+      const ageDays = p => Math.floor((Date.now() - new Date(p.date).getTime()) / dayMs);
+      const tonnage = p => parseWeight(p.weight) * parseReps(p.reps);
+      // Weekly sets per muscle group (last 7 days)
+      const muscleSets = (() => {
+        const m = {};
+        working.filter(p => ageDays(p) < 7).forEach(p => { const g = muscleGroupOf(p.exercise); m[g] = (m[g] || 0) + 1; });
+        return Object.entries(m).sort((a, b) => b[1] - a[1]);
+      })();
+      const maxMuscle = Math.max(1, ...muscleSets.map(([, v]) => v));
+      // 8-week tonnage trend
+      const weekVol = Array.from({length: 8}, (_, i) => {
+        const lo = (7 - i) * 7, hi = lo + 7;
+        return working.filter(p => { const a = ageDays(p); return a >= lo && a < hi; }).reduce((acc, p) => acc + tonnage(p), 0);
+      });
+      const maxWeek = Math.max(1, ...weekVol);
+      // Training load: this week vs 4-week average
+      const thisWeek = weekVol[7];
+      const prevAvg = (weekVol[3] + weekVol[4] + weekVol[5] + weekVol[6]) / 4;
+      const loadRatio = prevAvg > 0 ? thisWeek / prevAvg : null;
+      const loadLabel = loadRatio === null ? null : loadRatio < 0.8 ? ["Light week", "var(--accent)"] : loadRatio <= 1.3 ? ["On track", "var(--success)"] : ["High load", "var(--warning)"];
+      // Bodyweight log
+      const [bwLog, setBwLog] = useState(() => store.get("body_weight_log", []));
+      const [bwInput, setBwInput] = useState("");
+      const addBw = () => {
+        const v = parseFloat(bwInput);
+        if (!v || v <= 0) return;
+        const updated = [...bwLog.filter(e => e.date !== todayStr()), {date: todayStr(), kg: v}].sort((a, b) => new Date(a.date) - new Date(b.date));
+        store.set("body_weight_log", updated); setBwLog(updated); setBwInput("");
+      };
+      const delBw = date => { const updated = bwLog.filter(e => e.date !== date); store.set("body_weight_log", updated); setBwLog(updated); };
+      // Swipe-to-delete on history rows
+      const swipeRef = useRef({x: 0, y: 0, id: null});
       const handleReset = () => {
         if (confirm("Delete all training history? This cannot be undone.")) {
           localStorage.removeItem("workout_progression"); localStorage.removeItem("workout_logs");
@@ -2075,7 +2465,67 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       };
       return (
         <div>
-          <div className="card"><h2 className="font-bold" style={{fontSize:"20px"}}>Progression</h2><p className="text-small">Weight and hold tracking over time</p></div>
+          <div className="card">
+            <div className="flex-between">
+              <div><h2 className="font-bold" style={{fontSize:"20px"}}>Progression</h2><p className="text-small">Weight and hold tracking over time</p></div>
+              {loadLabel && <span className="badge" style={{fontSize:"11px",padding:"6px 10px",color:loadLabel[1],borderColor:loadLabel[1]}} title="This week's volume vs your 4-week average">{loadLabel[0]}</span>}
+            </div>
+          </div>
+          {muscleSets.length > 0 && (
+            <div className="card">
+              <h3 className="font-bold" style={{fontSize:"15px"}}>This Week — Sets per Muscle</h3>
+              <p className="text-small" style={{marginBottom:"10px"}}>Working sets, last 7 days (warm-ups excluded)</p>
+              {muscleSets.map(([g, v]) => (
+                <div key={g} style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
+                  <span className="text-small" style={{width:"74px",fontWeight:"700",flexShrink:0}}>{g}</span>
+                  <div style={{flex:1,height:"14px",borderRadius:"7px",background:"var(--input-bg)",overflow:"hidden"}}>
+                    <div style={{width:`${Math.round(v/maxMuscle*100)}%`,height:"100%",borderRadius:"7px",background:"var(--accent)"}}/>
+                  </div>
+                  <span className="font-bold" style={{width:"26px",textAlign:"right",fontSize:"13px"}}>{v}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {weekVol.some(v=>v>0) && (
+            <div className="card">
+              <h3 className="font-bold" style={{fontSize:"15px"}}>Weekly Volume — last 8 weeks</h3>
+              <p className="text-small" style={{marginBottom:"10px"}}>Total tonnage (kg × reps)</p>
+              <div style={{display:"flex",alignItems:"flex-end",gap:"6px",height:"90px"}}>
+                {weekVol.map((v, i) => (
+                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
+                    <div style={{width:"100%",borderRadius:"6px 6px 0 0",background:i===7?"var(--accent)":"var(--accent-muted)",height:`${Math.max(3, Math.round(v/maxWeek*72))}px`}} title={`${Math.round(v).toLocaleString()} kg`}/>
+                    <span className="text-small" style={{fontSize:"9px"}}>{i===7?"now":`-${7-i}w`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="card">
+            <h3 className="font-bold" style={{fontSize:"15px"}}>Bodyweight</h3>
+            <div style={{display:"flex",gap:"8px",margin:"10px 0"}}>
+              <input className="field" inputMode="decimal" placeholder="kg today" style={{marginBottom:0,flex:1}} value={bwInput} onChange={e=>setBwInput(decOnly(e.target.value))}/>
+              <button className="button-primary" style={{width:"auto",padding:"10px 16px",fontSize:"14px"}} onClick={addBw}>Log</button>
+            </div>
+            {bwLog.length>1&&(()=>{
+              const vals=bwLog.map(e=>e.kg);const lo=Math.min(...vals),hi=Math.max(...vals),rng=(hi-lo)||1;
+              return (
+                <div style={{display:"flex",alignItems:"flex-end",gap:"3px",height:"56px",marginBottom:"8px"}}>
+                  {bwLog.slice(-21).map(e=>(
+                    <div key={e.date} style={{flex:1,borderRadius:"3px 3px 0 0",background:"var(--accent-muted)",borderTop:"2px solid var(--accent)",height:`${12+Math.round((e.kg-lo)/rng*40)}px`}} title={`${e.date}: ${e.kg}kg`}/>
+                  ))}
+                </div>
+              );
+            })()}
+            {[...bwLog].reverse().slice(0,5).map(e=>(
+              <div key={e.date} className="progression-item" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span className="text-small">{e.date}</span>
+                <span style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <span className="font-bold text-accent">{e.kg} kg</span>
+                  <button onClick={()=>delBw(e.date)} style={{color:"var(--danger)",background:"var(--danger-muted)",width:"20px",height:"20px",borderRadius:"50%",fontSize:"12px",fontWeight:"900"}}>×</button>
+                </span>
+              </div>
+            ))}
+          </div>
           {uniqueEx.length===0?(
             <div className="card" style={{textAlign:"center",padding:"40px 20px",color:"var(--text-secondary)"}}>Complete sets inside Workouts or Tendons to start tracking.</div>
           ):(
@@ -2085,18 +2535,37 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 <select className="field" value={selectedEx} onChange={e=>setSelectedEx(e.target.value)} style={{background:"var(--input-bg)",cursor:"pointer"}}>
                   {uniqueEx.map((ue,i)=><option key={i} value={ue}>{ue}</option>)}
                 </select>
-                <h3 className="font-bold" style={{fontSize:"15px",marginTop:"14px"}}>Progression Curve</h3>
-                <ProgressionChart data={filtered} selectedExercise={selectedEx}/>
+                <div className="flex-between" style={{marginTop:"14px"}}>
+                  <h3 className="font-bold" style={{fontSize:"15px"}}>Progression Curve</h3>
+                  <div style={{display:"flex",gap:"4px"}}>
+                    {[["weight","Weight"],["1rm","Est 1RM"]].map(([m,lab])=>(
+                      <button key={m} onClick={()=>setChartMode(m)} style={{padding:"5px 10px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",
+                        border:`1.5px solid ${chartMode===m?"var(--accent)":"var(--card-border)"}`,
+                        color:chartMode===m?"var(--accent)":"var(--text-secondary)",
+                        background:chartMode===m?"var(--accent-muted)":"transparent"}}>{lab}</button>
+                    ))}
+                  </div>
+                </div>
+                <ProgressionChart data={filtered} selectedExercise={selectedEx} mode={chartMode}/>
               </div>
               <div className="card">
                 <h3 className="font-bold" style={{fontSize:"15px",marginBottom:"10px"}}>Log History</h3>
                 {[...filtered].reverse().map((l,i)=>(
-                  <div key={i} className="progression-item" style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
-                    <div style={{flex:1,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span>{l.date}{l.setNumber ? ` (Set ${l.setNumber})` : ''}</span>
-                      <span className="font-bold text-accent">{l.weight||"BW"}{l.reps?` · ${l.reps} reps`:""}{l.hold&&l.hold!=="0"?` · ${l.hold}`:""}</span>
+                  <div key={i} className="progression-item" style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",touchAction:"pan-y"}}
+                    onTouchStart={e=>{swipeRef.current={x:e.touches[0].clientX,y:e.touches[0].clientY,id:l.id};}}
+                    onTouchEnd={e=>{
+                      const s=swipeRef.current;
+                      if(s.id!==l.id)return;
+                      const dx=e.changedTouches[0].clientX-s.x, dy=e.changedTouches[0].clientY-s.y;
+                      if(dx<-60&&Math.abs(dx)>Math.abs(dy)*2)handleDeleteSet(l.id);
+                    }}>
+                    <div style={{flex:1,display:"flex",justifyContent:"space-between",alignItems:"center",gap:"6px"}}>
+                      <span>{l.date}{l.setNumber ? ` (Set ${l.setNumber})` : ''}
+                        {l.setType&&l.setType!=='normal'&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px",color:l.setType==='warmup'?"var(--warning)":l.setType==='failure'?"var(--danger)":"var(--accent)"}}>{l.setType==='warmup'?'W':l.setType==='drop'?'D':'F'}</span>}
+                      </span>
+                      <span className="font-bold text-accent">{l.weight||"BW"}{l.reps?` · ${l.reps} reps`:""}{l.hold&&l.hold!=="0"?` · ${l.hold}`:""}{l.rir!==undefined&&l.rir!==""?` · RIR ${l.rir}`:""}</span>
                     </div>
-                    <button onClick={() => handleDeleteSet(l.id)} style={{color:"var(--danger)",background:"var(--danger-muted)",width:"22px",height:"22px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"900"}}>×</button>
+                    <button onClick={() => handleDeleteSet(l.id)} style={{color:"var(--danger)",background:"var(--danger-muted)",width:"22px",height:"22px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"900",flexShrink:0}}>×</button>
                   </div>
                 ))}
               </div>
@@ -2229,6 +2698,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                         <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
                         <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"7px",width:"78px"}} value={ex.rest||""} placeholder="90s" onChange={e=>updateExercise(i,{rest:e.target.value})}/>
                         <SideToggle ex={ex} onChange={v=>updateExercise(i,{unilateral:v})}/>
+                        {i<split.exercises.length-1&&<button onClick={()=>updateExercise(i,{supersetWithNext:!ex.supersetWithNext})} title="Superset with the next exercise"
+                          style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
+                            border:`1.5px solid ${ex.supersetWithNext?"var(--accent)":"var(--card-border)"}`,
+                            color:ex.supersetWithNext?"var(--accent)":"var(--text-secondary)",
+                            background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)"}}>⛓ SS</button>}
                       </div>
                     </div>
                   </div>
@@ -2237,6 +2711,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                     <Editable as="p" className="font-bold" value={ex.name} onSave={t=>updateExercise(i,{name:t})}/>
                     <p className="text-small">{ex.sets} sets — {ex.reps||ex.hold}
                       {exerciseHasSides(ex)&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
+                      {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>⛓ SS↓</span>}
+                      <span className="badge" style={{fontSize:"9px",marginLeft:"4px",opacity:0.75}}>{muscleGroupOf(ex.name)}</span>
                     </p>
                     <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
                     <Editable as="p" multiline className="text-small" style={{fontSize:"12px",marginTop:"3px",fontStyle:"italic",opacity:0.8,lineHeight:"1.35"}} value={ex.cue||""} placeholder="Double-tap to add cue…" onSave={t=>updateExercise(i,{cue:t})}/>
@@ -2453,8 +2929,18 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 ))}
               </div>
             </div>
+            {(()=>{const lr=store.get('workout_last_routine',null);if(!lr||!lr.exercises||!lr.exercises.length)return null;const c=lr.color&&!String(lr.color).startsWith("var(")?lr.color:null;return(
+              <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center",...(c?{borderColor:c,borderWidth:"1.5px"}:{})}}>
+                <div>
+                  <p className="font-bold">Repeat Last Workout</p>
+                  <p className="text-small">{lr.name} — {lr.date} — {lr.exercises.length} exercises</p>
+                </div>
+                <button className="button-primary" style={{width:"auto",padding:"10px 18px",fontSize:"14px",...(c?{background:c,borderColor:c}:{})}} onClick={()=>setActiveRoutine({name:lr.name,color:lr.color,exercises:lr.exercises})}>Start</button>
+              </div>
+            );})()}
             <SoundConfigCard/>
             <TimerConfigCard/>
+            <DataBackupCard/>
             <WakeLockToggle/>
           </div>
         );
@@ -2564,4 +3050,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+    (async () => {
+      try {
+        await idb.open();
+        const mirror = await idb.getAll();
+        Object.keys(mirror).forEach(k => { try { if (localStorage.getItem(k) === null && typeof mirror[k] === 'string') localStorage.setItem(k, mirror[k]); } catch {} });
+        for (let i=0;i<localStorage.length;i++){const k=localStorage.key(i);try{idb.set(k,localStorage.getItem(k));}catch{}}
+      } catch {}
+      ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+    })();

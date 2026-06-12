@@ -1,4 +1,4 @@
-:root[data-theme="dark"] {
+    :root[data-theme="dark"] {
       --bg:#121214;--card-bg:#1c1c1e;--card-border:rgba(255,255,255,0.07);--text:#fff;
       --text-secondary:#8e8e93;--accent:#bf5af2;--accent-muted:rgba(191,90,242,0.15);
       --accent-rgb:191,90,242;--success:#30d158;--success-muted:rgba(48,209,88,0.15);
@@ -127,3 +127,5 @@
     .ex-history-entry:last-child{border-bottom:none}
     .reorder-btn{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--input-bg);border:1px solid var(--card-border);color:var(--text-secondary)}
     .reorder-btn:disabled{opacity:0.3}
+    @keyframes prPop{0%{transform:scale(0.4);opacity:0}60%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
+    .pr-badge{animation:prPop .45s cubic-bezier(.2,1.4,.4,1)}

@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Workout">
   <meta name="theme-color" content="#121214">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>Workout & Mobility Flow</title>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -16,5 +18,13 @@
 <body>
   <div id="root"></div>
   <script type="text/babel" src="app.js"></script>
+  <script>
+    // Offline support — only registers on https/localhost
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function(){});
+      });
+    }
+  </script>
 </body>
 </html>
