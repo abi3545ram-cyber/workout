@@ -1,4 +1,4 @@
-    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // ── Utilities ──────────────────────────────────────────────────────────────
     const parseRestSec = r => {
@@ -422,8 +422,8 @@
             {meta.last?`Last backup ${daysSince===0?"today":`${daysSince}d ago`} — ${meta.sinceWorkouts||0} workout${(meta.sinceWorkouts||0)===1?"":"s"} since`:"Never backed up. Phone storage can be wiped by the OS — keep a copy."}
           </p>
           <div style={{display:"flex",gap:"8px"}}>
-            <button className="button-secondary" style={{padding:"9px",fontSize:"13px"}} onClick={doExport}>⬇ Export backup</button>
-            <button className="button-secondary" style={{padding:"9px",fontSize:"13px"}} onClick={()=>fileRef.current&&fileRef.current.click()}>⬆ Restore</button>
+            <button className="button-secondary" style={{padding:"9px",fontSize:"13px"}} onClick={doExport}><Icons.Download/> Export backup</button>
+            <button className="button-secondary" style={{padding:"9px",fontSize:"13px"}} onClick={()=>fileRef.current&&fileRef.current.click()}><Icons.Upload/> Restore</button>
             <input ref={fileRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={doImport}/>
           </div>
         </div>
@@ -447,7 +447,7 @@
               if(Notification.permission==='granted'){alert('Rest-end notifications are on (when the app is in the background).');return;}
               Notification.requestPermission();
             }catch{}
-          }}>🔔 Notify when rest ends</button>
+          }}><Icons.Bell/> Notify when rest ends</button>
         </div>
       );
     }
@@ -899,7 +899,7 @@
         <div className="modal-bg" style={{zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
           <div className="modal-body">
             <div className="drag-bar"/>
-            <h3 className="font-bold" style={{fontSize:"19px",marginBottom:"12px"}}>🏋️ Plate Calculator</h3>
+            <h3 className="font-bold" style={{fontSize:"19px",marginBottom:"12px"}}>Plate Calculator</h3>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
               <div><label className="field-label">Target (kg)</label><input className="field" type="number" inputMode="decimal" value={target} onChange={e=>setTarget(e.target.value)}/></div>
               <div><label className="field-label">Bar (kg)</label>
@@ -948,6 +948,16 @@
       Pause:({size=24})=><svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>,
       Note:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
       Trophy:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 22V2h4v20"/><rect x="6" y="2" width="12" height="7" rx="1"/></svg>,
+      Swap:({size=16})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3l4 4-4 4"/><path d="M20 7H4"/><path d="M8 21l-4-4 4-4"/><path d="M4 17h16"/></svg>,
+      Plate:({size=16})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>,
+      Link:({size=12})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+      Bell:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+      Download:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+      Upload:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+      Library:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+      Clock:({size=12})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+      Gear:({size=20})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+      Flame:({size=20})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3 2.5.5 5 2.5 5 6a4.5 4.5 0 1 1-9 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/><path d="M12 2c1 3 2.5 3.5 4 5 1.86 1.86 3 4.21 3 7a7 7 0 1 1-14 0c0-2 .5-3.5 1.5-5"/></svg>,
     };
 
     // ── Shared Small Components ───────────────────────────────────────────────
@@ -1646,7 +1656,7 @@
           <div className="timer-overlay" style={{...accentVars(routineColor),justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px"}}>
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",maxWidth:"400px",width:"100%"}}>
               <div style={{fontSize:"64px",marginBottom:"20px"}}>🎉</div>
-              <h1 style={{fontSize:"30px",fontWeight:"900",lineHeight:"1.15",marginBottom:"8px"}}>Congratulations!</h1>
+              <h1 style={{fontSize:"30px",fontWeight:"900",lineHeight:"1.15",marginBottom:"8px",letterSpacing:"-0.02em"}}>{(()=>{const n=(store.get('user_profile',{})||{}).name||store.get('workout_username','');return n?`Nice work, ${n}!`:"Nice work!";})()}</h1>
               <p style={{fontSize:"17px",color:"var(--text-secondary)",marginBottom:"24px"}}>You finished {routineName}!</p>
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",width:"100%",marginBottom:"16px"}}>
@@ -1662,7 +1672,7 @@
                     <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:i < sessionPRs.length - 1 ? "0.5px solid var(--card-border)" : "none"}}>
                       <span className="font-bold" style={{fontSize:"14px"}}>{pr.exercise}</span>
                       <div style={{display:"flex",gap:"4px"}}>
-                        {pr.prs.map(p => <span key={p} className="pr-badge">{p === 'weight' ? '🏋️ Weight' : p === 'reps' ? '🔁 Reps' : '📊 1RM'}</span>)}
+                        {pr.prs.map(p => <span key={p} className="pr-badge">{p === 'weight' ? 'Weight PR' : p === 'reps' ? 'Reps PR' : '1RM PR'}</span>)}
                       </div>
                     </div>
                   ))}
@@ -1700,13 +1710,13 @@
             <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
               <div>
                 <span className="badge" style={{marginLeft:"0"}}>{routineName}</span>
-                <p className="text-small" style={{marginTop:"4px"}}>Ex {exIdx+1}/{orderedExercises.length} — Set {currentSetIdx+1}/{maxSets} — {loggedSets}/{totalSets} logged — ⏱ {elapsedMin}m{chainEnd(exIdx)>chainStart(exIdx)?" — ⛓ superset":""}</p>
+                <p className="text-small" style={{marginTop:"4px"}}>Ex {exIdx+1}/{orderedExercises.length} — Set {currentSetIdx+1}/{maxSets} — {loggedSets}/{totalSets} logged — {elapsedMin} min{chainEnd(exIdx)>chainStart(exIdx)?" — superset":""}</p>
               </div>
             </div>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
               {historyStack.length>0&&<button onClick={goBack} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 12px",fontSize:"13px",fontWeight:"800"}}>← Back</button>}
-              {!(activeEx.hold||activeEx.totalSec)&&<button onClick={()=>setPlateCalc(true)} title="Plate calculator" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>🏋️</button>}
-              <button onClick={()=>setSwapOpen(true)} title="Swap exercise" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>⇄</button>
+              {!(activeEx.hold||activeEx.totalSec)&&<button onClick={()=>setPlateCalc(true)} title="Plate calculator" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Plate/></button>}
+              <button onClick={()=>setSwapOpen(true)} title="Swap exercise" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Swap/></button>
               <button onClick={() => setReorderMode(true)} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>⇅</button>
               <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 14px",fontSize:"13px",fontWeight:"800",textTransform:"uppercase"}} onClick={()=>setIsFinishedScreen(true)}>Finish</button>
             </div>
@@ -2071,7 +2081,7 @@
                                   style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
                                     border:`1.5px solid ${ex.supersetWithNext?"var(--accent)":"var(--card-border)"}`,
                                     color:ex.supersetWithNext?"var(--accent)":"var(--text-secondary)",
-                                    background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)"}}>⛓ SS</button>}
+                                    background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)",display:"inline-flex",alignItems:"center",gap:"4px"}}><Icons.Link/>SS</button>}
                                 {otherSecs.length>0&&<select className="field" style={{marginBottom:0,fontSize:"11px",padding:"5px",width:"68px",cursor:"pointer"}} value="" onChange={e=>{if(e.target.value)moveExTo(sec.section,exKey,e.target.value);}}>
                                   <option value="">Move→</option>
                                   {otherSecs.map(s=><option key={s} value={s}>{s}</option>)}
@@ -2086,7 +2096,7 @@
                               <Editable as="p" className="font-bold" style={{fontSize:"14px"}} value={ex.name} onSave={t=>updateExercise(sec.section,ei,{name:t})} singleAction={()=>setHistoryModal({id:exKey,name:ex.name})}/>
                               <p className="text-small" style={{fontSize:"11px",marginTop:"2px"}}>{ex.equip} — {ex.sets} sets
                                 {exerciseHasSides(ex)&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
-                                {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>⛓ SS↓</span>}
+                                {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>SS</span>}
                                 <span className="badge" style={{fontSize:"9px",marginLeft:"4px",opacity:0.75}}>{muscleGroupOf(ex.name)}</span>
                               </p>
                               <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
@@ -2109,7 +2119,7 @@
                         const v=prompt(`Rest time for ALL exercises in "${sec.section}" (e.g. 90s or 2 min):`);
                         if(!v)return;
                         saveW(workouts.map(s=>s.section===sec.section?{...s,exercises:s.exercises.map(e=>({...e,rest:v.trim()}))}:s));
-                      }}>⏱ Rest for all</button>
+                      }}><Icons.Clock/> Rest for all</button>
                     </div>}
                   </div>
                 )}
@@ -2246,7 +2256,7 @@
                               style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
                                 border:`1.5px solid ${ex.supersetWithNext?"var(--accent)":"var(--card-border)"}`,
                                 color:ex.supersetWithNext?"var(--accent)":"var(--text-secondary)",
-                                background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)"}}>⛓ SS</button>}
+                                background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)",display:"inline-flex",alignItems:"center",gap:"4px"}}><Icons.Link/>SS</button>}
                           </div>
                         </div>
                         <button onClick={()=>deleteEx(sess.label,exKey)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>
@@ -2277,7 +2287,7 @@
                     const v=prompt(`Rest time for ALL exercises in "${sess.label}" (e.g. 90s or 2 min):`);
                     if(!v)return;
                     saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sess.label?{...s,exercises:s.exercises.map(e=>({...e,rest:v.trim()}))}:s)}});
-                  }}>⏱ Rest for all</button>
+                  }}><Icons.Clock/> Rest for all</button>
                 </div>}
               </div>
             </div>
@@ -2702,7 +2712,7 @@
                           style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
                             border:`1.5px solid ${ex.supersetWithNext?"var(--accent)":"var(--card-border)"}`,
                             color:ex.supersetWithNext?"var(--accent)":"var(--text-secondary)",
-                            background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)"}}>⛓ SS</button>}
+                            background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)",display:"inline-flex",alignItems:"center",gap:"4px"}}><Icons.Link/>SS</button>}
                       </div>
                     </div>
                   </div>
@@ -2711,7 +2721,7 @@
                     <Editable as="p" className="font-bold" value={ex.name} onSave={t=>updateExercise(i,{name:t})}/>
                     <p className="text-small">{ex.sets} sets — {ex.reps||ex.hold}
                       {exerciseHasSides(ex)&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
-                      {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>⛓ SS↓</span>}
+                      {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>SS</span>}
                       <span className="badge" style={{fontSize:"9px",marginLeft:"4px",opacity:0.75}}>{muscleGroupOf(ex.name)}</span>
                     </p>
                     <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
@@ -2728,12 +2738,12 @@
             );})}
             {editMode&&<div style={{display:"flex",gap:"8px",marginTop:"12px",flexWrap:"wrap"}}>
               <button className="button-secondary" onClick={addExercise}>+ Add Exercise</button>
-              <button className="button-secondary" onClick={()=>setPickerOpen(true)}>📚 From Library</button>
+              <button className="button-secondary" onClick={()=>setPickerOpen(true)}><Icons.Library/> From Library</button>
               <button className="button-secondary" onClick={()=>{
                 const v=prompt("Rest time for ALL exercises in this split (e.g. 90s or 2 min):");
                 if(!v)return;
                 saveSplit({exercises:split.exercises.map(e=>({...e,rest:v.trim()}))});
-              }}>⏱ Rest for all</button>
+              }}><Icons.Clock/> Rest for all</button>
             </div>}
             {pickerOpen&&(
               <TapModal isOpen onClose={()=>{setPickerOpen(false);setPicked({});setPickQuery("");}}>
@@ -2753,6 +2763,33 @@
     }
 
     // ── App ────────────────────────────────────────────────────────────────────
+    function Onboarding({initialName,onDone}) {
+      const [name,setName]=useState(initialName||"");
+      const [target,setTarget]=useState(3);
+      return (
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:"32px 24px",maxWidth:"430px",margin:"0 auto"}}>
+          <div style={{width:"72px",height:"72px",borderRadius:"22px",background:"var(--accent-muted)",border:"1.5px solid var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent)",marginBottom:"28px"}}>
+            <Icons.Dumbbell/>
+          </div>
+          <p className="text-small" style={{fontSize:"12px",fontWeight:"800",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:"10px"}}>Workout Flow</p>
+          <h1 style={{fontSize:"36px",fontWeight:"900",lineHeight:"1.1",letterSpacing:"-0.02em",marginBottom:"10px"}}>Train hard.<br/>Track everything.</h1>
+          <p className="text-small" style={{fontSize:"15px",marginBottom:"32px",lineHeight:"1.5"}}>Workouts, tendon work and mobility — logged on your device, nowhere else.</p>
+          <label className="field-label">What should we call you?</label>
+          <input className="field" autoFocus placeholder="Your name" value={name} maxLength={20} onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&name.trim())onDone({name:name.trim(),weeklyTarget:target,created:todayStr()});}}/>
+          <label className="field-label" style={{marginTop:"14px"}}>Weekly workout target</label>
+          <div style={{display:"flex",gap:"8px",marginBottom:"30px"}}>
+            {[2,3,4,5,6].map(n=>(
+              <button key={n} onClick={()=>setTarget(n)} style={{flex:1,padding:"13px 0",borderRadius:"12px",fontSize:"16px",fontWeight:"800",
+                border:`1.5px solid ${target===n?"var(--accent)":"var(--card-border)"}`,
+                color:target===n?"var(--accent)":"var(--text-secondary)",
+                background:target===n?"var(--accent-muted)":"var(--input-bg)"}}>{n}</button>
+            ))}
+          </div>
+          <button className="button-primary" disabled={!name.trim()} style={!name.trim()?{opacity:0.45}:{}} onClick={()=>onDone({name:name.trim(),weeklyTarget:target,created:todayStr()})}>Let's go</button>
+        </div>
+      );
+    }
+
     function App() {
       const [activeTab,setActiveTab]=useState("home");
       const [theme,setTheme]=useState(()=>{
@@ -2761,6 +2798,10 @@
         return t;
       });
       const [username,setUsername]=useState(()=>store.get("workout_username","Abiram"));
+      const [profile,setProfile]=useState(()=>store.get("user_profile",null));
+      const [settingsOpen,setSettingsOpen]=useState(false);
+      // Fade out the static splash once React is in charge
+      useEffect(()=>{try{const s=document.getElementById('splash');if(s){s.style.opacity='0';setTimeout(()=>{try{s.remove();}catch{}},400);}}catch{}},[]);
       const [editingName,setEditingName]=useState(false);
       const [hiddenTabs,setHiddenTabs]=useState(()=>store.get("workout_hidden_tabs",[]));
       const [weights,setWeights]=useState(()=>store.get("workout_weights",{}));
@@ -2835,6 +2876,30 @@
           last30.push({date:ds,dayNum:d.getDate(),status,logs:dl});
         }
         const showDay=day=>{if(day.logs.length>0) setModalContent({type:"day_details",data:day});};
+        // ── This Week (Mon–Sun) ──
+        const weeklyTarget=(profile&&profile.weeklyTarget)||3;
+        const dow=(today.getDay()+6)%7; // 0 = Monday
+        const weekDays=Array.from({length:7},(_,i)=>{
+          const d=new Date(today); d.setDate(today.getDate()-dow+i);
+          const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+          const dl=logs.filter(l=>l.date===ds);
+          return {ds,label:"MTWTFSS"[i],isToday:ds===todayStr(),isFuture:i>dow,status:dl.length===0?"none":dl.some(l=>!l.isPartial)?"completed":"partial"};
+        });
+        const weekCount=logs.filter(l=>weekDays.some(d=>d.ds===l.date)).length;
+        const ringPct=Math.min(1,weekCount/weeklyTarget);
+        const trainedToday=logs.some(l=>l.date===todayStr());
+        // ── Today's suggestion: least-recently-trained launchable routine ──
+        const lr=store.get('workout_last_routine',null);
+        const candidates=[
+          {name:store.get("workouts_fullbody_name","Full Body"),go:()=>setActiveTab("workouts")},
+          ...customSplits.map(s=>({name:s.section,go:()=>setActiveTab(`split-${s.id||s.section}`)})),
+        ];
+        candidates.forEach(c=>{
+          const last=logs.filter(l=>l.routine===c.name).map(l=>l.date).sort().pop();
+          c.last=last||null;
+        });
+        const suggestion=[...candidates].sort((a,b)=>(a.last||"0").localeCompare(b.last||"0"))[0]||candidates[0];
+        const canDirectStart=lr&&lr.exercises&&lr.exercises.length&&suggestion&&lr.name===suggestion.name;
         const homeTiles=[
           !hiddenTabs.includes("workouts")&&{id:"workouts",label:"Workouts",Icon:Icons.Dumbbell,color:"var(--success)"},
           !hiddenTabs.includes("tendons")&&{id:"tendons",label:"Tendon",Icon:Icons.Tendon,color:"var(--danger)"},
@@ -2844,14 +2909,77 @@
         return (
           <div>
             <div style={{padding:"18px 0 22px",borderBottom:"1px solid var(--card-border)",marginBottom:"18px"}}>
-              <p style={{fontSize:"13px",fontWeight:"800",color:"var(--text-secondary)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"14px"}}>Workout</p>
+              <div className="flex-between" style={{marginBottom:"14px"}}>
+                <p style={{fontSize:"13px",fontWeight:"800",color:"var(--text-secondary)",letterSpacing:"0.12em",textTransform:"uppercase"}}>Workout</p>
+                <button onClick={()=>setSettingsOpen(true)} title="Settings" style={{color:"var(--text-secondary)",padding:"6px",display:"flex"}}><Icons.Gear/></button>
+              </div>
               {editingName?(
                 <input className="field" autoFocus value={username} onChange={e=>{setUsername(e.target.value);store.set("workout_username",e.target.value);}} onBlur={()=>setEditingName(false)} onKeyDown={e=>{if(e.key==="Enter")setEditingName(false)}}/>
               ):(
                 <button onClick={()=>setEditingName(true)} style={{textAlign:"left",display:"block"}}>
-                  <h1 style={{fontSize:"40px",lineHeight:"1.05",fontWeight:"900"}}>Hi, {username||"Abiram"}.</h1>
-                  <p className="text-small" style={{fontSize:"17px",marginTop:"8px"}}>Tap name to edit · Long-press tiles to rename</p>
+                  <h1 style={{fontSize:"34px",lineHeight:"1.1",fontWeight:"900",letterSpacing:"-0.02em"}}>{(()=>{const h=today.getHours();return h<12?"Good morning":h<18?"Good afternoon":"Good evening";})()}, {username||"there"}.</h1>
+                  <p className="text-small" style={{fontSize:"15px",marginTop:"6px"}}>{today.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</p>
                 </button>
+              )}
+            </div>
+
+            {/* This Week: goal ring + day dots */}
+            <div className="card" style={{display:"flex",alignItems:"center",gap:"20px"}}>
+              <div style={{position:"relative",width:"82px",height:"82px",flexShrink:0}}>
+                <svg width="82" height="82" viewBox="0 0 82 82">
+                  <circle cx="41" cy="41" r="35" fill="none" stroke="var(--input-bg)" strokeWidth="8"/>
+                  <circle cx="41" cy="41" r="35" fill="none" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${2*Math.PI*35}`} strokeDashoffset={`${2*Math.PI*35*(1-ringPct)}`}
+                    transform="rotate(-90 41 41)" style={{transition:"stroke-dashoffset 0.6s ease"}}/>
+                </svg>
+                <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                  <span className="stat-num" style={{fontSize:"26px",fontWeight:"900",lineHeight:"1"}}>{weekCount}</span>
+                  <span className="text-small" style={{fontSize:"10px"}}>of {weeklyTarget}</span>
+                </div>
+              </div>
+              <div style={{flex:1}}>
+                <p className="section-label" style={{marginBottom:"10px"}}>This Week</p>
+                <div style={{display:"flex",gap:"8px",marginBottom:"8px"}}>
+                  {weekDays.map((d,i)=>(
+                    <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"5px"}}>
+                      <span className="text-small" style={{fontSize:"9px",fontWeight:"700"}}>{d.label}</span>
+                      <span style={{width:"13px",height:"13px",borderRadius:"50%",
+                        background:d.status==="completed"?"var(--accent)":d.status==="partial"?"var(--accent-muted)":"var(--input-bg)",
+                        boxShadow:d.isToday?"0 0 0 2px var(--accent)":"none",
+                        opacity:d.isFuture?0.35:1}}/>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-small" style={{fontSize:"12px"}}>{weekCount>=weeklyTarget?"Weekly target hit — strong week.":`${weeklyTarget-weekCount} more to hit your target.`}</p>
+              </div>
+            </div>
+
+            {/* Today's session */}
+            <div className="card" style={trainedToday?{}:{borderColor:"var(--accent)",borderWidth:"1.5px"}}>
+              <p className="section-label" style={{marginBottom:"6px"}}>Today</p>
+              {trainedToday?(
+                <div className="flex-between">
+                  <div>
+                    <p className="font-bold" style={{fontSize:"17px"}}>Session logged ✓</p>
+                    <p className="text-small" style={{marginTop:"2px"}}>Recovery matters — see you tomorrow.</p>
+                  </div>
+                </div>
+              ):(
+                <div>
+                  <div className="flex-between">
+                    <div>
+                      <p className="font-bold" style={{fontSize:"17px"}}>{suggestion?suggestion.name:"Train"}</p>
+                      <p className="text-small" style={{marginTop:"2px"}}>{suggestion&&suggestion.last?`Last done ${suggestion.last}`:"Not trained yet — good day to start"}</p>
+                    </div>
+                    <button className="button-primary" style={{width:"auto",padding:"11px 22px",fontSize:"15px"}} onClick={()=>{
+                      if(canDirectStart)setActiveRoutine({name:lr.name,color:lr.color,exercises:lr.exercises});
+                      else if(suggestion)suggestion.go();
+                    }}>{canDirectStart?"Start":"Open"}</button>
+                  </div>
+                  {lr&&lr.exercises&&lr.exercises.length&&!canDirectStart?(
+                    <button className="button-secondary" style={{marginTop:"12px",padding:"9px",fontSize:"13px"}} onClick={()=>setActiveRoutine({name:lr.name,color:lr.color,exercises:lr.exercises})}>Repeat last: {lr.name}</button>
+                  ):null}
+                </div>
               )}
             </div>
 
@@ -2861,7 +2989,7 @@
                 <div style={{display:"flex",gap:"24px",position:"relative",zIndex:1}}>
                   <div>
                     <p className="text-small font-bold" style={{textTransform:"uppercase",fontSize:"10px",letterSpacing:"0.08em"}}>Current Streak</p>
-                    <p style={{fontSize:"28px",fontWeight:"900",color:"var(--warning)",lineHeight:"1.1"}}>{streaks.current} <span style={{fontSize:"14px",fontWeight:"600"}}>days</span></p>
+                    <p style={{fontSize:"28px",fontWeight:"900",color:"var(--warning)",lineHeight:"1.1",display:"flex",alignItems:"center",gap:"6px"}}><Icons.Flame/>{streaks.current} <span style={{fontSize:"14px",fontWeight:"600"}}>days</span></p>
                   </div>
                   <div>
                     <p className="text-small font-bold" style={{textTransform:"uppercase",fontSize:"10px",letterSpacing:"0.08em"}}>Longest</p>
@@ -2904,9 +3032,6 @@
               </TapModal>
             )}
 
-            {/* Import Split Button */}
-            <button className="button-secondary" style={{marginBottom:"16px",padding:"10px",fontSize:"13px"}} onClick={()=>setImportModal(true)}>📥 Import Split from JSON</button>
-
             <div className="card">
               <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Training Log</h2>
               <p className="text-small">Strength, tendon, and mobility tracking</p>
@@ -2929,19 +3054,18 @@
                 ))}
               </div>
             </div>
-            {(()=>{const lr=store.get('workout_last_routine',null);if(!lr||!lr.exercises||!lr.exercises.length)return null;const c=lr.color&&!String(lr.color).startsWith("var(")?lr.color:null;return(
-              <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center",...(c?{borderColor:c,borderWidth:"1.5px"}:{})}}>
-                <div>
-                  <p className="font-bold">Repeat Last Workout</p>
-                  <p className="text-small">{lr.name} — {lr.date} — {lr.exercises.length} exercises</p>
-                </div>
-                <button className="button-primary" style={{width:"auto",padding:"10px 18px",fontSize:"14px",...(c?{background:c,borderColor:c}:{})}} onClick={()=>setActiveRoutine({name:lr.name,color:lr.color,exercises:lr.exercises})}>Start</button>
-              </div>
-            );})()}
-            <SoundConfigCard/>
-            <TimerConfigCard/>
-            <DataBackupCard/>
-            <WakeLockToggle/>
+            {/* Settings sheet */}
+            {settingsOpen&&(
+              <TapModal isOpen onClose={()=>setSettingsOpen(false)}>
+                <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"14px"}}>Settings</h2>
+                <SoundConfigCard/>
+                <TimerConfigCard/>
+                <DataBackupCard/>
+                <WakeLockToggle/>
+                <button className="button-secondary" style={{marginBottom:"10px",padding:"10px",fontSize:"13px"}} onClick={()=>{setSettingsOpen(false);setImportModal(true);}}>Import Split from JSON</button>
+                <button className="button-secondary" onClick={()=>setSettingsOpen(false)}>Done</button>
+              </TapModal>
+            )}
           </div>
         );
       };
@@ -2996,6 +3120,8 @@
         }
         return null;
       };
+
+      if (!profile) return <Onboarding initialName={store.get("workout_username","")} onDone={p=>{store.set("user_profile",p);store.set("workout_username",p.name);setUsername(p.name);setProfile(p);}}/>;
 
       return (
         <div>
