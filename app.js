@@ -816,6 +816,23 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     ];
 
     // Map any exercise name to a body part (library lookup first, then keywords)
+    function Confetti() {
+      const pieces = useMemo(()=>Array.from({length:80},(_,i)=>({
+        id:i, left:Math.random()*100, delay:Math.random()*0.5, dur:2.2+Math.random()*1.5,
+        rot:Math.random()*360, size:6+Math.random()*7,
+        color:["var(--accent)","var(--pr-gold)","#fff","var(--success)"][i%4]
+      })),[]);
+      return (
+        <div style={{position:"fixed",inset:0,pointerEvents:"none",overflow:"hidden",zIndex:50}}>
+          {pieces.map(p=>(
+            <span key={p.id} style={{position:"absolute",top:"-20px",left:`${p.left}%`,width:`${p.size}px`,height:`${p.size*0.6}px`,
+              background:p.color,borderRadius:"1px",opacity:0.9,
+              animation:`confettiFall ${p.dur}s linear ${p.delay}s forwards`,transform:`rotate(${p.rot}deg)`}}/>
+          ))}
+        </div>
+      );
+    }
+
     const MUSCLE_LOOKUP = (() => { const m={}; EXERCISE_DB.forEach(g=>g.items.forEach(([n])=>{m[n.toLowerCase()]=g.group;})); return m; })();
     const muscleGroupOf = name => {
       const n = (name||"").toLowerCase();
@@ -1114,9 +1131,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           <p className="text-small" style={{marginBottom:"16px"}}>Exercise History</p>
           {best?.bestWeight && parseWeight(best.bestWeight.weight) > 0 && (
             <div style={{display:"flex",gap:"8px",marginBottom:"16px",flexWrap:"wrap"}}>
-              <div className="session-badge" style={{borderColor:"var(--pr-gold)"}}><span>🏆 Max Weight:</span><span className="font-bold" style={{color:"var(--pr-gold)"}}>{fmtWeight(best.bestWeight.weight)}</span></div>
-              {best.bestReps && <div className="session-badge" style={{borderColor:"var(--pr-gold)"}}><span>🏆 Max Reps:</span><span className="font-bold" style={{color:"var(--pr-gold)"}}>{best.bestReps.reps}</span></div>}
-              {best.best1RM && <div className="session-badge" style={{borderColor:"var(--pr-gold)"}}><span>🏆 Est 1RM:</span><span className="font-bold" style={{color:"var(--pr-gold)"}}>{calc1RM(best.best1RM.weight, best.best1RM.reps)}kg</span></div>}
+              <div className="session-badge" style={{borderColor:"var(--pr-gold)"}}><span>Max Weight:</span><span className="font-bold" style={{color:"var(--pr-gold)"}}>{fmtWeight(best.bestWeight.weight)}</span></div>
+              {best.bestReps && <div className="session-badge" style={{borderColor:"var(--pr-gold)"}}><span>Max Reps:</span><span className="font-bold" style={{color:"var(--pr-gold)"}}>{best.bestReps.reps}</span></div>}
+              {best.best1RM && <div className="session-badge" style={{borderColor:"var(--pr-gold)"}}><span>Est 1RM:</span><span className="font-bold" style={{color:"var(--pr-gold)"}}>{calc1RM(best.best1RM.weight, best.best1RM.reps)}kg</span></div>}
             </div>
           )}
           <div style={{display:"flex",gap:"4px",justifyContent:"flex-end",marginBottom:"4px"}}>
@@ -1441,6 +1458,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           triggerSound('pr-fanfare');
           try { navigator.vibrate?.([50, 30, 50]); } catch {}
           setSessionPRs(prev => [...prev, { exercise: activeEx.name, exerciseId: activeEx.id, prs, weight: w, reps: r }]);
+          try { const h = store.get("pr_history", []); prs.forEach(type => h.push({ date: todayStr(), exercise: activeEx.name, type, weight: w, reps: r })); store.set("pr_history", h); } catch {}
         }
 
         setSetLogs(p => ({...p, [sk]: { ...(p[sk]||{}), weight: w, reps: r, seconds: s, logged: true, logId, prs }}));
@@ -1652,10 +1670,16 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       // ── Finished Screen ──
       if(isFinishedScreen){
         const streaks = calculateStreaks();
+        // Compare against the most recent prior session of this same routine
+        const priorSessions = store.get("workout_logs",[]).filter(l=>l.routine===routineName && l.date!==todayStr());
+        const lastSession = priorSessions.sort((a,b)=>b.date.localeCompare(a.date))[0];
+        const volDelta = (lastSession && lastSession.volume>0 && totalVolume>0) ? Math.round((totalVolume/lastSession.volume-1)*100) : null;
+        const fmtDelta = d => d===null?null : d>0?`up ${d}%`:d<0?`down ${Math.abs(d)}%`:"same";
         return (
           <div className="timer-overlay" style={{...accentVars(routineColor),justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px"}}>
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",maxWidth:"400px",width:"100%"}}>
-              <div style={{fontSize:"64px",marginBottom:"20px"}}>🎉</div>
+              {sessionPRs.length>0 && <Confetti/>}
+              <div style={{width:"72px",height:"72px",borderRadius:"50%",background:"var(--accent-muted)",border:"1.5px solid var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent)",marginBottom:"20px"}}><Icons.Trophy size={34}/></div>
               <h1 style={{fontSize:"30px",fontWeight:"900",lineHeight:"1.15",marginBottom:"8px",letterSpacing:"-0.02em"}}>{(()=>{const n=(store.get('user_profile',{})||{}).name||store.get('workout_username','');return n?`Nice work, ${n}!`:"Nice work!";})()}</h1>
               <p style={{fontSize:"17px",color:"var(--text-secondary)",marginBottom:"24px"}}>You finished {routineName}!</p>
 
@@ -1665,9 +1689,16 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 <div className="card summary-stat"><div className="stat-value text-accent">{totalVolume > 0 ? `${Math.round(totalVolume).toLocaleString()}` : '—'}</div><div className="stat-label">Volume kg</div></div>
               </div>
 
+              {volDelta!==null && (
+                <div className="card" style={{width:"100%",marginBottom:"16px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",borderColor:volDelta>=0?"var(--success)":"var(--card-border)"}}>
+                  <span style={{color:volDelta>0?"var(--success)":volDelta<0?"var(--warning)":"var(--text-secondary)",fontWeight:"900",fontSize:"18px"}}>{volDelta>0?"▲":volDelta<0?"▼":"="}</span>
+                  <span className="text-small">Volume {fmtDelta(volDelta)} vs last {routineName} ({Math.round(lastSession.volume).toLocaleString()} kg)</span>
+                </div>
+              )}
+
               {sessionPRs.length > 0 && (
                 <div className="card" style={{width:"100%",marginBottom:"16px",textAlign:"left"}}>
-                  <p className="font-bold" style={{marginBottom:"8px"}}>🏆 New Personal Records</p>
+                  <p className="font-bold" style={{marginBottom:"8px",display:"flex",alignItems:"center",gap:"6px"}}><span style={{color:"var(--pr-gold)"}}><Icons.Trophy size={16}/></span> New Personal Records</p>
                   {sessionPRs.map((pr, i) => (
                     <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:i < sessionPRs.length - 1 ? "0.5px solid var(--card-border)" : "none"}}>
                       <span className="font-bold" style={{fontSize:"14px"}}>{pr.exercise}</span>
@@ -1750,17 +1781,17 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
             {/* Timer circle for timed exercises */}
             {((mode==="work"&&targetSeconds>0)||mode==="rest"||mode==="split_transition")?(
-              <div className="timer-circle-container" style={{width:"180px",height:"180px",margin:"20px auto"}}>
+              <div className="timer-circle-container" style={{width:"230px",height:"230px",margin:"24px auto"}}>
                 <svg className="timer-circle-svg" viewBox="0 0 220 220">
                   <circle className="timer-circle-bg" cx="110" cy="110" r="100"/>
                   <circle className="timer-circle-progress" cx="110" cy="110" r="100" strokeDasharray="628" strokeDashoffset={strokeDashoffset}/>
                 </svg>
-                <div className="timer-display" style={{fontSize:"36px"}}><span>{fmtTime(remaining)}</span><span className="timer-label">{mode==="work"?"hold":"rest"}</span></div>
+                <div className="timer-display" style={{fontSize:"56px"}}><span>{fmtTime(remaining)}</span><span className="timer-label">{mode==="work"?"hold":"rest"}</span></div>
               </div>
             ):(
-              mode==="work"&&<div style={{margin:"16px auto",textAlign:"center"}}>
-                <div style={{fontSize:"40px",fontWeight:"900"}}>{activeEx.reps}</div>
-                <div className="timer-label" style={{fontSize:"13px"}}>Target Reps{hasSides?" — each side":""}</div>
+              mode==="work"&&<div style={{margin:"22px auto",textAlign:"center"}}>
+                <div className="stat-num" style={{fontSize:"68px",fontWeight:"900",lineHeight:"1"}}>{activeEx.reps}</div>
+                <div className="timer-label" style={{fontSize:"13px",marginTop:"6px"}}>Target Reps{hasSides?" — each side":""}</div>
               </div>
             )}
 
@@ -1839,7 +1870,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                             <button className={`set-done-btn ${isDone ? 'done' : 'pending'}`} onClick={() => { if (!isDone) { setCurrentSetIdx(si); handleCompleteSet(si); } }}>
                               {isDone ? '✓' : '○'}
                             </button>
-                            {log.prs && log.prs.length > 0 && !log.prs.includes('first') && <div className="pr-badge" style={{marginTop:"4px",fontSize:"9px"}}>🏆 PR</div>}
+                            {log.prs && log.prs.length > 0 && !log.prs.includes('first') && <div className="pr-badge" style={{marginTop:"4px",fontSize:"9px"}}>PR</div>}
                           </td>
                         </tr>
                       );
@@ -2435,6 +2466,57 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         return Object.entries(m).sort((a, b) => b[1] - a[1]);
       })();
       const maxMuscle = Math.max(1, ...muscleSets.map(([, v]) => v));
+      // ── Muscle recovery: days since each group was last trained ──
+      const recovery = (() => {
+        const last = {};
+        working.forEach(p => { const g = muscleGroupOf(p.exercise); const d = p.date; if (!last[g] || d > last[g]) last[g] = d; });
+        return Object.entries(last).map(([g, d]) => ({group: g, days: Math.floor((Date.now() - new Date(d).getTime()) / dayMs)})).sort((a, b) => a.days - b.days);
+      })();
+      // ── Per-exercise records ──
+      const exRecords = (() => {
+        if (!selectedEx) return null;
+        const pts = trackedPts.filter(p => p.exercise === selectedEx && p.setType !== 'warmup');
+        if (!pts.length) return null;
+        let bestW = pts[0], best1 = pts[0], bestVolDay = {};
+        pts.forEach(p => {
+          if (parseWeight(p.weight) > parseWeight(bestW.weight)) bestW = p;
+          if (calc1RM(p.weight, p.reps) > calc1RM(best1.weight, best1.reps)) best1 = p;
+          bestVolDay[p.date] = (bestVolDay[p.date] || 0) + parseWeight(p.weight) * parseReps(p.reps);
+        });
+        const topVol = Object.entries(bestVolDay).sort((a, b) => b[1] - a[1])[0];
+        return {
+          weight: parseWeight(bestW.weight) ? `${bestW.weight}${bestW.reps ? ` × ${bestW.reps}` : ''}` : null,
+          oneRm: calc1RM(best1.weight, best1.reps) || null,
+          sessionVol: topVol ? Math.round(topVol[1]).toLocaleString() : null,
+        };
+      })();
+      // ── Achievements ──
+      const allLogs = store.get("workout_logs", []);
+      const streaksA = calculateStreaks();
+      const totalVol = working.reduce((a, p) => a + tonnage(p), 0);
+      const prCount = store.get("pr_history", []).length;
+      const achievements = [
+        {got: allLogs.length >= 1, label: "First session", sub: "Logged your first workout"},
+        {got: allLogs.length >= 10, label: "10 sessions", sub: "Consistency building"},
+        {got: allLogs.length >= 50, label: "50 sessions", sub: "Seasoned lifter"},
+        {got: streaksA.longest >= 7, label: "7-day streak", sub: "A full week"},
+        {got: streaksA.longest >= 30, label: "30-day streak", sub: "A full month"},
+        {got: totalVol >= 100000, label: "100k kg moved", sub: "Lifetime volume"},
+        {got: totalVol >= 500000, label: "500k kg moved", sub: "Serious tonnage"},
+        {got: prCount >= 10, label: "10 PRs", sub: "Always improving"},
+      ];
+      const earned = achievements.filter(a => a.got);
+      // ── CSV export ──
+      const exportCSV = () => {
+        const rows = [["date","exercise","weight","reps","hold","setNumber","setType","rir"]];
+        trackedPts.forEach(p => rows.push([p.date, p.exercise, p.weight||"", p.reps||"", p.hold||"", p.setNumber||"", p.setType||"normal", p.rir!==undefined?p.rir:""]));
+        const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+        const blob = new Blob([csv], {type:"text/csv"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `workout-data-${todayStr()}.csv`;
+        document.body.appendChild(a); a.click(); a.remove();
+      };
       // 8-week tonnage trend
       const weekVol = Array.from({length: 8}, (_, i) => {
         const lo = (7 - i) * 7, hi = lo + 7;
@@ -2480,6 +2562,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               <div><h2 className="font-bold" style={{fontSize:"20px"}}>Progression</h2><p className="text-small">Weight and hold tracking over time</p></div>
               {loadLabel && <span className="badge" style={{fontSize:"11px",padding:"6px 10px",color:loadLabel[1],borderColor:loadLabel[1]}} title="This week's volume vs your 4-week average">{loadLabel[0]}</span>}
             </div>
+            {trackedPts.length>0 && <button className="button-secondary" style={{marginTop:"12px",padding:"9px",fontSize:"13px"}} onClick={exportCSV}><Icons.Download/> Export data as CSV</button>}
           </div>
           {muscleSets.length > 0 && (
             <div className="card">
@@ -2505,6 +2588,39 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                   <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
                     <div style={{width:"100%",borderRadius:"6px 6px 0 0",background:i===7?"var(--accent)":"var(--accent-muted)",height:`${Math.max(3, Math.round(v/maxWeek*72))}px`}} title={`${Math.round(v).toLocaleString()} kg`}/>
                     <span className="text-small" style={{fontSize:"9px"}}>{i===7?"now":`-${7-i}w`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {recovery.length > 0 && (
+            <div className="card">
+              <h3 className="font-bold" style={{fontSize:"15px"}}>Muscle Recovery</h3>
+              <p className="text-small" style={{marginBottom:"10px"}}>Days since each group was last trained</p>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+                {recovery.map(r => {
+                  const fresh = r.days >= 3, mid = r.days === 2;
+                  const col = fresh ? "var(--success)" : mid ? "var(--warning)" : "var(--text-secondary)";
+                  return (
+                    <div key={r.group} style={{flex:"1 1 28%",minWidth:"90px",border:`1px solid ${col}`,borderRadius:"12px",padding:"10px"}}>
+                      <p className="font-bold" style={{fontSize:"13px"}}>{r.group}</p>
+                      <p style={{fontSize:"20px",fontWeight:"900",color:col,lineHeight:"1.2"}}>{r.days===0?"Today":r.days===1?"1 day":`${r.days} days`}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {earned.length > 0 && (
+            <div className="card">
+              <h3 className="font-bold" style={{fontSize:"15px"}}>Achievements</h3>
+              <p className="text-small" style={{marginBottom:"10px"}}>{earned.length} of {achievements.length} unlocked</p>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+                {achievements.map((a,i)=>(
+                  <div key={i} title={a.sub} style={{flex:"1 1 28%",minWidth:"100px",textAlign:"center",padding:"12px 8px",borderRadius:"12px",
+                    border:`1px solid ${a.got?"var(--pr-gold)":"var(--card-border)"}`,opacity:a.got?1:0.4}}>
+                    <div style={{color:a.got?"var(--pr-gold)":"var(--text-secondary)",display:"flex",justifyContent:"center",marginBottom:"4px"}}><Icons.Trophy size={18}/></div>
+                    <p className="font-bold" style={{fontSize:"12px",lineHeight:"1.2"}}>{a.label}</p>
                   </div>
                 ))}
               </div>
@@ -2545,6 +2661,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 <select className="field" value={selectedEx} onChange={e=>setSelectedEx(e.target.value)} style={{background:"var(--input-bg)",cursor:"pointer"}}>
                   {uniqueEx.map((ue,i)=><option key={i} value={ue}>{ue}</option>)}
                 </select>
+                {exRecords && (exRecords.weight || exRecords.oneRm || exRecords.sessionVol) && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"14px"}}>
+                    <div className="card summary-stat" style={{margin:0,borderColor:"var(--pr-gold)"}}><div className="stat-value" style={{color:"var(--pr-gold)",fontSize:"18px"}}>{exRecords.weight||"—"}</div><div className="stat-label">Best set</div></div>
+                    <div className="card summary-stat" style={{margin:0,borderColor:"var(--pr-gold)"}}><div className="stat-value" style={{color:"var(--pr-gold)",fontSize:"22px"}}>{exRecords.oneRm?`${exRecords.oneRm}`:"—"}</div><div className="stat-label">Est 1RM</div></div>
+                    <div className="card summary-stat" style={{margin:0,borderColor:"var(--pr-gold)"}}><div className="stat-value" style={{color:"var(--pr-gold)",fontSize:"18px"}}>{exRecords.sessionVol||"—"}</div><div className="stat-label">Best day vol</div></div>
+                  </div>
+                )}
                 <div className="flex-between" style={{marginTop:"14px"}}>
                   <h3 className="font-bold" style={{fontSize:"15px"}}>Progression Curve</h3>
                   <div style={{display:"flex",gap:"4px"}}>
