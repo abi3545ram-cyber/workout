@@ -727,32 +727,41 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     const TENDON = {
       explosive:{label:"Power Plan",weeks:"~12 weeks",name:"Explosive + Tendon",color:"#ff453a",
-        meta:"Explosive work first, when fresh. Order per day: warm-up → speed/jump/reactive → landing → tendon (iso/HSR) → then your normal full-body lift. Run the three days non-consecutively (e.g. Mon/Wed/Fri). Isos: progress by adding load, keep holds ~30-45s. Plyos/sprints: progress intensity, never rep count.",
+        meta:"Explosive work first, when fresh. Order per day: warm-up → speed/jump/reactive → landing → tendon (iso/HSR) → then your normal full-body lift. Run the three days non-consecutively (e.g. Mon/Wed/Fri). The Warm-Up tab is shared — do it before every day, then add the day-specific ramp. Isos: progress by adding load, keep holds ~30-45s. Plyos/sprints: progress intensity, never rep count.",
         sessions:[
+          {label:"Warm-Up",day:"Shared — do before every session",exercises:[
+            {id:"wu-p1",name:"Phase 1 — Raise temperature",equip:"Warm-up",sets:1,reps:"~3 min",weight:"",rest:"0s",unilateral:false,cue:"Easy jog (bike instead on Day B). Light sweat, slightly raised heart rate. Don't go into drills cold."},
+            {id:"wu-p2",name:"Phase 2 — Dynamic mobility",equip:"Warm-up",sets:1,reps:"~3 min",weight:"",rest:"0s",unilateral:false,cue:"Moving, not held: leg swings front-back 10/leg · side-to-side 10/leg · walking knee hugs 6/leg · heel-to-glute 6/leg · straight-leg kicks 6/leg · world's greatest stretch 4/side · knee-to-wall ankle rocks 8/leg · light ankle pogo bounces ×20."},
+            {id:"wu-p3",name:"Phase 3 — Movement prep drills",equip:"Warm-up",sets:1,reps:"~3 min",weight:"",rest:"0s",unilateral:false,cue:"~15-20m each, walk back: A-skips ×2 (knee up, toe up) · high knees ×2 · butt kicks ×2 · carioca ×2 each way · straight-leg bounds ×1-2."},
+            {id:"wu-p4",name:"Phase 4 — Day-specific ramp",equip:"Warm-up",sets:1,reps:"~2-3 min",weight:"",rest:"0s",unilateral:false,cue:"Day A: 2-3 build-up runs (30m, 60→80→95%) + 1-2 near-max efforts before accelerations. Day B: ankle hops 2×15, then 3-5 low pogos + 2-3 submax box step-off landings before depth jumps. Day C: carioca + lateral lunges + lateral pogos, 20-30s single-leg balance per leg, 2-3 submax bounds. No long static stretches before training."},
+          ]},
           {label:"Day A",day:"Sprint / Achilles",exercises:[
-            {id:"dA-warmup",name:"Warm-up: jog + dynamic + 2 build-ups",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",cue:"Easy jog, dynamic drills, then two build-up runs to prime the nervous system. Don't skip — sprints go in cold otherwise."},
+            {id:"dA-warmup",name:"Warm-up (see Warm-Up tab)",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",unilateral:false,cue:"Run the shared Warm-Up first. Day A ramp: 2-3 build-up runs (60→80→95%) + 1-2 near-max efforts before the working accelerations."},
             {id:"dA-accel",name:"Accelerations (20m)",equip:"Sprint",sets:6,reps:"20m",weight:"~95% effort",rest:"2 min",cue:"~95% effort over 20m. Walk back between reps to fully recover. Progress sprint speed, never rep count — set ends the moment speed drops."},
             {id:"dA-flying",name:"Flying Sprints (15m run-in + 20m)",equip:"Sprint",sets:4,reps:"20m",weight:"max",rest:"3 min",cue:"15m run-in to build speed, then 20m at max velocity. Full 3 min rest — this is quality, not conditioning."},
-            {id:"dA-calf-iso",name:"Single-Leg Calf Raise Iso — Mid-Range",equip:"Single leg + load",sets:4,reps:"1",hold:"35s",weight:"+40kg",rest:"60s",single:true,cue:"Mid-calf position, one leg, hold completely still under load. 35s per leg. Stiffness driver — progress by adding load, not time."},
+            {id:"dA-calf-iso",name:"Single-Leg Calf Raise Iso — Straight Knee",equip:"Single leg + load",sets:4,reps:"1",hold:"35s",weight:"+40kg",rest:"60s",single:true,cue:"Straight knee (gastrocnemius), mid-calf position, one leg, hold completely still under load. 35s per leg. Primary Achilles stiffness driver — progress by adding load, not time."},
+            {id:"dA-soleus-iso",name:"Single-Leg Soleus Iso — Bent Knee",equip:"Single leg + load",sets:3,reps:"1",hold:"30s",weight:"+30kg",rest:"60s",single:true,cue:"Knee bent ~20-30° to bias the soleus. Hold mid-range under load, 30s per leg. Loads the deeper portion of the Achilles the straight-knee hold misses."},
             {id:"dA-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
           ]},
           {label:"Day B",day:"Jump / Patellar + Landing",exercises:[
-            {id:"dB-warmup",name:"Warm-up: jog/bike + ankle hops + dynamic",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",cue:"Jog or bike, 2×15 ankle hops, dynamic drills. Prime the ankles and knees for landing work."},
+            {id:"dB-warmup",name:"Warm-up (see Warm-Up tab)",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",unilateral:false,cue:"Run the shared Warm-Up first. Day B ramp: ankle hops 2×15, then 3-5 low pogos + 2-3 submax box step-off landings before depth jumps."},
             {id:"dB-snapdowns",name:"Snap Downs",equip:"Bodyweight",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Fast drop into an athletic stick position. Absorb and freeze. Teaches the landing mechanics before adding height."},
             {id:"dB-stick",name:"Stick Landings (drop ~30cm, freeze 3s)",equip:"Box ~30cm",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Drop from a ~30cm box, land, absorb, and freeze for 3 seconds. Build the landing before you add the rebound."},
             {id:"dB-depth",name:"Depth Jumps (~30cm box)",equip:"Box ~30cm",sets:4,reps:"4",weight:"Bodyweight",rest:"2 min",cue:"Step off (don't jump), land, instantly rebound up. Minimal ground contact. Progress box height, never reps."},
             {id:"dB-broad",name:"Broad Jumps",equip:"Bodyweight",sets:4,reps:"3",weight:"Bodyweight",rest:"90s",cue:"Maximal horizontal distance. Big arm drive, land soft. Walk back between reps."},
             {id:"dB-spanish",name:"Spanish Squat Iso",equip:"Band + plate",sets:4,reps:"1",hold:"40s",weight:"+20kg plate",rest:"60s",cue:"Band behind the knees, sit back against it, hold at ~90°. Patellar stiffness driver. Add load to progress."},
+            {id:"dB-patellar-hsr",name:"Leg Extension HSR (optional patellar)",equip:"Machine",sets:3,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",unilateral:false,cue:"Optional patellar HSR — the preferred option. 3s down, 1s pause, 3s up at a true 6-8RM. Option B if a leg-ext machine isn't free: Split Squat HSR, 3×6-8 per leg, same tempo. Pick one, not both."},
             {id:"dB-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
           ]},
           {label:"Day C",day:"Reactive / Unilateral + HSR",exercises:[
-            {id:"dC-warmup",name:"Warm-up: jog + dynamic",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",cue:"Easy jog and dynamic drills."},
+            {id:"dC-warmup",name:"Warm-up (see Warm-Up tab)",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",unilateral:false,cue:"Run the shared Warm-Up first. Day C ramp: carioca + lateral lunges + lateral pogos, 20-30s single-leg balance per leg, 2-3 submax bounds/skater hops."},
             {id:"dC-linehops",name:"Single-Leg Line Hops",equip:"Bodyweight",sets:3,reps:"10 / direction",weight:"Bodyweight",rest:"60s",single:true,cue:"Fast hops over a line, stiff ankle. 10 each direction. Quick ground contacts — think hot floor."},
             {id:"dC-skater",name:"Lateral / Skater Bounds",equip:"Bodyweight",sets:3,reps:"8 (4/side)",weight:"Bodyweight",rest:"75s",cue:"Explosive push off one leg, land on the other, stick it. 4 per side. Reactive lateral power for combat."},
             {id:"dC-slbounds",name:"Single-Leg Bounds",equip:"Bodyweight",sets:3,reps:"6 / leg",weight:"Bodyweight",rest:"90s",single:true,cue:"Max distance per bound, controlled landing. 6 per leg."},
             {id:"dC-altbound",name:"Alternate-Leg Bounding (20m)",equip:"Bodyweight",sets:2,reps:"20m",weight:"Bodyweight",rest:"2 min",cue:"Explosive bounding over 20m, alternating legs. Walk back between reps."},
-            {id:"dC-hsr-calf",name:"Heavy-Slow Calf Raise (HSR — only HSR input)",equip:"Machine/DB",sets:4,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",cue:"Your ONLY HSR input — keep it genuinely heavy and strict. 3s down to stretch, 1s pause, 3s up. Drop tempo before you ever drop load."},
+            {id:"dC-hsr-calf",name:"Heavy-Slow Calf Raise (HSR — only HSR input)",equip:"Machine/DB",sets:4,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",unilateral:false,cue:"Your ONLY HSR input — keep it genuinely heavy and strict. 3s down to stretch, 1s pause, 3s up. Drop tempo before you ever drop load."},
             {id:"dC-splitsquat-iso",name:"Split Squat Iso (patellar, 2nd angle)",equip:"Load",sets:3,reps:"1",hold:"30s",weight:"+15kg",rest:"60s",single:true,cue:"Hold the bottom of a split squat, 30s per side. Loads the patellar tendon at a second joint angle. Add load to progress."},
+            {id:"dC-wallsit-iso",name:"Wall Sit Iso (patellar, 3rd angle)",equip:"Load",sets:3,reps:"1",hold:"45s",weight:"+20kg",rest:"60s",unilateral:false,cue:"Back flat on the wall, thighs parallel, plate held on the lap. Hold 45s. Third patellar angle for quad-tendon stiffness — keep it loaded, not bodyweight."},
             {id:"dC-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
           ]},
         ]},
@@ -2344,7 +2353,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [historyModal,setHistoryModal]=useState(null);
       const [tendonData,setTendonData]=useState(()=>{
         // v2 plan: new key so existing users get the Explosive plan, not the old phases.
-        const saved=store.get("tendon_custom_v2",null);
+        const saved=store.get("tendon_custom_v3",null);
         if(saved&&saved.explosive)return saved;
         return TENDON;
       });
@@ -2354,7 +2363,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [libPicked,setLibPicked]=useState({});
       const [libQuery,setLibQuery]=useState("");
       const closeLib=()=>{setLibFor(null);setLibPicked({});setLibQuery("");};
-      const saveTendon=u=>{setTendonData(u);store.set("tendon_custom_v2",u);};
+      const saveTendon=u=>{setTendonData(u);store.set("tendon_custom_v3",u);};
       const updatePhaseField=(field,value)=>saveTendon({...tendonData,[selectedPhase]:{...pd,[field]:value}});
       const updateSession=(sessLabel,patch)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,...patch}:s)}});
       const updateEx=(sessLabel,idx,patch)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s)}});
