@@ -608,18 +608,56 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     // ── Data ───────────────────────────────────────────────────────────────────
     const FB_SECTIONS = [
       {section:"Full Body",exercises:[
-        {id:"fb-hip-thrust",name:"Hip Thrust",equip:"Barbell",sets:3,reps:"5-8",weight:"",rest:"2 min",hero:true,
-         cue:"Shoulders on bench, chin tucked, drive hips to full lockout and squeeze glutes hard."},
-        {id:"fb-lat-pulldown",name:"Lat Pulldown",equip:"Cable",sets:3,reps:"5-8",weight:"",rest:"2 min",
-         cue:"Slight lean back, pull to upper chest, elbows down and in."},
-        {id:"fb-shoulder-press",name:"Shoulder Press",equip:"Machine",sets:3,reps:"6-9",weight:"",rest:"90s",
+        {id:"fb-tricep-pushdown",name:"Tricep Pushdown",equip:"Cable (Single)",sets:1,reps:"7",weight:"18kg",rest:"90s",
+         cue:"Elbows glued to your sides, full lockout, control the weight back up."},
+        {id:"fb-one-arm-preacher",name:"One Arm Preacher Curl",equip:"Dumbbell (Single)",sets:1,reps:"4",weight:"24kg",rest:"90s",single:true,
+         cue:"Armpit on the pad, full stretch at the bottom, no bounce."},
+        {id:"fb-overhead-tri",name:"Overhead Triceps Extension",equip:"Cable (Single)",sets:1,reps:"8",weight:"32kg",rest:"90s",
+         cue:"Elbows tucked by the ears, deep stretch behind the head, press to lockout."},
+        {id:"fb-reverse-preacher",name:"Reverse Preacher Curl",equip:"EZ Bar",sets:1,reps:"6",weight:"40kg",rest:"90s",
+         cue:"Overhand grip, wrists locked, control the descent."},
+        {id:"fb-one-arm-lateral",name:"One Arm Lateral Raise",equip:"Cable (Single)",sets:1,reps:"5",weight:"17kg",rest:"60s",single:true,
+         cue:"Cable behind the body, lead with the elbow, constant tension."},
+        {id:"fb-chest-press",name:"Chest Press",equip:"Machine",sets:1,reps:"5",weight:"107kg",rest:"2 min",
+         cue:"Handles at mid-chest, press and squeeze without slamming the stack."},
+        {id:"fb-shoulder-press",name:"Shoulder Press",equip:"Machine",sets:1,reps:"7",weight:"59kg",rest:"90s",
          cue:"Back flat on the pad, press without shrugging the traps."},
-        {id:"fb-leg-curl",name:"Seated Leg Curl",equip:"Machine",sets:3,reps:"6-9",weight:"",rest:"90s",
-         cue:"Hips pinned, full squeeze, slow controlled return."},
-        {id:"fb-calf-press",name:"Calf Press",equip:"Machine",sets:3,reps:"7-10",weight:"",rest:"90s",
-         cue:"Full stretch at the bottom, pause, drive all the way to the toes."},
-        {id:"fb-row",name:"T-Bar Row",equip:"Machine",sets:3,reps:"6-9",weight:"",rest:"90s",
+        {id:"fb-front-raise",name:"Front Raise",equip:"Dumbbell (Double)",sets:1,reps:"8",weight:"16kg",rest:"60s",
+         cue:"Raise to eye level, no swing, control the lowering."},
+        {id:"fb-lat-pulldown",name:"Lat Pulldown",equip:"Cable (Single)",sets:1,reps:"5",weight:"100kg",rest:"2 min",
+         cue:"Slight lean back, pull to upper chest, elbows down and in."},
+        {id:"fb-reverse-fly",name:"Reverse Fly",equip:"Machine",sets:1,reps:"9",weight:"100kg",rest:"90s",
+         cue:"Slight elbow bend held constant, sweep back, squeeze the rear delts."},
+        {id:"fb-tbar-row",name:"T-Bar Row",equip:"Machine",sets:1,reps:"6",weight:"120kg",rest:"90s",
          cue:"Chest supported, drive the elbows back, squeeze the mid-back."},
+        {id:"fb-shoulder-shrug",name:"Shoulder Shrug",equip:"Dumbbell (Double)",sets:1,reps:"6",weight:"46kg",rest:"60s",
+         cue:"Straight up to the ears, 1s hold at the top, no rolling."},
+        {id:"fb-low-row",name:"Low Row",equip:"Cable (Single)",sets:1,reps:"8",weight:"80kg",rest:"90s",
+         cue:"Chest tall, pull to the belly button, squeeze the shoulder blades."},
+        {id:"fb-hip-thrust",name:"Hip Thrust",equip:"Barbell",sets:1,reps:"5",weight:"130kg",rest:"2 min",hero:true,
+         cue:"Shoulders on bench, chin tucked, drive hips to full lockout and squeeze glutes hard."},
+        {id:"fb-hack-squat",name:"Hack Squat",equip:"Machine",sets:1,reps:"6",weight:"25kg",rest:"2 min",
+         cue:"Back flat on the pad, feet mid-platform, deep controlled reps."},
+        {id:"fb-seated-leg-curl",name:"Seated Leg Curl",equip:"Machine",sets:1,reps:"7",weight:"88kg",rest:"90s",
+         cue:"Hips pinned, full squeeze, slow controlled return."},
+        {id:"fb-leg-extension",name:"Leg Extensions",equip:"Machine",sets:1,reps:"7",weight:"80kg",rest:"90s",
+         cue:"Pause 1s at the top, control the negative."},
+        {id:"fb-calf-press",name:"Calf Press Machine",equip:"Machine",sets:1,reps:"7",weight:"145kg",rest:"90s",
+         cue:"Full stretch at the bottom, pause, drive all the way to the toes."},
+        {id:"fb-inner-thigh",name:"Inner Thigh Machine",equip:"Machine",sets:1,reps:"5",weight:"79kg",rest:"60s",
+         cue:"Squeeze in smoothly, resist the return."},
+        {id:"fb-outer-thigh",name:"Outer Thigh Machine",equip:"Machine",sets:1,reps:"7",weight:"79kg",rest:"60s",
+         cue:"Tall posture, push out with control, pause at the widest point."},
+        {id:"fb-core-twist",name:"Core Twist",equip:"Band",sets:1,reps:"8",weight:"82kg",rest:"60s",
+         cue:"Controlled rotation, resist the momentum on the return."},
+        {id:"fb-ab-crunch",name:"Ab Crunch Machine",equip:"Machine",sets:1,reps:"8",weight:"118kg",rest:"60s",
+         cue:"Ribs to hips, not the neck, slow return."},
+        {id:"fb-back-extension",name:"Back Extension",equip:"Bodyweight",sets:2,reps:"7",weight:"60kg",rest:"60s",
+         cue:"Hinge at the hip to a deep hamstring stretch, drive to parallel \u2014 don't hyperextend."},
+        {id:"fb-wrist-curl",name:"Wrist Curl",equip:"Band",sets:1,reps:"8",weight:"40kg",rest:"45s",
+         cue:"Forearm fully supported, wrist only, slow and full range."},
+        {id:"fb-reverse-wrist-curl",name:"Reverse Wrist Curl",equip:"Band",sets:1,reps:"8",weight:"20kg",rest:"45s",
+         cue:"Overhand grip, wrist only, full range, slow eccentric."},
       ]},
       {section:"Arms",exercises:[
         {id:"ex-overhead-tri",name:"Overhead Triceps Extension",equip:"Cable",sets:2,reps:"8-12",weight:"",rest:"2 min",hero:true,
@@ -806,6 +844,16 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     }
 
     // ── Exercise Library (Hevy/Tracked-style database) ─────────────────────────
+    // User-created exercises live here and show up in the picker under "★ Custom".
+    const getCustomExercises = () => store.get("custom_exercises", []);
+    const addCustomExercise = ex => {
+      const list = getCustomExercises();
+      // de-dupe by lowercased name
+      if (list.some(e => e.name.toLowerCase() === ex.name.toLowerCase())) return list;
+      const updated = [...list, ex];
+      store.set("custom_exercises", updated);
+      return updated;
+    };
     const EXERCISE_DB = [
       {group:"Chest",items:[
         ["Bench Press","Barbell","Shoulder blades pinned, feet planted, bar to mid-chest, press up and slightly back"],
@@ -926,14 +974,23 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     // Searchable picker: body-part tabs across the top (Tracked-style), cue under each name
     function ExercisePickList({sections,picked,setPicked,query,setQuery,single}) {
       const [tab,setTab]=useState("All");
+      const [custom,setCustom]=useState(()=>getCustomExercises());
+      const [creating,setCreating]=useState(false);
+      const [newName,setNewName]=useState("");
+      const [newEquip,setNewEquip]=useState("Machine");
+      const [newGroup,setNewGroup]=useState("Legs");
+      const [newCue,setNewCue]=useState("");
       const hasYours=!!(sections&&sections.length);
-      const tabs=["All",...(hasYours?["★ Yours"]:[]),...EXERCISE_DB.map(g=>g.group)];
+      const hasCustom=custom.length>0;
+      const tabs=["All",...(hasYours?["★ Yours"]:[]),...(hasCustom?["★ Custom"]:[]),...EXERCISE_DB.map(g=>g.group)];
       const yourGroups=hasYours?sections.map(s=>({group:`★ ${s.section}`,yours:true,items:s.exercises.map(e=>({key:`y-${e.id||e.name}`,name:e.name,equip:e.equip||"",cue:e.cue||"",src:e}))})):[];
+      const customGroup=hasCustom?[{group:"★ Custom",custom:true,items:custom.map(e=>({key:`c-${e.name}`,name:e.name,equip:e.equip||"",cue:e.cue||"",muscle:e.muscle||"Other"}))}]:[];
       const libGroups=EXERCISE_DB.map(g=>({group:g.group,items:g.items.map(([n,eq,cue])=>({key:`l-${g.group}-${n}`,name:n,equip:eq,cue:cue||"",muscle:g.group}))}));
       const q=(query||"").trim().toLowerCase();
-      let groups=[...yourGroups,...libGroups];
+      let groups=[...yourGroups,...customGroup,...libGroups];
       if(!q){
         if(tab==="★ Yours")groups=yourGroups;
+        else if(tab==="★ Custom")groups=customGroup;
         else if(tab!=="All")groups=libGroups.filter(g=>g.group===tab);
       }
       groups=groups.map(g=>({...g,items:g.items.filter(it=>!q||it.name.toLowerCase().includes(q)||(it.equip||"").toLowerCase().includes(q))})).filter(g=>g.items.length);
@@ -952,6 +1009,29 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 color:tab===t&&!q?"var(--accent)":"var(--text-secondary)"}}>{t}</button>
             ))}
           </div>
+          {!creating ? (
+            <button className="button-secondary" style={{marginBottom:"8px",padding:"9px",fontSize:"13px"}} onClick={()=>setCreating(true)}>+ Create new exercise</button>
+          ) : (
+            <div className="card" style={{marginBottom:"8px",padding:"12px"}}>
+              <p className="font-bold" style={{fontSize:"14px",marginBottom:"8px"}}>New exercise</p>
+              <input className="field" placeholder="Name (e.g. Cable Pullover)" value={newName} onChange={e=>setNewName(e.target.value)}/>
+              <input className="field" placeholder="Equipment (e.g. Cable, Machine)" value={newEquip} onChange={e=>setNewEquip(e.target.value)}/>
+              <select className="field" value={newGroup} onChange={e=>setNewGroup(e.target.value)}>
+                {["Chest","Back","Shoulders","Arms","Legs","Core","Power","Other"].map(g=><option key={g} value={g}>{g}</option>)}
+              </select>
+              <input className="field" placeholder="Cue (optional)" value={newCue} onChange={e=>setNewCue(e.target.value)} style={{marginBottom:"10px"}}/>
+              <div style={{display:"flex",gap:"8px"}}>
+                <button className="button-primary" style={{padding:"10px",fontSize:"14px"}} disabled={!newName.trim()} onClick={()=>{
+                  const ex={name:newName.trim(),equip:newEquip.trim()||"Other",muscle:newGroup,cue:newCue.trim()};
+                  const updated=addCustomExercise(ex);
+                  setCustom(updated);
+                  setNewName("");setNewEquip("Machine");setNewGroup("Legs");setNewCue("");
+                  setCreating(false);setTab("★ Custom");
+                }}>Save to library</button>
+                <button className="button-secondary" style={{padding:"10px",fontSize:"14px"}} onClick={()=>{setCreating(false);setNewName("");setNewCue("");}}>Cancel</button>
+              </div>
+            </div>
+          )}
           <div style={{maxHeight:"36vh",overflowY:"auto",border:"1px solid var(--card-border)",borderRadius:"12px",padding:"6px 10px"}}>
             {groups.length===0&&<p className="text-small" style={{padding:"14px",textAlign:"center"}}>No matches</p>}
             {groups.map(g=>(
@@ -976,7 +1056,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       );
     }
     const pickedToExercises = picked => Object.values(picked).map(it =>
-      it.src ? {...it.src, id: uid()} : {id:uid(),name:it.name,equip:it.equip,sets:3,reps:"8-12",hold:"",rest:"90s",weight:"",cue:it.cue||""}
+      it.src ? {...it.src, id: uid()} : {id:uid(),name:it.name,equip:it.equip,sets:1,reps:"5-8",hold:"",rest:"90s",weight:"",cue:it.cue||""}
     );
 
     // Tracked-style plate calculator + warm-up ramp
@@ -1418,6 +1498,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const m = {};
         h.filter(x => x.date === latestDate).forEach(x => { if (x.setNumber) m[x.setNumber] = x; });
         return m;
+      }, [exIdx, activeEx && activeEx.id, activeEx && activeEx.name]);
+      // Target reps shown to the user = the reps you last actually lifted for this exercise,
+      // falling back to the programmed target if there's no history yet.
+      const displayTargetReps = useMemo(() => {
+        if (!activeEx) return "";
+        const last = getLastPerformance(activeEx.id, activeEx.name);
+        if (last && last.reps !== undefined && last.reps !== "" && String(last.reps) !== "0") return String(last.reps);
+        return activeEx.reps || "";
       }, [exIdx, activeEx && activeEx.id, activeEx && activeEx.name]);
       const getSetWeight = (si) => {
         const sk = `${exIdx}-${si}`;
@@ -1870,7 +1958,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               </div>
             ):(
               mode==="work"&&<div style={{margin:"22px auto",textAlign:"center"}}>
-                <div className="stat-num" style={{fontSize:"68px",fontWeight:"900",lineHeight:"1"}}>{activeEx.reps}</div>
+                <div className="stat-num" style={{fontSize:"68px",fontWeight:"900",lineHeight:"1"}}>{displayTargetReps||activeEx.reps}</div>
                 <div className="timer-label" style={{fontSize:"13px",marginTop:"6px"}}>Target Reps{hasSides?" — each side":""}</div>
               </div>
             )}
@@ -2068,7 +2156,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const deleteExercise=(secName,exId)=>saveW(workouts.map(s=>s.section===secName?{...s,exercises:s.exercises.filter(e=>(e.id||e.name)!==exId)}:s));
       const handleAddExercise=secName=>{
         const nm=prompt("New exercise name:");if(!nm)return;
-        saveW(workouts.map(s=>s.section===secName?{...s,exercises:[...s.exercises,{id:uid(),name:nm,equip:"Bodyweight",sets:1,reps:"10-12",rest:"90s",weight:"",cue:""}]}:s));
+        saveW(workouts.map(s=>s.section===secName?{...s,exercises:[...s.exercises,{id:uid(),name:nm,equip:"Bodyweight",sets:1,reps:"5-8",rest:"90s",weight:"",cue:""}]}:s));
       };
       const launchSectionSession=sec=>{
         setActiveRoutine({name:`${sec.section} Workout`,color:tileColor,exercises:sec.exercises.map(e=>withSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});
@@ -3084,12 +3172,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [workouts,setWorkouts]=useState(()=>{
         const saved=store.get("workout_sections_custom",null);
         if(!saved)return FB_SECTIONS;
-        // One-time migration: ensure a real, editable "Full Body" section exists.
-        const hasFB=saved.some(s=>s.section==="Full Body");
-        if(!hasFB){
-          const fb=FB_SECTIONS.find(s=>s.section==="Full Body");
-          const merged=[fb,...saved];
+        // v2 migration: replace any existing "Full Body" with the new 25-exercise version once.
+        const done=store.get("fullbody_v2_done",false);
+        const fbNew=FB_SECTIONS.find(s=>s.section==="Full Body");
+        if(!done){
+          const others=saved.filter(s=>s.section!=="Full Body");
+          const merged=[fbNew,...others];
           store.set("workout_sections_custom",merged);
+          store.set("fullbody_v2_done",true);
           return merged;
         }
         return saved;
