@@ -24,6 +24,32 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||"");
       return m ? `${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)}` : null;
     };
+    // ── App accent palette (single fixed accent, user-choosable) ──
+    const ACCENT_PALETTES = [
+      {id:"teal",   name:"Teal",   color:"#16d6a4"},
+      {id:"violet", name:"Violet", color:"#9b7bff"},
+      {id:"amber",  name:"Amber",  color:"#ffb020"},
+      {id:"coral",  name:"Coral",  color:"#ff6b5e"},
+      {id:"azure",  name:"Azure",  color:"#3a9bff"},
+      {id:"lime",   name:"Lime",   color:"#9ae600"},
+      {id:"rose",   name:"Rose",   color:"#ff5d8f"},
+      {id:"gold",   name:"Gold",   color:"#ffd700"},
+    ];
+    const applyAppAccent = color => {
+      try {
+        const root = document.documentElement;
+        if (!color) { root.style.removeProperty('--accent'); root.style.removeProperty('--accent-muted'); root.style.removeProperty('--accent-rgb'); return; }
+        const rgb = hexToRgbStr(color);
+        root.style.setProperty('--accent', color);
+        if (rgb) { root.style.setProperty('--accent-muted', `rgba(${rgb},0.15)`); root.style.setProperty('--accent-rgb', rgb); }
+      } catch {}
+    };
+    // Apply saved accent as early as possible (before first paint of App)
+    try {
+      const savedAccent = (() => { try { return JSON.parse(localStorage.getItem('app_accent')); } catch { return null; } })();
+      const th = (() => { try { return JSON.parse(localStorage.getItem('workout_theme')); } catch { return 'dark'; } })();
+      if (savedAccent && th !== 'anti-red') applyAppAccent(savedAccent);
+    } catch {}
     // CSS-variable override: everything inside a container (badges, chips, chevrons,
     // checkboxes, charts…) follows the custom accent for true colour consistency.
     const accentVars = color => {
@@ -2711,7 +2737,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             ))}
           </div>
           {uniqueEx.length===0?(
-            <div className="card" style={{textAlign:"center",padding:"40px 20px",color:"var(--text-secondary)"}}>Complete sets inside Workouts or Tendons to start tracking.</div>
+            <div className="card">
+              <div className="empty-state">
+                <div className="es-icon"><Icons.Chart size={26}/></div>
+                <p className="es-title">No data yet</p>
+                <p className="es-sub">Complete a few sets in Workouts or Tendons and your progress charts, records and analytics will appear here.</p>
+              </div>
+            </div>
           ):(
             <div>
               <div className="card">
@@ -2944,9 +2976,34 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     }
 
     // ── App ────────────────────────────────────────────────────────────────────
+    function AccentPicker({value,onPick,theme}) {
+      const disabled = theme==='anti-red';
+      return (
+        <div className="card" style={disabled?{opacity:0.5}:{}}>
+          <p className="font-bold" style={{marginBottom:"3px"}}>Accent colour</p>
+          <p className="text-small" style={{marginBottom:"12px"}}>{disabled?"The Anti-Red theme uses its own gold accent.":"Sets the app's highlight colour everywhere."}</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:"12px"}}>
+            {ACCENT_PALETTES.map(p=>{
+              const active=value===p.color;
+              return (
+                <button key={p.id} disabled={disabled} onClick={()=>onPick(p.color)} title={p.name}
+                  style={{width:"40px",height:"40px",borderRadius:"50%",background:p.color,flexShrink:0,position:"relative",
+                    boxShadow:active?`0 0 0 3px var(--bg), 0 0 0 5px ${p.color}`:"none",transition:"box-shadow 0.15s"}}>
+                  {active&&<span style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",mixBlendMode:"difference"}}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     function Onboarding({initialName,onDone}) {
       const [name,setName]=useState(initialName||"");
       const [target,setTarget]=useState(3);
+      const [accent,setAccent]=useState("#16d6a4");
       return (
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:"32px 24px",maxWidth:"430px",margin:"0 auto"}}>
           <div style={{width:"72px",height:"72px",borderRadius:"22px",background:"var(--accent-muted)",border:"1.5px solid var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent)",marginBottom:"28px"}}>
@@ -2956,17 +3013,25 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           <h1 style={{fontSize:"36px",fontWeight:"900",lineHeight:"1.1",letterSpacing:"-0.02em",marginBottom:"10px"}}>Train hard.<br/>Track everything.</h1>
           <p className="text-small" style={{fontSize:"15px",marginBottom:"32px",lineHeight:"1.5"}}>Workouts, tendon work and mobility — logged on your device, nowhere else.</p>
           <label className="field-label">What should we call you?</label>
-          <input className="field" autoFocus placeholder="Your name" value={name} maxLength={20} onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&name.trim())onDone({name:name.trim(),weeklyTarget:target,created:todayStr()});}}/>
+          <input className="field" autoFocus placeholder="Your name" value={name} maxLength={20} onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&name.trim())onDone({name:name.trim(),weeklyTarget:target,accent,created:todayStr()});}}/>
           <label className="field-label" style={{marginTop:"14px"}}>Weekly workout target</label>
-          <div style={{display:"flex",gap:"8px",marginBottom:"30px"}}>
+          <div style={{display:"flex",gap:"8px",marginBottom:"22px"}}>
             {[2,3,4,5,6].map(n=>(
               <button key={n} onClick={()=>setTarget(n)} style={{flex:1,padding:"13px 0",borderRadius:"12px",fontSize:"16px",fontWeight:"800",
-                border:`1.5px solid ${target===n?"var(--accent)":"var(--card-border)"}`,
-                color:target===n?"var(--accent)":"var(--text-secondary)",
-                background:target===n?"var(--accent-muted)":"var(--input-bg)"}}>{n}</button>
+                border:`1.5px solid ${target===n?accent:"var(--card-border)"}`,
+                color:target===n?accent:"var(--text-secondary)",
+                background:target===n?`${accent}26`:"var(--input-bg)"}}>{n}</button>
             ))}
           </div>
-          <button className="button-primary" disabled={!name.trim()} style={!name.trim()?{opacity:0.45}:{}} onClick={()=>onDone({name:name.trim(),weeklyTarget:target,created:todayStr()})}>Let's go</button>
+          <label className="field-label">Accent colour</label>
+          <div style={{display:"flex",flexWrap:"wrap",gap:"12px",marginBottom:"30px"}}>
+            {ACCENT_PALETTES.map(p=>(
+              <button key={p.id} onClick={()=>{setAccent(p.color);applyAppAccent(p.color);}} title={p.name}
+                style={{width:"38px",height:"38px",borderRadius:"50%",background:p.color,flexShrink:0,
+                  boxShadow:accent===p.color?`0 0 0 3px var(--bg), 0 0 0 5px ${p.color}`:"none"}}/>
+            ))}
+          </div>
+          <button className="button-primary" disabled={!name.trim()} style={!name.trim()?{opacity:0.45}:{}} onClick={()=>onDone({name:name.trim(),weeklyTarget:target,accent,created:todayStr()})}>Let's go</button>
         </div>
       );
     }
@@ -2978,6 +3043,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         document.documentElement.setAttribute('data-theme',t);
         return t;
       });
+      const [appAccent,setAppAccent]=useState(()=>store.get("app_accent","#16d6a4"));
+      const chooseAccent=c=>{setAppAccent(c);store.set("app_accent",c);};
+      useEffect(()=>{ if(theme==='anti-red') applyAppAccent(null); else applyAppAccent(appAccent); },[appAccent,theme]);
       const [username,setUsername]=useState(()=>store.get("workout_username","Abiram"));
       const [profile,setProfile]=useState(()=>store.get("user_profile",null));
       const [settingsOpen,setSettingsOpen]=useState(false);
@@ -3231,17 +3299,16 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               </TapModal>
             )}
 
+            <div className="group-header">Lifetime sessions</div>
             <div className="card">
-              <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Training Log</h2>
-              <p className="text-small">Strength, tendon, and mobility tracking</p>
-              <div className="badge-bar" style={{marginTop:"16px"}}>
-                <div className="session-badge"><span>Workouts:</span><span className="text-accent font-bold">{counts.workouts}</span></div>
-                <div className="session-badge"><span>Tendon:</span><span className="text-accent font-bold">{counts.tendons}</span></div>
-                <div className="session-badge"><span>Stretches:</span><span className="text-accent font-bold">{counts.stretches}</span></div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px"}}>
+                <div style={{textAlign:"center"}}><div className="stat-hero text-accent">{counts.workouts}</div><div className="stat-cap">Workouts</div></div>
+                <div style={{textAlign:"center"}}><div className="stat-hero text-accent">{counts.tendons}</div><div className="stat-cap">Tendon</div></div>
+                <div style={{textAlign:"center"}}><div className="stat-hero text-accent">{counts.stretches}</div><div className="stat-cap">Stretch</div></div>
               </div>
             </div>
+            <div className="group-header">Activity</div>
             <div className="card">
-              <h3 className="font-bold" style={{fontSize:"16px"}}>30-Day Grid</h3>
               <p className="text-small" style={{marginBottom:"12px"}}>Tap a highlighted day to view session logs</p>
               <div className="calendar-grid">
                 {["S","M","T","W","T","F","S"].map((h,i)=><div key={i} className="calendar-header-day">{h}</div>)}
@@ -3257,6 +3324,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             {settingsOpen&&(
               <TapModal isOpen onClose={()=>setSettingsOpen(false)}>
                 <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"14px"}}>Settings</h2>
+                <AccentPicker value={appAccent} onPick={chooseAccent} theme={theme}/>
                 <SoundConfigCard/>
                 <TimerConfigCard/>
                 <DataBackupCard/>
@@ -3320,7 +3388,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         return null;
       };
 
-      if (!profile) return <Onboarding initialName={store.get("workout_username","")} onDone={p=>{store.set("user_profile",p);store.set("workout_username",p.name);setUsername(p.name);setProfile(p);}}/>;
+      if (!profile) return <Onboarding initialName={store.get("workout_username","")} onDone={p=>{store.set("user_profile",p);store.set("workout_username",p.name);if(p.accent){store.set("app_accent",p.accent);setAppAccent(p.accent);}setUsername(p.name);setProfile(p);}}/>;
 
       return (
         <div>
