@@ -278,21 +278,28 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       return toneAudio[key];
     };
     let audioUnlocked = false;
-    const unlockAudio = () => {
-      if (audioUnlocked) return;
-      audioUnlocked = true;
+    // Prime ONE HTMLAudio element per tone (silent) within a gesture. We deliberately
+    // play only a single element first (iOS allows one play() per gesture reliably),
+    // then prime the rest opportunistically.
+    const primeWavElements = () => {
       Object.keys(TONES).forEach(k => {
         const a = getToneAudio(k);
         if (!a) return;
         try {
           a.muted = true;
           const p = a.play();
-          if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; audioUnlocked = false; });
-        } catch { a.muted = false; audioUnlocked = false; }
+          if (p && p.then) p.then(() => { try { a.pause(); a.currentTime = 0; } catch {} a.muted = false; }).catch(() => { a.muted = false; });
+          else { a.muted = false; }
+        } catch { a.muted = false; }
       });
     };
+    const unlockAudio = () => {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      primeWavElements();
+    };
 
-    // WebAudio fallback synth
+    // WebAudio synth — primary on most devices; also used to force-unlock with a silent buffer
     let synthCtx = null;
     const freshCtx = () => {
       try {
@@ -312,7 +319,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       unlockAudio();
       try {
         const ctx = freshCtx();
-        if (ctx && ctx.state !== 'running') ctx.resume().catch(()=>{});
+        if (!ctx) return;
+        if (ctx.state !== 'running') ctx.resume().catch(()=>{});
+        // Silent buffer kick — this is what actually flips iOS WebAudio to "running"
+        try {
+          const b = ctx.createBuffer(1, 1, 22050);
+          const s = ctx.createBufferSource();
+          s.buffer = b; s.connect(ctx.destination); s.start(0);
+        } catch {}
       } catch {}
     };
     window.addEventListener('pointerdown', unlockSynth, {passive:true});
@@ -350,19 +364,29 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         }).catch(rebuildAndPlay);
       } catch {}
     };
-    // Play a named tone: HTMLAudio first, synth fallback if it refuses
+    // Play a named tone. Synth first (most reliable, respects no "one play per gesture"
+    // limit and works after unlock), HTMLAudio WAV as fallback.
     const playTone = key => {
+      const s = TONES[key];
+      // Try synth path when a context is available and running.
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC && s) {
+          const ctx = freshCtx();
+          if (ctx && ctx.state === 'running') { playSynthTone(s.f, s.d, s.t, s.v); return; }
+        }
+      } catch {}
+      // Fallback: pre-rendered WAV element.
       const a = getToneAudio(key);
       if (a) {
         try {
           const inst = (a.paused || a.ended) ? a : a.cloneNode();
           inst.currentTime = 0;
           const p = inst.play();
-          if (p && p.catch) p.catch(() => { const s = TONES[key]; if (s) playSynthTone(s.f, s.d, s.t, s.v); });
+          if (p && p.catch) p.catch(() => { if (s) playSynthTone(s.f, s.d, s.t, s.v); });
           return;
         } catch {}
       }
-      const s = TONES[key];
       if (s) playSynthTone(s.f, s.d, s.t, s.v);
     };
     const triggerSound = type => {
@@ -376,6 +400,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       {key:'chime',label:'Done',desc:'Set done',f:[523.25,659.25,783.99],d:0.6,t:'sine',v:0.2},
     ];
     const triggerSoundChecked = type => {
+      if (store.get('sound_master_off', false)) return;
       unlockSynth();
       const active = store.get('workout_active_sounds',{tick:true,'rest-chime':true,chime:true,'beep-high':true});
       if (!active[type]) return;
@@ -384,6 +409,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     // Best-effort local notification when rest ends with the screen away
     const notifyRestEnd = () => {
       try {
+        if (!store.get('notify_rest_enabled', false)) return;
         if (document.visibilityState === 'visible') return;
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -393,6 +419,33 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         }
       } catch {}
     };
+
+    function NotifyToggle() {
+      const [on,setOn]=useState(()=>store.get('notify_rest_enabled',false));
+      const flip=async()=>{
+        if(on){ setOn(false); store.set('notify_rest_enabled',false); return; }
+        try{
+          if(!('Notification' in window)){alert('Notifications are not supported on this device/browser.');return;}
+          let perm=Notification.permission;
+          if(perm==='default') perm=await Notification.requestPermission();
+          if(perm!=='granted'){
+            alert('Your browser blocked notifications. Enable them for this site in your browser settings, then try again.');
+            return;
+          }
+          setOn(true); store.set('notify_rest_enabled',true);
+        }catch{}
+      };
+      return (
+        <div className="flex-between" style={{marginTop:"14px",alignItems:"center"}}>
+          <span className="text-small" style={{display:"flex",alignItems:"center",gap:"7px"}}><Icons.Bell/> Notify when rest ends</span>
+          <button onClick={flip} role="switch" aria-checked={on} style={{width:"48px",height:"28px",borderRadius:"999px",flexShrink:0,position:"relative",
+            background:on?"var(--accent)":"var(--input-bg)",border:`1.5px solid ${on?"var(--accent)":"var(--card-border)"}`,transition:"background 0.2s"}}>
+            <span style={{position:"absolute",top:"2px",left:on?"22px":"2px",width:"20px",height:"20px",borderRadius:"50%",
+              background:on?"var(--btn-text)":"var(--text-secondary)",transition:"left 0.2s"}}/>
+          </button>
+        </div>
+      );
+    }
 
     function DataBackupCard() {
       const [meta,setMeta]=useState(()=>store.get('backup_meta',{last:null,sinceWorkouts:0}));
@@ -441,23 +494,26 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             <input className="field" type="number" min="1" max="60" style={{marginBottom:0,width:"90px"}} value={trans} onChange={e=>save(e.target.value)}/>
             <span className="text-small">seconds</span>
           </div>
-          <button className="button-secondary" style={{marginTop:"12px",padding:"9px",fontSize:"13px"}} onClick={()=>{
-            try{
-              if(!('Notification' in window)){alert('Notifications not supported on this device/browser.');return;}
-              if(Notification.permission==='granted'){alert('Rest-end notifications are on (when the app is in the background).');return;}
-              Notification.requestPermission();
-            }catch{}
-          }}><Icons.Bell/> Notify when rest ends</button>
+          <NotifyToggle/>
         </div>
       );
     }
 
     function SoundConfigCard() {
       const [sounds,setSounds] = useState(()=>store.get('workout_active_sounds',{tick:true,'rest-chime':true,chime:true,'beep-high':true}));
+      const [masterOff,setMasterOff] = useState(()=>store.get('sound_master_off',false));
       const toggle = key => { const u={...sounds,[key]:!sounds[key]}; setSounds(u); store.set('workout_active_sounds',u); };
+      const flipMaster = () => { const v=!masterOff; setMasterOff(v); store.set('sound_master_off',v); if(!v) unlockSynth(); };
       return (
         <div className="card">
-          <p className="font-bold" style={{marginBottom:"10px"}}>Sound Alerts</p>
+          <div className="flex-between" style={{marginBottom:"10px"}}>
+            <p className="font-bold">Sound Alerts</p>
+            <button onClick={flipMaster} role="switch" aria-checked={!masterOff} title={masterOff?"Sounds off":"Sounds on"} style={{width:"48px",height:"28px",borderRadius:"999px",flexShrink:0,position:"relative",
+              background:!masterOff?"var(--accent)":"var(--input-bg)",border:`1.5px solid ${!masterOff?"var(--accent)":"var(--card-border)"}`,transition:"background 0.2s"}}>
+              <span style={{position:"absolute",top:"2px",left:!masterOff?"22px":"2px",width:"20px",height:"20px",borderRadius:"50%",background:!masterOff?"var(--btn-text)":"var(--text-secondary)",transition:"left 0.2s"}}/>
+            </button>
+          </div>
+          <div style={{opacity:masterOff?0.4:1,pointerEvents:masterOff?"none":"auto"}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
             {SOUND_LIST.map(({key,label,desc,f,d,t,v})=>(
               <button key={key} onClick={()=>toggle(key)} style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",borderRadius:"10px",background:sounds[key]?"var(--accent-muted)":"var(--input-bg)",border:sounds[key]?"1.5px solid var(--accent)":"1.5px solid var(--card-border)",color:sounds[key]?"var(--accent)":"var(--text-secondary)",textAlign:"left"}}>
@@ -466,7 +522,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 <span style={{fontSize:"11px",opacity:0.5,padding:"2px 5px",borderRadius:"6px",background:"var(--input-bg)"}} onClick={e=>{e.stopPropagation();unlockSynth();playTone(key);}}>▶</span>
               </button>
             ))}
+            </div>
           </div>
+          <p className="text-small" style={{fontSize:"11px",marginTop:"10px",opacity:0.8}}>Tap ▶ to test. If you hear nothing on iPhone, flick the physical silent switch off — browsers can't play over it.</p>
         </div>
       );
     }
@@ -2935,6 +2993,15 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const saveTileMeta=(id,patch)=>{const u={...tileMeta,[id]:{...(tileMeta[id]||{}),...patch}};setTileMeta(u);store.set("workout_tile_meta",u);};
       // Tile colour chosen on the Home screen drives the buttons inside that tab
       const tileColorFor=id=>{const c=(tileMeta[id]||{}).color;return c?getThemeColor(c,theme):null;};
+      // The exact colour a Home tile shows (custom colour if set, else its default) — used so the
+      // bottom tab matches the Home tile on first paint, not only after it becomes active.
+      const TILE_DEFAULT_COLOR={workouts:"var(--success)",tendons:"var(--danger)",stretches:"#0a84ff"};
+      const tileDisplayColor=id=>{
+        const custom=(tileMeta[id]||{}).color;
+        if(custom)return getThemeColor(custom,theme);
+        if(TILE_DEFAULT_COLOR[id])return TILE_DEFAULT_COLOR[id];
+        return getThemeColor("var(--accent)",theme);
+      };
       const tileLabelFor=(id,fallback)=>(tileMeta[id]||{}).label||fallback;
       const [workouts,setWorkouts]=useState(()=>store.get("workout_sections_custom",FB_SECTIONS));
       const saveReps=(k,v)=>{const u={...customReps,[k]:v};setCustomReps(u);store.set("workout_reps",u);};
@@ -3287,9 +3354,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
           <div className="tab-bar">
             {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:tileLabelFor("workouts","Workouts"),Icon:Icons.Dumbbell,tile:"workouts"},{id:"tendons",label:tileLabelFor("tendons","Tendons"),Icon:Icons.Tendon,tile:"tendons"},{id:"stretches",label:tileLabelFor("stretches","Stretch"),Icon:Icons.Stretch,tile:"stretches"},{id:"progression",label:"Progress",Icon:Icons.Chart},...customSplits.map(s=>({id:`split-${s.id||s.section}`,label:tileLabelFor(s.id||s.section,s.section),Icon:Icons.Dumbbell,tile:s.id||s.section}))].filter(t=>t.id==="home"||t.id==="progression"||t.id.startsWith("split-")||!hiddenTabs.includes(t.id)).map(({id,label,Icon,tile})=>{
-              const tc = activeTab===id && tile ? tileColorFor(tile) : null;
+              // Match the Home tile colour at all times. Home & Progress have no tile, so they
+              // use the active accent only when selected.
+              const tc = tile ? tileDisplayColor(tile) : null;
+              const active = activeTab===id;
               return (
-                <button key={id} className={`tab-btn ${activeTab===id?"active":""}`} style={{width:"auto",flex:"1 1 0",minWidth:"48px",...(tc?{color:tc}:{})}} onClick={()=>setActiveTab(id)}>
+                <button key={id} className={`tab-btn ${active?"active":""}`} style={{width:"auto",flex:"1 1 0",minWidth:"48px",...(tc?{color:tc,opacity:active?1:0.6}:{})}} onClick={()=>setActiveTab(id)}>
                   <Icon/><span>{label}</span>
                 </button>
               );
