@@ -2995,12 +2995,21 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const tileColorFor=id=>{const c=(tileMeta[id]||{}).color;return c?getThemeColor(c,theme):null;};
       // The exact colour a Home tile shows (custom colour if set, else its default) — used so the
       // bottom tab matches the Home tile on first paint, not only after it becomes active.
-      const TILE_DEFAULT_COLOR={workouts:"var(--success)",tendons:"var(--danger)",stretches:"#0a84ff"};
+      // Real hex defaults per tile so the colour can drive the whole page accent
+      // (accentVars needs hex, not CSS vars). Matches the Home tile palette.
+      const TILE_DEFAULT_COLOR=(()=>{
+        const light = theme==='light';
+        return {
+          workouts: light?"#34c759":"#30d158",   // green
+          tendons:  light?"#ff3b30":"#ff453a",   // red
+          stretches:"#0a84ff",                    // blue
+        };
+      })();
       const tileDisplayColor=id=>{
         const custom=(tileMeta[id]||{}).color;
-        if(custom)return getThemeColor(custom,theme);
-        if(TILE_DEFAULT_COLOR[id])return TILE_DEFAULT_COLOR[id];
-        return getThemeColor("var(--accent)",theme);
+        if(custom){const c=getThemeColor(custom,theme);return c&&c.startsWith("var(")?null:c;}
+        if(theme==='anti-red')return null; // anti-red forces its own gold everywhere
+        return TILE_DEFAULT_COLOR[id]||null;
       };
       const tileLabelFor=(id,fallback)=>(tileMeta[id]||{}).label||fallback;
       const [workouts,setWorkouts]=useState(()=>store.get("workout_sections_custom",FB_SECTIONS));
@@ -3332,11 +3341,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
           <div className="container">
             {activeTab==="home"&&renderHome()}
-            {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} customReps={customReps} saveReps={saveReps} counts={counts} setActiveRoutine={setActiveRoutine} setModalContent={setModalContent} reloadLogs={reloadLogs} theme={theme} notes={notes} saveNote={saveNote} tileColor={tileColorFor("workouts")}/>}
-            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} notes={notes} saveNote={saveNote} tileColor={tileColorFor("tendons")}/>}
-            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} tileColor={tileColorFor("stretches")}/>}
+            {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} customReps={customReps} saveReps={saveReps} counts={counts} setActiveRoutine={setActiveRoutine} setModalContent={setModalContent} reloadLogs={reloadLogs} theme={theme} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor("workouts")}/>}
+            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor("tendons")}/>}
+            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} tileColor={tileDisplayColor("stretches")}/>}
             {activeTab==="progression"&&<ProgressionTab reloadLogs={reloadLogs}/>}
-            {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine} notes={notes} saveNote={saveNote} tileColor={tileColorFor(activeCustomSplit.id||activeCustomSplit.section)} allSections={workouts}/>}
+            {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor(activeCustomSplit.id||activeCustomSplit.section)} allSections={workouts}/>}
           </div>
 
           {renderModal()}
