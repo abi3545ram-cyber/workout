@@ -607,6 +607,20 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // ── Data ───────────────────────────────────────────────────────────────────
     const FB_SECTIONS = [
+      {section:"Full Body",exercises:[
+        {id:"fb-hip-thrust",name:"Hip Thrust",equip:"Barbell",sets:3,reps:"5-8",weight:"",rest:"2 min",hero:true,
+         cue:"Shoulders on bench, chin tucked, drive hips to full lockout and squeeze glutes hard."},
+        {id:"fb-lat-pulldown",name:"Lat Pulldown",equip:"Cable",sets:3,reps:"5-8",weight:"",rest:"2 min",
+         cue:"Slight lean back, pull to upper chest, elbows down and in."},
+        {id:"fb-shoulder-press",name:"Shoulder Press",equip:"Machine",sets:3,reps:"6-9",weight:"",rest:"90s",
+         cue:"Back flat on the pad, press without shrugging the traps."},
+        {id:"fb-leg-curl",name:"Seated Leg Curl",equip:"Machine",sets:3,reps:"6-9",weight:"",rest:"90s",
+         cue:"Hips pinned, full squeeze, slow controlled return."},
+        {id:"fb-calf-press",name:"Calf Press",equip:"Machine",sets:3,reps:"7-10",weight:"",rest:"90s",
+         cue:"Full stretch at the bottom, pause, drive all the way to the toes."},
+        {id:"fb-row",name:"T-Bar Row",equip:"Machine",sets:3,reps:"6-9",weight:"",rest:"90s",
+         cue:"Chest supported, drive the elbows back, squeeze the mid-back."},
+      ]},
       {section:"Arms",exercises:[
         {id:"ex-overhead-tri",name:"Overhead Triceps Extension",equip:"Cable",sets:2,reps:"8-12",weight:"",rest:"2 min",hero:true,
          cue:"Do this completely fresh. Both hands on rope, elbows above head. Lower behind head to full long-head stretch. Press to lockout. Max effort."},
@@ -674,55 +688,34 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     ];
 
     const TENDON = {
-      p1:{label:"Phase 1",weeks:"Weeks 1-4",name:"Isometric",color:"#ff453a",
-        meta:"Hold at about 2/10 effort — sustained tension, not force. Take 15g collagen + vit C 30-60 min before. No caffeine.",
+      explosive:{label:"Power Plan",weeks:"~12 weeks",name:"Explosive + Tendon",color:"#ff453a",
+        meta:"Explosive work first, when fresh. Order per day: warm-up → speed/jump/reactive → landing → tendon (iso/HSR) → then your normal full-body lift. Run the three days non-consecutively (e.g. Mon/Wed/Fri). Isos: progress by adding load, keep holds ~30-45s. Plyos/sprints: progress intensity, never rep count.",
         sessions:[
-          {label:"Session A",day:"Achilles + Patellar",exercises:[
-            {id:"t1a-calf-iso-mid",name:"Calf Raise Iso — Mid Range",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20-25kg DB",rest:"90s",cue:"Stand on one leg at mid-calf position. Hold completely still. The stimulus is sustained tension — no movement."},
-            {id:"t1a-wall-sit",name:"Wall Sit",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",cue:"Back flat against wall, thighs parallel, knees at 90 degrees. Hold. Patellar tendon stimulus."},
-            {id:"t1a-calf-bottom",name:"Calf Hold — Bottom Stretch",equip:"Single leg + DB",sets:2,reps:"6",hold:"20s",weight:"+15kg DB",rest:"60s",cue:"Heel dropped off a step as low as possible. Hold at the deepest Achilles stretch."},
-            {id:"t1a-hip-flexor",name:"Hip Flexor Lunge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"20s",weight:"Bodyweight",rest:"60s",single:true,cue:"Back knee on floor, front foot forward, torso upright. Feel the stretch through front of rear hip. Hold still."},
-            {id:"t1a-wrist-iso",name:"Wrist Iso Hold",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",single:true,cue:"Press wrist into band and hold without moving. Three positions: neutral, flexion, extension."},
+          {label:"Day A",day:"Sprint / Achilles",exercises:[
+            {id:"dA-warmup",name:"Warm-up: jog + dynamic + 2 build-ups",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",cue:"Easy jog, dynamic drills, then two build-up runs to prime the nervous system. Don't skip — sprints go in cold otherwise."},
+            {id:"dA-accel",name:"Accelerations (20m)",equip:"Sprint",sets:6,reps:"20m",weight:"~95% effort",rest:"2 min",cue:"~95% effort over 20m. Walk back between reps to fully recover. Progress sprint speed, never rep count — set ends the moment speed drops."},
+            {id:"dA-flying",name:"Flying Sprints (15m run-in + 20m)",equip:"Sprint",sets:4,reps:"20m",weight:"max",rest:"3 min",cue:"15m run-in to build speed, then 20m at max velocity. Full 3 min rest — this is quality, not conditioning."},
+            {id:"dA-calf-iso",name:"Single-Leg Calf Raise Iso — Mid-Range",equip:"Single leg + load",sets:4,reps:"1",hold:"35s",weight:"+40kg",rest:"60s",single:true,cue:"Mid-calf position, one leg, hold completely still under load. 35s per leg. Stiffness driver — progress by adding load, not time."},
+            {id:"dA-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
           ]},
-          {label:"Session B",day:"Combat + Glute/Ham",exercises:[
-            {id:"t1b-wall-sit-prog",name:"Wall Sit — Progressed",equip:"Bodyweight",sets:3,reps:"6",hold:"30s",weight:"Bodyweight",rest:"90s",cue:"Same as Session A, but add a slight heel raise at the bottom to load calves simultaneously."},
-            {id:"t1b-calf-iso-peak",name:"Calf Raise Iso — Peak",equip:"Single leg + DB",sets:3,reps:"6",hold:"30s",weight:"+20kg DB",rest:"90s",cue:"Rise onto toes and hold at the very top. Different loading zone from Session A mid-range."},
-            {id:"t1b-wrist-ext",name:"Wrist Iso — Extension",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",single:true,cue:"Forearm on a surface. Resist band pulling wrist into extension. Hold completely still."},
-            {id:"t1b-wrist-flex",name:"Wrist Iso — Flexion",equip:"Light band",sets:2,reps:"6",hold:"15s",weight:"Light band",rest:"45s",single:true,cue:"Same position. Resist band pulling wrist into flexion. Separate set from extension."},
-            {id:"t1b-glute-bridge",name:"Glute Bridge Hold",equip:"Bodyweight",sets:2,reps:"6",hold:"30s",weight:"Bodyweight",rest:"60s",cue:"Hips fully extended, shoulders on floor. Hold at top. Hamstring and glute tendon stimulus."},
+          {label:"Day B",day:"Jump / Patellar + Landing",exercises:[
+            {id:"dB-warmup",name:"Warm-up: jog/bike + ankle hops + dynamic",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",cue:"Jog or bike, 2×15 ankle hops, dynamic drills. Prime the ankles and knees for landing work."},
+            {id:"dB-snapdowns",name:"Snap Downs",equip:"Bodyweight",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Fast drop into an athletic stick position. Absorb and freeze. Teaches the landing mechanics before adding height."},
+            {id:"dB-stick",name:"Stick Landings (drop ~30cm, freeze 3s)",equip:"Box ~30cm",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Drop from a ~30cm box, land, absorb, and freeze for 3 seconds. Build the landing before you add the rebound."},
+            {id:"dB-depth",name:"Depth Jumps (~30cm box)",equip:"Box ~30cm",sets:4,reps:"4",weight:"Bodyweight",rest:"2 min",cue:"Step off (don't jump), land, instantly rebound up. Minimal ground contact. Progress box height, never reps."},
+            {id:"dB-broad",name:"Broad Jumps",equip:"Bodyweight",sets:4,reps:"3",weight:"Bodyweight",rest:"90s",cue:"Maximal horizontal distance. Big arm drive, land soft. Walk back between reps."},
+            {id:"dB-spanish",name:"Spanish Squat Iso",equip:"Band + plate",sets:4,reps:"1",hold:"40s",weight:"+20kg plate",rest:"60s",cue:"Band behind the knees, sit back against it, hold at ~90°. Patellar stiffness driver. Add load to progress."},
+            {id:"dB-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
           ]},
-        ]},
-      p2:{label:"Phase 2",weeks:"Weeks 5-8",name:"Heavy Slow",color:"#ff9f0a",
-        meta:"Every rep: 4 seconds down, 1 second pause, 3 seconds up. The tempo is the stimulus — rushing defeats the purpose.",
-        sessions:[
-          {label:"Session A",day:"Calf, Quad, Hamstring",exercises:[
-            {id:"t2a-sl-calf",name:"Single Leg Calf Raise",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",cue:"One leg only. Four seconds up, one second hold, three seconds down to full stretch. Full range. Use a rack for balance."},
-            {id:"t2a-sissy-squat",name:"Slow Sissy Squat",equip:"Light added weight",sets:3,reps:"8",tempo:"4-1-3",weight:"BW +5kg",rest:"2 min",cue:"Hold something for balance. Lean back — knees travel far forward. Four seconds to max stretch, one pause, three up. True sissy pattern."},
-            {id:"t2a-nordic",name:"Nordic Curl",equip:"Bodyweight",sets:3,reps:"6",tempo:"5s down",weight:"Bodyweight",rest:"2 min",cue:"Knees on padded surface, feet anchored. Lower as slowly as possible — five seconds or more. Catch with hands."},
-            {id:"t2a-sl-rdl",name:"Single Leg RDL",equip:"Dumbbell",sets:2,reps:"10",tempo:"3-1-3",weight:"50-55kg",rest:"90s",cue:"Balance on one leg, hinge at hip, weight in opposite hand. Three seconds down to deep hamstring stretch."},
-          ]},
-          {label:"Session B",day:"Calf + Wrist",exercises:[
-            {id:"t2b-sl-calf",name:"Single Leg Calf Raise B",equip:"Dumbbell",sets:4,reps:"8",tempo:"4-1-3",weight:"+30-35kg DB",rest:"2 min",cue:"Same as Session A. Emphasise extra time at the bottom stretch — pause a beat before driving up."},
-            {id:"t2b-weighted-wall",name:"Weighted Wall Sit",equip:"Weight plate",sets:3,reps:"6",hold:"30s",weight:"+10kg plate",rest:"2 min",cue:"Phase 1 wall sit with a plate resting across your thighs. Hold 90 degrees."},
-            {id:"t2b-slow-wrist",name:"Slow Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"7.5kg",rest:"60s",single:true,cue:"Forearm fully supported, palm up. Wrist only. Three seconds down, one second pause, three seconds up."},
-            {id:"t2b-slow-rev-wrist",name:"Slow Reverse Wrist Curl",equip:"Dumbbell",sets:3,reps:"10",tempo:"3-1-3",weight:"5kg",rest:"60s",single:true,cue:"Overhand grip. Same tempo. Wrist extensor tendon — critical for combat wrist stability."},
-          ]},
-        ]},
-      p3:{label:"Phase 3",weeks:"Weeks 9-12",name:"Plyometric",color:"#bf5af2",
-        meta:"Ground contact time matters more than height. Target under 150ms per contact. All bodyweight. Quick, quiet landings.",
-        sessions:[
-          {label:"Session A",day:"Vertical + Reactive",exercises:[
-            {id:"t3a-ankle-hops",name:"Ankle Hops",equip:"Bodyweight",sets:4,reps:"25",weight:"Bodyweight",rest:"90s",cue:"Minimal knee bend. Stiff ankles. Think the floor is hot — quick, quiet contacts. Balls of feet throughout."},
-            {id:"t3a-pogo",name:"Pogo Jumps",equip:"Bodyweight",sets:4,reps:"20",weight:"Bodyweight",rest:"90s",cue:"Slightly higher than ankle hops. Stiff through ankle and knee. Spring-like — no collapse on landing."},
-            {id:"t3a-depth-freeze",name:"Depth Drop to Freeze",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",cue:"Step off the box — don't jump. Land and hold for two seconds. Build the landing before adding the jump."},
-            {id:"t3a-depth-jump",name:"Depth Drop to Jump",equip:"Box 30-40cm",sets:3,reps:"6",weight:"Bodyweight",rest:"2 min",cue:"Step off, land, immediately explode up. Minimal ground contact. Stay stiff."},
-            {id:"t3a-broad-jump",name:"Broad Jump",equip:"Bodyweight",sets:4,reps:"6",weight:"Bodyweight",rest:"2 min",cue:"Maximal horizontal jump. Drive arms. Land softly. Walk back between reps."},
-          ]},
-          {label:"Session B",day:"Horizontal + Combat",exercises:[
-            {id:"t3b-sl-ankle",name:"Single Leg Ankle Hop",equip:"Bodyweight",sets:3,reps:"15 each",weight:"Bodyweight",rest:"90s",single:true,cue:"Progress from double-leg. If unstable, return to double first. Stiff ankle, quick contacts."},
-            {id:"t3b-lat-bound",name:"Lateral Bound",equip:"Bodyweight",sets:3,reps:"8 each",weight:"Bodyweight",rest:"90s",single:true,cue:"Push laterally off one leg, land on the other, immediately bound back. Reactive landing."},
-            {id:"t3b-cont-broad",name:"Continuous Broad Jump",equip:"Bodyweight",sets:3,reps:"5 in a row",weight:"Bodyweight",rest:"2 min",cue:"Land and immediately jump again — five consecutive jumps."},
-            {id:"t3b-med-ball",name:"Rotational Med Ball Slam",equip:"Med ball",sets:3,reps:"8",weight:"5-8kg ball",rest:"90s",cue:"Full hip rotation — drive from the hips, not the arms. Wrist snap at release."},
+          {label:"Day C",day:"Reactive / Unilateral + HSR",exercises:[
+            {id:"dC-warmup",name:"Warm-up: jog + dynamic",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",cue:"Easy jog and dynamic drills."},
+            {id:"dC-linehops",name:"Single-Leg Line Hops",equip:"Bodyweight",sets:3,reps:"10 / direction",weight:"Bodyweight",rest:"60s",single:true,cue:"Fast hops over a line, stiff ankle. 10 each direction. Quick ground contacts — think hot floor."},
+            {id:"dC-skater",name:"Lateral / Skater Bounds",equip:"Bodyweight",sets:3,reps:"8 (4/side)",weight:"Bodyweight",rest:"75s",cue:"Explosive push off one leg, land on the other, stick it. 4 per side. Reactive lateral power for combat."},
+            {id:"dC-slbounds",name:"Single-Leg Bounds",equip:"Bodyweight",sets:3,reps:"6 / leg",weight:"Bodyweight",rest:"90s",single:true,cue:"Max distance per bound, controlled landing. 6 per leg."},
+            {id:"dC-altbound",name:"Alternate-Leg Bounding (20m)",equip:"Bodyweight",sets:2,reps:"20m",weight:"Bodyweight",rest:"2 min",cue:"Explosive bounding over 20m, alternating legs. Walk back between reps."},
+            {id:"dC-hsr-calf",name:"Heavy-Slow Calf Raise (HSR — only HSR input)",equip:"Machine/DB",sets:4,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",cue:"Your ONLY HSR input — keep it genuinely heavy and strict. 3s down to stretch, 1s pause, 3s up. Drop tempo before you ever drop load."},
+            {id:"dC-splitsquat-iso",name:"Split Squat Iso (patellar, 2nd angle)",equip:"Load",sets:3,reps:"1",hold:"30s",weight:"+15kg",rest:"60s",single:true,cue:"Hold the bottom of a split squat, 30s per side. Loads the patellar tendon at a second joint angle. Add load to progress."},
+            {id:"dC-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
           ]},
         ]},
     };
@@ -1057,6 +1050,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       Upload:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
       Library:({size=14})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
       Clock:({size=12})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+      Minimize:({size=18})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
+      Play:({size=16})=><svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="6 4 20 12 6 20 6 4"/></svg>,
       Gear:({size=20})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
       Flame:({size=20})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3 2.5.5 5 2.5 5 6a4.5 4.5 0 1 1-9 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/><path d="M12 2c1 3 2.5 3.5 4 5 1.86 1.86 3 4.21 3 7a7 7 0 1 1-14 0c0-2 .5-3.5 1.5-5"/></svg>,
     };
@@ -1305,7 +1300,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     }
 
     // ── SessionPlayer ──────────────────────────────────────────────────────────
-    function SessionPlayer({routineName,routineColor,exercises,onFinish,onCancel,allWeights,allNotes}) {
+    function SessionPlayer({routineName,routineColor,exercises,onFinish,onCancel,allWeights,allNotes,minimized,onMinimize}) {
       const [exIdx,setExIdx]=useState(0);
       const [mode,setMode]=useState("work");
       const [sessionPRs,setSessionPRs]=useState([]);
@@ -1724,7 +1719,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       // ── Reorder Mode ──
       if (reorderMode) {
         return (
-          <div className="timer-overlay" style={accentVars(routineColor)}>
+          <div className="timer-overlay" style={{...accentVars(routineColor),...(minimized?{display:"none"}:{})}}>
             <div className="flex-between" style={{marginBottom:"16px"}}>
               <h2 className="font-bold" style={{fontSize:"20px"}}>Reorder Exercises</h2>
               <button className="button-secondary" style={{width:"auto",padding:"8px 16px"}} onClick={() => setReorderMode(false)}>Done</button>
@@ -1760,7 +1755,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const volDelta = (lastSession && lastSession.volume>0 && totalVolume>0) ? Math.round((totalVolume/lastSession.volume-1)*100) : null;
         const fmtDelta = d => d===null?null : d>0?`up ${d}%`:d<0?`down ${Math.abs(d)}%`:"same";
         return (
-          <div className="timer-overlay" style={{...accentVars(routineColor),justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px"}}>
+          <div className="timer-overlay" style={{...accentVars(routineColor),justifyContent:"center",alignItems:"center",textAlign:"center",padding:"40px 24px",...(minimized?{display:"none"}:{})}}>
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",maxWidth:"400px",width:"100%"}}>
               {sessionPRs.length>0 && <Confetti/>}
               <div style={{width:"72px",height:"72px",borderRadius:"50%",background:"var(--accent-muted)",border:"1.5px solid var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent)",marginBottom:"20px"}}><Icons.Trophy size={34}/></div>
@@ -1820,7 +1815,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
       // ── Active Workout ──
       return (
-        <div className="timer-overlay" style={accentVars(routineColor)}>
+        <div className="timer-overlay" style={{...accentVars(routineColor),...(minimized?{display:"none"}:{})}}>
           <div className="flex-between" style={{width:"100%",marginBottom:"10px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
               <div>
@@ -1829,6 +1824,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               </div>
             </div>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
+              <button onClick={onMinimize} title="Minimise — keep session running" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Minimize/></button>
               {historyStack.length>0&&<button onClick={goBack} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 12px",fontSize:"13px",fontWeight:"800"}}>← Back</button>}
               {!(activeEx.hold||activeEx.totalSec)&&<button onClick={()=>setPlateCalc(true)} title="Plate calculator" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Plate/></button>}
               <button onClick={()=>setSwapOpen(true)} title="Swap exercise" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Swap/></button>
@@ -2148,10 +2144,10 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           <div className="card" style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderColor:accent,borderWidth:"1.5px"}}>
             <div>
               <p className="font-bold" style={{fontSize:"16px"}}><Editable value={fbName} onSave={saveFbName}/></p>
-              <p className="text-small">{workoutSections.reduce((a,s)=>a+s.exercises.length,0)} exercises — all sections</p>
+              <p className="text-small">{(workoutSections.find(s=>s.section==="Full Body")||{exercises:[]}).exercises.length} exercises — edit in the Full Body section below</p>
             </div>
             <button className="button-primary" style={{width:"auto",padding:"10px 20px",fontSize:"14px",background:accent,borderColor:accent}}
-              onClick={()=>setActiveRoutine({name:`${fbName} Workout`,color:tileColor,exercises:workoutSections.flatMap(s=>s.exercises.map(e=>withSides({...e,section:s.section,weight:weights[e.id||e.name]||e.weight||""})))})}>
+              onClick={()=>{const fb=workoutSections.find(s=>s.section==="Full Body");const list=fb?fb.exercises:workoutSections.flatMap(s=>s.exercises);setActiveRoutine({name:`${fbName} Workout`,color:tileColor,exercises:list.map(e=>withSides({...e,weight:weights[e.id||e.name]||e.weight||""}))});}}>
               Start
             </button>
           </div>
@@ -2254,18 +2250,23 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // ── TendonsTab ─────────────────────────────────────────────────────────────
     function TendonsTab({weights,saveWeight,counts,setActiveRoutine,theme,reloadLogs,notes,saveNote,tileColor}) {
-      const [selectedPhase,setSelectedPhase]=useState("p1");
+      const [selectedPhase,setSelectedPhase]=useState("explosive");
       const [editMode,setEditMode]=useState(false);
       const [checked,setChecked]=useState({});
       const [historyModal,setHistoryModal]=useState(null);
-      const [tendonData,setTendonData]=useState(()=>store.get("tendon_custom",TENDON));
+      const [tendonData,setTendonData]=useState(()=>{
+        // v2 plan: new key so existing users get the Explosive plan, not the old phases.
+        const saved=store.get("tendon_custom_v2",null);
+        if(saved&&saved.explosive)return saved;
+        return TENDON;
+      });
       const pd=tendonData[selectedPhase];
       const pdColor=tileColor||getThemeColor(pd.color,theme);
       const [libFor,setLibFor]=useState(null);
       const [libPicked,setLibPicked]=useState({});
       const [libQuery,setLibQuery]=useState("");
       const closeLib=()=>{setLibFor(null);setLibPicked({});setLibQuery("");};
-      const saveTendon=u=>{setTendonData(u);store.set("tendon_custom",u);};
+      const saveTendon=u=>{setTendonData(u);store.set("tendon_custom_v2",u);};
       const updatePhaseField=(field,value)=>saveTendon({...tendonData,[selectedPhase]:{...pd,[field]:value}});
       const updateSession=(sessLabel,patch)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,...patch}:s)}});
       const updateEx=(sessLabel,idx,patch)=>saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===sessLabel?{...s,exercises:s.exercises.map((e,i)=>i===idx?{...e,...patch}:e)}:s)}});
@@ -2315,12 +2316,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               <button className="button-secondary" style={{marginTop:"10px"}} onClick={closeLib}>Cancel</button>
             </TapModal>
           )}
-          <div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
+          {Object.keys(tendonData).length>1&&<div className="card" style={{padding:"8px",display:"flex",gap:"6px",marginBottom:"14px"}}>
             {Object.keys(tendonData).map(k=>{
               const btnColor=tileColor||getThemeColor(tendonData[k].color,theme);
               return <button key={k} onClick={()=>setSelectedPhase(k)} style={{flex:1,padding:"10px",borderRadius:"10px",background:selectedPhase===k?btnColor:"transparent",color:selectedPhase===k?"var(--btn-text)":"var(--text-secondary)",fontWeight:"700",fontSize:"13px"}}>{tendonData[k].label}</button>;
             })}
-          </div>
+          </div>}
           <div className="card">
             <div className="flex-between">
               <div style={{flex:1}}>
@@ -3080,12 +3081,27 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         return TILE_DEFAULT_COLOR[id]||null;
       };
       const tileLabelFor=(id,fallback)=>(tileMeta[id]||{}).label||fallback;
-      const [workouts,setWorkouts]=useState(()=>store.get("workout_sections_custom",FB_SECTIONS));
+      const [workouts,setWorkouts]=useState(()=>{
+        const saved=store.get("workout_sections_custom",null);
+        if(!saved)return FB_SECTIONS;
+        // One-time migration: ensure a real, editable "Full Body" section exists.
+        const hasFB=saved.some(s=>s.section==="Full Body");
+        if(!hasFB){
+          const fb=FB_SECTIONS.find(s=>s.section==="Full Body");
+          const merged=[fb,...saved];
+          store.set("workout_sections_custom",merged);
+          return merged;
+        }
+        return saved;
+      });
       const saveReps=(k,v)=>{const u={...customReps,[k]:v};setCustomReps(u);store.set("workout_reps",u);};
       const saveNote=(k,v)=>{const u={...notes,[k]:v};if(!v)delete u[k];setNotes(u);store.set("workout_notes",u);};
       const [logs,setLogs]=useState(()=>store.get("workout_logs",[]));
       const [counts,setCounts]=useState(()=>store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));
       const [activeRoutine,setActiveRoutine]=useState(null);
+      const [sessionMinimized,setSessionMinimized]=useState(false);
+      // Any time a new routine starts, ensure the player is expanded.
+      const startRoutine=r=>{setSessionMinimized(false);setActiveRoutine(r);};
       const [modalContent,setModalContent]=useState(null);
       const [importModal,setImportModal]=useState(false);
       const [importJson,setImportJson]=useState('');
@@ -3239,12 +3255,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                       <p className="text-small" style={{marginTop:"2px"}}>{suggestion&&suggestion.last?`Last done ${suggestion.last}`:"Not trained yet — good day to start"}</p>
                     </div>
                     <button className="button-primary" style={{width:"auto",padding:"11px 22px",fontSize:"15px"}} onClick={()=>{
-                      if(canDirectStart)setActiveRoutine({name:lr.name,color:lr.color,exercises:lr.exercises});
+                      if(canDirectStart)startRoutine({name:lr.name,color:lr.color,exercises:lr.exercises});
                       else if(suggestion)suggestion.go();
                     }}>{canDirectStart?"Start":"Open"}</button>
                   </div>
                   {lr&&lr.exercises&&lr.exercises.length&&!canDirectStart?(
-                    <button className="button-secondary" style={{marginTop:"12px",padding:"9px",fontSize:"13px"}} onClick={()=>setActiveRoutine({name:lr.name,color:lr.color,exercises:lr.exercises})}>Repeat last: {lr.name}</button>
+                    <button className="button-secondary" style={{marginTop:"12px",padding:"9px",fontSize:"13px"}} onClick={()=>startRoutine({name:lr.name,color:lr.color,exercises:lr.exercises})}>Repeat last: {lr.name}</button>
                   ):null}
                 </div>
               )}
@@ -3401,19 +3417,36 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
           {activeRoutine&&(
             <SessionPlayer routineName={activeRoutine.name} routineColor={activeRoutine.color} exercises={activeRoutine.exercises}
-              onFinish={()=>{setActiveRoutine(null);reloadLogs();}}
-              onCancel={()=>setActiveRoutine(null)}
+              minimized={sessionMinimized}
+              onMinimize={()=>setSessionMinimized(true)}
+              onFinish={()=>{setActiveRoutine(null);setSessionMinimized(false);reloadLogs();}}
+              onCancel={()=>{setActiveRoutine(null);setSessionMinimized(false);}}
               allWeights={weights}
               allNotes={notes}/>
+          )}
+          {activeRoutine&&sessionMinimized&&(
+            <button onClick={()=>setSessionMinimized(false)}
+              style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:"calc(80px + env(safe-area-inset-bottom))",width:"calc(100% - 32px)",maxWidth:"448px",zIndex:95,
+                background:activeRoutine.color&&!String(activeRoutine.color).startsWith("var(")?activeRoutine.color:"var(--accent)",color:"var(--btn-text)",
+                borderRadius:"14px",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",boxShadow:"0 6px 20px rgba(0,0,0,0.35)"}}>
+              <span style={{display:"flex",alignItems:"center",gap:"10px",minWidth:0}}>
+                <span style={{display:"flex",width:"26px",height:"26px",borderRadius:"50%",background:"rgba(255,255,255,0.25)",alignItems:"center",justifyContent:"center",flexShrink:0}}><Icons.Play size={13}/></span>
+                <span style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0}}>
+                  <span style={{fontWeight:"800",fontSize:"14px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"200px"}}>{activeRoutine.name}</span>
+                  <span style={{fontSize:"11px",opacity:0.85,fontWeight:"600"}}>Session in progress — tap to resume</span>
+                </span>
+              </span>
+              <span style={{fontWeight:"800",fontSize:"13px",flexShrink:0}}>Resume</span>
+            </button>
           )}
 
           <div className="container">
             {activeTab==="home"&&renderHome()}
-            {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} customReps={customReps} saveReps={saveReps} counts={counts} setActiveRoutine={setActiveRoutine} setModalContent={setModalContent} reloadLogs={reloadLogs} theme={theme} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor("workouts")}/>}
-            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor("tendons")}/>}
-            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={setActiveRoutine} theme={theme} reloadLogs={reloadLogs} tileColor={tileDisplayColor("stretches")}/>}
+            {activeTab==="workouts"&&<WorkoutsTab workouts={workouts} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} customReps={customReps} saveReps={saveReps} counts={counts} setActiveRoutine={startRoutine} setModalContent={setModalContent} reloadLogs={reloadLogs} theme={theme} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor("workouts")}/>}
+            {activeTab==="tendons"&&<TendonsTab weights={weights} saveWeight={saveWeight} counts={counts} setActiveRoutine={startRoutine} theme={theme} reloadLogs={reloadLogs} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor("tendons")}/>}
+            {activeTab==="stretches"&&<StretchesTab counts={counts} setActiveRoutine={startRoutine} theme={theme} reloadLogs={reloadLogs} tileColor={tileDisplayColor("stretches")}/>}
             {activeTab==="progression"&&<ProgressionTab reloadLogs={reloadLogs}/>}
-            {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={setActiveRoutine} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor(activeCustomSplit.id||activeCustomSplit.section)} allSections={workouts}/>}
+            {activeCustomSplit&&<CustomSplitTab split={activeCustomSplit} setWorkouts={setWorkouts} weights={weights} saveWeight={saveWeight} setActiveRoutine={startRoutine} notes={notes} saveNote={saveNote} tileColor={tileDisplayColor(activeCustomSplit.id||activeCustomSplit.section)} allSections={workouts}/>}
           </div>
 
           {renderModal()}
