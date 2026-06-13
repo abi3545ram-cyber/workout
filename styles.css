@@ -140,3 +140,4 @@
     .splash-mark{width:76px;height:76px;border-radius:24px;background:rgba(255,215,0,0.08);border:1.5px solid rgba(255,215,0,0.45);display:flex;align-items:center;justify-content:center;animation:splashPulse 1.6s ease-in-out infinite}
     .splash-name{color:#9a9a9e;font-size:12px;font-weight:800;letter-spacing:0.22em;font-family:'Inter',-apple-system,sans-serif}
     @keyframes splashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:0.85}}
+    @keyframes confettiFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
