@@ -432,16 +432,19 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       if (!active[type]) return;
       playTone(type);
     };
-    // Best-effort local notification when rest ends with the screen away
-    const notifyRestEnd = () => {
+    // Best-effort alert when any timer ends (rest OR a hold). Vibration fires even
+    // in-app; the OS notification only shows when the app is backgrounded (an OS limit).
+    const notifyTimerEnd = (title, body) => {
       try {
         if (!store.get('notify_rest_enabled', false)) return;
+        try { navigator.vibrate?.([70,40,70]); } catch {}
         if (document.visibilityState === 'visible') return;
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const t = title || 'Timer done', b = body || 'Time for your next set';
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.ready.then(reg=>reg.showNotification('Rest over',{body:'Time for your next set',tag:'rest-end'})).catch(()=>{});
+          navigator.serviceWorker.ready.then(reg=>reg.showNotification(t,{body:b,tag:'timer-end',renotify:true})).catch(()=>{ try{ new Notification(t,{body:b}); }catch{} });
         } else {
-          new Notification('Rest over',{body:'Time for your next set'});
+          try { new Notification(t,{body:b}); } catch {}
         }
       } catch {}
     };
@@ -463,7 +466,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       };
       return (
         <div className="flex-between" style={{marginTop:"14px",alignItems:"center"}}>
-          <span className="text-small" style={{display:"flex",alignItems:"center",gap:"7px"}}><Icons.Bell/> Notify when rest ends</span>
+          <span className="text-small" style={{display:"flex",alignItems:"center",gap:"7px"}}><Icons.Bell/> Notify when a timer ends</span>
           <button onClick={flip} role="switch" aria-checked={on} style={{width:"48px",height:"28px",borderRadius:"999px",flexShrink:0,position:"relative",
             background:on?"var(--accent)":"var(--input-bg)",border:`1.5px solid ${on?"var(--accent)":"var(--card-border)"}`,transition:"background 0.2s"}}>
             <span style={{position:"absolute",top:"2px",left:on?"22px":"2px",width:"20px",height:"20px",borderRadius:"50%",
@@ -949,6 +952,96 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         ["Jump Rope","Bodyweight","Wrists spin the rope, stay tall, small bounces"]]},
     ];
 
+    // Tendon-specific library (isometrics, HSR, reactive/plyo, sprint). Used by tendon splits.
+    const TENDON_DB = [
+      {group:"Achilles / Calf",items:[
+        {name:"Single-Leg Calf Raise Iso (Straight Knee)",equip:"Single leg + load",sets:4,hold:"35s",weight:"+40kg",rest:"60s",single:true,cue:"Straight knee biases the gastrocnemius. Hold still under load. Primary Achilles stiffness driver \u2014 progress by load."},
+        {name:"Single-Leg Soleus Iso (Bent Knee)",equip:"Single leg + load",sets:3,hold:"30s",weight:"+30kg",rest:"60s",single:true,cue:"Knee bent ~20-30 deg shifts load to the soleus. Loads the deeper Achilles the straight-knee hold misses."},
+        {name:"Calf Hold at Bottom Stretch",equip:"Single leg + load",sets:2,hold:"30s",weight:"+20kg",rest:"60s",single:true,cue:"Deep dorsiflexed stretch position, hold under load. Builds tendon compliance at length."},
+        {name:"Heavy-Slow Calf Raise (Standing)",equip:"Machine/DB",sets:4,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",cue:"Gastrocnemius HSR. 3s down to stretch, 1s pause, 3s up at a true 6-8RM."},
+        {name:"Heavy-Slow Calf Raise (Seated / Soleus)",equip:"Machine",sets:4,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",cue:"Bent knee = soleus HSR. The non-redundant second calf movement if you want one."},
+        {name:"Tibialis Raise",equip:"Bodyweight/band",sets:3,reps:"15-20",rest:"60s",cue:"Heels down, lift the toes against resistance. Balances the ankle and protects the shin."},
+      ]},
+      {group:"Patellar / Quad",items:[
+        {name:"Spanish Squat Iso",equip:"Band + plate",sets:4,hold:"40s",weight:"+20kg",rest:"60s",cue:"Band behind the knees, sit back against it, hold at ~90 deg. Patellar stiffness driver."},
+        {name:"Split Squat Iso",equip:"Load",sets:3,hold:"30s",weight:"+15kg",rest:"60s",single:true,cue:"Hold the bottom of a split squat. Loads the patellar tendon at a second joint angle."},
+        {name:"Wall Sit Iso",equip:"Load",sets:3,hold:"45s",weight:"+20kg",rest:"60s",cue:"Back flat on wall, thighs parallel, plate on the lap. Keep it loaded, not bodyweight."},
+        {name:"Leg Extension HSR",equip:"Machine",sets:3,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",cue:"Patellar HSR. 3s down, 1s pause, 3s up at a true 6-8RM."},
+        {name:"Slow Heavy Squat",equip:"Barbell/Machine",sets:3,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",cue:"Controlled tempo squat for patellar and quad tendon load."},
+        {name:"Single-Leg Decline Squat",equip:"Decline board",sets:3,reps:"8-10",tempo:"3-1-3",rest:"90s",single:true,cue:"Heel raised on a decline, slow descent. The classic patellar tendon loader."},
+      ]},
+      {group:"Hamstring",items:[
+        {name:"Nordic Curl",equip:"Bodyweight",sets:4,reps:"4-6",tempo:"5s lower",rest:"90s",cue:"Slow controlled lower, fight gravity the whole way. Hamstring tendon eccentric strength."},
+        {name:"Single-Leg RDL",equip:"DB/Barbell",sets:3,reps:"6-8",tempo:"3-1-3",rest:"90s",single:true,cue:"Hips square, hinge to a deep hamstring stretch, control the return."},
+        {name:"Slider / Razor Curl",equip:"Bodyweight",sets:3,reps:"8-10",rest:"75s",cue:"Hips up, curl the heels in under control. Hamstring at short length."},
+        {name:"Hamstring Bridge Iso Hold",equip:"Bodyweight",sets:3,hold:"30s",rest:"60s",single:true,cue:"Single-leg bridge, heel dug in, hold. Isometric hamstring tendon load."},
+      ]},
+      {group:"Wrist / Forearm",items:[
+        {name:"Wrist Iso Holds (neutral / flex / ext)",equip:"Light band",sets:2,hold:"15s",rest:"45s",cue:"Hold each of the three positions. Light band, builds tolerance for handstand loading."},
+        {name:"Slow Wrist Curl",equip:"DB/band",sets:3,reps:"8",tempo:"3-1-3",weight:"8-10kg",rest:"60s",cue:"Forearm supported, wrist only, slow and full range."},
+        {name:"Slow Reverse Wrist Curl",equip:"DB/band",sets:3,reps:"8",tempo:"3-1-3",weight:"5-6kg",rest:"60s",cue:"Overhand, lift the back of the hand, slow eccentric."},
+      ]},
+      {group:"Reactive / Plyo",items:[
+        {name:"Depth Jumps",equip:"Box ~30cm",sets:4,reps:"4",rest:"2 min",cue:"Step off, land, instantly rebound up. Minimal ground contact. Progress box height, never reps."},
+        {name:"Broad Jumps",equip:"Bodyweight",sets:4,reps:"3",rest:"90s",cue:"Maximal horizontal distance, big arm drive, land soft."},
+        {name:"Snap Downs",equip:"Bodyweight",sets:3,reps:"5",rest:"60s",cue:"Fast drop into an athletic stick. Absorb and freeze \u2014 teaches landing mechanics."},
+        {name:"Stick Landings",equip:"Box ~30cm",sets:3,reps:"5",rest:"60s",cue:"Drop from a box, land, absorb, freeze 3s. Build the landing before the rebound."},
+        {name:"Pogo Jumps",equip:"Bodyweight",sets:3,reps:"15",rest:"60s",cue:"Stiff ankles, fast bounces off the floor, minimal knee bend."},
+        {name:"Ankle Hops",equip:"Bodyweight",sets:3,reps:"20",rest:"60s",cue:"Small fast hops, calves and ankles do the work."},
+        {name:"Single-Leg Line Hops",equip:"Bodyweight",sets:3,reps:"10 / direction",rest:"60s",single:true,cue:"Fast hops over a line, stiff ankle. Think hot floor."},
+        {name:"Lateral / Skater Bounds",equip:"Bodyweight",sets:3,reps:"8 (4/side)",rest:"75s",cue:"Explosive push off one leg, land and stick on the other. Lateral power for combat."},
+        {name:"Single-Leg Bounds",equip:"Bodyweight",sets:3,reps:"6 / leg",rest:"90s",single:true,cue:"Max distance per bound, controlled landing."},
+        {name:"Alternate-Leg Bounding",equip:"Bodyweight",sets:2,reps:"20m",rest:"2 min",cue:"Explosive bounding over 20m, alternating legs."},
+        {name:"Box Jumps",equip:"Box",sets:4,reps:"5",rest:"90s",cue:"Full hip extension in the air, land soft and quiet."},
+      ]},
+      {group:"Sprint / Speed",items:[
+        {name:"Accelerations (20m)",equip:"Sprint",sets:6,reps:"20m",weight:"~95%",rest:"2 min",cue:"~95% over 20m, walk back to recover. Set ends the moment speed drops."},
+        {name:"Flying Sprints",equip:"Sprint",sets:4,reps:"20m",weight:"max",rest:"3 min",cue:"15m run-in then 20m at max velocity. Quality, not conditioning."},
+        {name:"Resisted / Hill Sprints",equip:"Sled/hill",sets:5,reps:"20m",rest:"3 min",cue:"Light sled (~10-15% bodyweight) or a hill. Drives acceleration power."},
+        {name:"Build-Up Runs",equip:"Sprint",sets:3,reps:"30m",rest:"90s",cue:"Accelerate 60 to 95% across the run, then ease off. Warm-up ramp."},
+      ]},
+    ];
+
+    // Stretch / mobility library. Used by stretching splits.
+    const STRETCH_DB = [
+      {group:"Hips & Glutes",items:[
+        {name:"World's Greatest Stretch",equip:"Stretch",totalSec:120,sideLabels:["right side","left side"],muscles:["Hip flexors","T-spine"],cue:"Deep lunge, hand inside the front foot, rotate the top arm to the ceiling. Drive the rear hip down each exhale."},
+        {name:"Low Lunge \u2014 Quad / Hip Flexor",equip:"Stretch",totalSec:120,sideLabels:["right side","left side"],muscles:["Quads","Hip flexors"],cue:"Back knee down, grab the rear ankle to the glute, hips square. Front of the rear thigh."},
+        {name:"Pigeon Pose",equip:"Stretch",totalSec:90,sideLabels:["right side","left side"],muscles:["Glutes","Piriformis"],cue:"Front shin across, hips square, fold forward over the front leg."},
+        {name:"Figure-4 / 90-90",equip:"Stretch",totalSec:90,sideLabels:["right side","left side"],muscles:["Glutes","Hip rotators"],cue:"Cross ankle over thigh and draw in, or sit 90-90 and lean over the front shin."},
+        {name:"Couch Stretch",equip:"Stretch",totalSec:90,sideLabels:["right side","left side"],muscles:["Hip flexors","Quads"],cue:"Rear shin up a wall, square the hips, tuck the pelvis. Strong hip-flexor stretch."},
+        {name:"Butterfly Stretch",equip:"Stretch",totalSec:90,sideLabels:[],muscles:["Adductors","Groin"],cue:"Soles together, sit tall, gently press the knees down with the elbows."},
+        {name:"Frog Stretch",equip:"Stretch",totalSec:90,sideLabels:[],muscles:["Adductors","Groin"],cue:"Knees wide on the floor, shins out, rock the hips back slowly."},
+        {name:"Straddle / Pancake",equip:"Stretch",totalSec:120,sideLabels:[],muscles:["Adductors","Hamstrings"],cue:"Legs wide, hinge from the hips with a long spine, walk the hands forward."},
+      ]},
+      {group:"Hamstrings & Posterior",items:[
+        {name:"Seated Forward Fold",equip:"Stretch",totalSec:90,sideLabels:[],muscles:["Hamstrings","Low back"],cue:"Legs straight, hinge from the hips not the mid-back. Long spine first, depth second."},
+        {name:"Standing Hamstring Stretch",equip:"Stretch",totalSec:60,sideLabels:["right side","left side"],muscles:["Hamstrings"],cue:"Heel forward, hinge over the straight leg, keep the back flat."},
+        {name:"Downward Dog",equip:"Stretch",totalSec:60,sideLabels:[],muscles:["Hamstrings","Calves","Shoulders"],cue:"Hips up and back, heels reaching for the floor, long spine."},
+        {name:"Jefferson Curl (loaded)",equip:"Light load",totalSec:60,sideLabels:[],muscles:["Posterior chain"],cue:"Slow segmental roll-down with a light weight. Advanced \u2014 load the spine and hams gently."},
+      ]},
+      {group:"Back & Spine",items:[
+        {name:"Cat-Cow",equip:"Stretch",totalSec:60,sideLabels:[],muscles:["Spine"],cue:"On all-fours, arch down then round up, slow rhythmic cycles. Keep moving."},
+        {name:"Cobra / Upward Dog Waves",equip:"Stretch",totalSec:60,sideLabels:[],muscles:["Spine","Abs"],cue:"Face down, press slowly into extension, hold, lower, repeat. Never crank."},
+        {name:"Child's Pose",equip:"Stretch",totalSec:60,sideLabels:[],muscles:["Lats","Low back"],cue:"Hips to heels, arms long, breathe into the back."},
+        {name:"Seated Spinal Twist",equip:"Stretch",totalSec:60,sideLabels:["right side","left side"],muscles:["Spine","Glutes"],cue:"Sit tall, rotate from the mid-back, use the arm as a lever not a crank."},
+        {name:"Thread the Needle",equip:"Stretch",totalSec:120,sideLabels:["right arm under","left arm under"],muscles:["T-spine","Posterior shoulder"],cue:"On all-fours, slide one arm under, shoulder and cheek to the ground, hips level."},
+      ]},
+      {group:"Shoulders & Upper",items:[
+        {name:"Overhead Lat Stretch",equip:"Stretch",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Lats"],cue:"Hand behind the head, push the elbow back and across, lean away. Ribs down."},
+        {name:"Cross-Body Shoulder",equip:"Stretch",totalSec:90,sideLabels:["right arm","left arm"],muscles:["Rear delt","Rhomboids"],cue:"Arm across the body, draw it in with the opposite arm, shoulder pressed down."},
+        {name:"Band Shoulder Dislocates",equip:"Band",totalSec:60,sideLabels:[],muscles:["Shoulders"],cue:"Wide grip on a band, pass it overhead and behind, slow. Opens the shoulders."},
+        {name:"Doorway Pec Stretch",equip:"Stretch",totalSec:60,sideLabels:["right side","left side"],muscles:["Chest"],cue:"Forearm on the frame, step through, rotate away from the arm."},
+        {name:"Neck Release",equip:"Stretch",totalSec:90,sideLabels:["right side","left side"],muscles:["Neck","Upper traps"],cue:"Tilt ear to shoulder, very light hand assist, never crank."},
+      ]},
+      {group:"Ankles & Wrists",items:[
+        {name:"Knee-to-Wall Ankle",equip:"Stretch",totalSec:90,sideLabels:["right side","left side"],muscles:["Ankle dorsiflexion","Achilles"],cue:"Foot a few inches from the wall, drive the knee over the toes, heel flat."},
+        {name:"Calf / Soleus Wall Stretch",equip:"Stretch",totalSec:60,sideLabels:["right side","left side"],muscles:["Calves","Achilles"],cue:"Straight back leg for gastroc, bent for soleus. Heel down."},
+        {name:"Wrist & Forearm",equip:"Stretch",totalSec:90,sideLabels:["right side","left side"],muscles:["Wrist flexors","Extensors"],cue:"Arm out, palm up then palm down, gently pull the fingers back each way."},
+        {name:"Wrist Extension on Floor",equip:"Stretch",totalSec:60,sideLabels:[],muscles:["Wrist flexors"],cue:"On all-fours, palms down fingers back, rock gently. Handstand prep."},
+      ]},
+    ];
+
     // Map any exercise name to a body part (library lookup first, then keywords)
     function Confetti() {
       const pieces = useMemo(()=>Array.from({length:80},(_,i)=>({
@@ -981,7 +1074,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       return "Other";
     };
     // Searchable picker: body-part tabs across the top (Tracked-style), cue under each name
-    function ExercisePickList({sections,picked,setPicked,query,setQuery,single}) {
+    function ExercisePickList({sections,picked,setPicked,query,setQuery,single,db,allowCreate=true}) {
+      const LIB = db || EXERCISE_DB;
       const [tab,setTab]=useState("All");
       const [custom,setCustom]=useState(()=>getCustomExercises());
       const [creating,setCreating]=useState(false);
@@ -990,11 +1084,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [newGroup,setNewGroup]=useState("Legs");
       const [newCue,setNewCue]=useState("");
       const hasYours=!!(sections&&sections.length);
-      const hasCustom=custom.length>0;
-      const tabs=["All",...(hasYours?["★ Yours"]:[]),...(hasCustom?["★ Custom"]:[]),...EXERCISE_DB.map(g=>g.group)];
+      const hasCustom=custom.length>0 && !db;
+      const tabs=["All",...(hasYours?["★ Yours"]:[]),...(hasCustom?["★ Custom"]:[]),...LIB.map(g=>g.group)];
       const yourGroups=hasYours?sections.map(s=>({group:`★ ${s.section}`,yours:true,items:s.exercises.map(e=>({key:`y-${e.id||e.name}`,name:e.name,equip:e.equip||"",cue:e.cue||"",src:e}))})):[];
       const customGroup=hasCustom?[{group:"★ Custom",custom:true,items:custom.map(e=>({key:`c-${e.name}`,name:e.name,equip:e.equip||"",cue:e.cue||"",muscle:e.muscle||"Other"}))}]:[];
-      const libGroups=EXERCISE_DB.map(g=>({group:g.group,items:g.items.map(([n,eq,cue])=>({key:`l-${g.group}-${n}`,name:n,equip:eq,cue:cue||"",muscle:g.group}))}));
+      const libGroups=LIB.map(g=>({group:g.group,items:g.items.map(it=>{const o=Array.isArray(it)?{name:it[0],equip:it[1],cue:it[2]||""}:it;return {key:`l-${g.group}-${o.name}`,name:o.name,equip:o.equip||"",cue:o.cue||"",muscle:g.group,meta:o};})}));
       const q=(query||"").trim().toLowerCase();
       let groups=[...yourGroups,...customGroup,...libGroups];
       if(!q){
@@ -1018,7 +1112,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 color:tab===t&&!q?"var(--accent)":"var(--text-secondary)"}}>{t}</button>
             ))}
           </div>
-          {!creating ? (
+          {allowCreate && (!creating ? (
             <button className="button-secondary" style={{marginBottom:"8px",padding:"9px",fontSize:"13px"}} onClick={()=>setCreating(true)}>+ Create new exercise</button>
           ) : (
             <div className="card" style={{marginBottom:"8px",padding:"12px"}}>
@@ -1040,7 +1134,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 <button className="button-secondary" style={{padding:"10px",fontSize:"14px"}} onClick={()=>{setCreating(false);setNewName("");setNewCue("");}}>Cancel</button>
               </div>
             </div>
-          )}
+          ))}
           <div style={{maxHeight:"36vh",overflowY:"auto",border:"1px solid var(--card-border)",borderRadius:"12px",padding:"6px 10px"}}>
             {groups.length===0&&<p className="text-small" style={{padding:"14px",textAlign:"center"}}>No matches</p>}
             {groups.map(g=>(
@@ -1064,9 +1158,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         </div>
       );
     }
-    const pickedToExercises = picked => Object.values(picked).map(it =>
-      it.src ? {...it.src, id: uid()} : {id:uid(),name:it.name,equip:it.equip,sets:1,reps:"5-8",hold:"",rest:"90s",weight:"",cue:it.cue||""}
-    );
+    const pickedToExercises = (picked, kind) => Object.values(picked).map(it => {
+      if (it.src) return {...it.src, id: uid()};
+      const m = it.meta || {};
+      if (kind === 'stretch') return {id:uid(),name:it.name,equip:it.equip||"Stretch",sets:1,reps:"",hold:`${m.totalSec||45}s`,totalSec:m.totalSec||45,rest:"15s",weight:"",sideLabels:m.sideLabels||[],muscles:m.muscles||[],cue:m.cue||it.cue||""};
+      if (kind === 'tendon') return {id:uid(),name:it.name,equip:it.equip||"Tendon",sets:m.sets||3,reps:m.reps||"",hold:m.hold||"30s",tempo:m.tempo||"",rest:m.rest||"90s",weight:m.weight||"",single:!!m.single,cue:m.cue||it.cue||""};
+      return {id:uid(),name:it.name,equip:it.equip,sets:m.sets||1,reps:m.reps||"5-8",hold:"",rest:m.rest||"90s",weight:"",cue:it.cue||""};
+    });
 
     // Tracked-style plate calculator + warm-up ramp
     function PlateCalcModal({initialWeight,onClose}) {
@@ -1438,10 +1536,10 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [swapOpen,setSwapOpen]=useState(false);
       const [swapPicked,setSwapPicked]=useState({});
       const [swapQuery,setSwapQuery]=useState("");
-      // Live workout duration in the header
-      const [elapsedMin,setElapsedMin]=useState(0);
+      // Live workout duration in the header (minutes:seconds)
+      const [elapsedSec,setElapsedSec]=useState(0);
       useEffect(()=>{
-        const t=setInterval(()=>setElapsedMin(Math.floor((Date.now()-startTimeRef.current)/60000)),15000);
+        const t=setInterval(()=>setElapsedSec(Math.floor((Date.now()-startTimeRef.current)/1000)),1000);
         return ()=>clearInterval(t);
       },[]);
       // Last set of the last exercise → no point resting afterwards (chain-aware)
@@ -1556,6 +1654,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             setMode("split_transition");
           } else {
             triggerSoundChecked('chime');
+            notifyTimerEnd('Hold done', activeEx && activeEx.name ? activeEx.name + ' — next up' : 'Next set');
             // Auto-log timed exercises
             if((activeEx.hold||activeEx.totalSec)&&!currentLog.logged){
               logSet(currentSetIdx);
@@ -1570,7 +1669,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           }
         } else if(m==="rest"){
           triggerSoundChecked('rest-chime');
-          notifyRestEnd();
+          notifyTimerEnd('Rest over','Time for your next set');
           setPendingAutoStart("work");
           advanceSet();
         } else if(m==="split_transition"){
@@ -1917,7 +2016,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
               <div>
                 <span className="badge" style={{marginLeft:"0"}}>{routineName}</span>
-                <p className="text-small" style={{marginTop:"4px"}}>Ex {exIdx+1}/{orderedExercises.length} — Set {currentSetIdx+1}/{maxSets} — {loggedSets}/{totalSets} logged — {elapsedMin} min{chainEnd(exIdx)>chainStart(exIdx)?" — superset":""}</p>
+                <p className="text-small" style={{marginTop:"4px"}}>Ex {exIdx+1}/{orderedExercises.length} — Set {currentSetIdx+1}/{maxSets} — {loggedSets}/{totalSets} logged — {fmtTime(elapsedSec)}{chainEnd(exIdx)>chainStart(exIdx)?" — superset":""}</p>
               </div>
             </div>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
@@ -2404,9 +2503,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             <TapModal isOpen onClose={closeLib}>
               <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Add to {libFor}</h2>
               <p className="text-small" style={{marginBottom:"12px"}}>Picked exercises convert to timed holds — adjust in edit mode.</p>
-              <ExercisePickList picked={libPicked} setPicked={setLibPicked} query={libQuery} setQuery={setLibQuery}/>
+              <ExercisePickList db={TENDON_DB} allowCreate={false} picked={libPicked} setPicked={setLibPicked} query={libQuery} setQuery={setLibQuery}/>
               <button className="button-primary" style={{marginTop:"14px"}} disabled={!Object.keys(libPicked).length} onClick={()=>{
-                const added=pickedToExercises(libPicked).map(e=>({...e,hold:e.hold||"30s",reps:"",sets:e.sets||3,rest:e.rest||"90s"}));
+                const added=pickedToExercises(libPicked,"tendon").map(e=>({...e,hold:e.hold||"30s",reps:e.reps||"",sets:e.sets||3,rest:e.rest||"90s"}));
                 saveTendon({...tendonData,[selectedPhase]:{...pd,sessions:pd.sessions.map(s=>s.label===libFor?{...s,exercises:[...s.exercises,...added]}:s)}});
                 closeLib();
               }}>Add {Object.keys(libPicked).length||""}</button>
@@ -2902,28 +3001,62 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     }
 
     function SplitBuilderModal({onSave,onClose,sections}) {
+      const [step,setStep]=useState(0);
+      const [kind,setKind]=useState(null);
       const [name,setName]=useState("");
       const [phaseCount,setPhaseCount]=useState("1");
       const [picked,setPicked]=useState({});
       const [query,setQuery]=useState("");
       const count=Object.keys(picked).length;
+      const KINDS=[
+        {id:"hypertrophy",label:"Hypertrophy",sub:"Weights & reps",Icon:Icons.Dumbbell,color:"var(--success)"},
+        {id:"tendon",label:"Tendon",sub:"Isometrics, HSR & plyos",Icon:Icons.Tendon,color:"var(--danger)"},
+        {id:"stretch",label:"Stretching",sub:"Mobility & timed holds",Icon:Icons.Stretch,color:"#0a84ff"},
+      ];
+      const db=kind==="tendon"?TENDON_DB:kind==="stretch"?STRETCH_DB:null;
+      const defName=kind==="tendon"?"New Tendon Block":kind==="stretch"?"New Mobility Routine":"New Split";
       const save=()=>{
         const pCount=Math.max(1,Math.min(8,parseInt(phaseCount)||1));
         const phases=Array.from({length:pCount},(_,i)=>`Phase ${i+1}`);
-        let exercises=pickedToExercises(picked);
-        if(exercises.length===0)exercises=[{id:uid(),name:"Exercise 1",equip:"Bodyweight",sets:1,reps:"8-12",hold:"",rest:"90s",weight:"",cue:""}];
-        onSave({id:uid(),section:name.trim()||"New Split",description:"",phases,exercises});
+        let exercises=pickedToExercises(picked,kind);
+        if(exercises.length===0){
+          if(kind==="stretch")exercises=[{id:uid(),name:"Stretch 1",equip:"Stretch",sets:1,reps:"",hold:"45s",totalSec:45,rest:"15s",weight:"",cue:""}];
+          else if(kind==="tendon")exercises=[{id:uid(),name:"Hold 1",equip:"Tendon",sets:3,reps:"",hold:"30s",rest:"90s",weight:"",cue:""}];
+          else exercises=[{id:uid(),name:"Exercise 1",equip:"Bodyweight",sets:1,reps:"8-12",hold:"",rest:"90s",weight:"",cue:""}];
+        }
+        onSave({id:uid(),section:name.trim()||defName,description:"",phases,exercises,kind});
       };
+      if(step===0){
+        return (
+          <TapModal isOpen onClose={onClose}>
+            <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>New Split</h2>
+            <p className="text-small" style={{marginBottom:"16px"}}>What kind of training is this? It sets the exercise library you pick from.</p>
+            {KINDS.map(k=>(
+              <button key={k.id} onClick={()=>{setKind(k.id);setStep(1);}} className="card" style={{width:"100%",display:"flex",alignItems:"center",gap:"14px",padding:"16px",marginBottom:"10px",textAlign:"left",border:`1.5px solid ${k.color}`}}>
+                <span style={{color:k.color,display:"flex"}}><k.Icon/></span>
+                <span style={{flex:1}}>
+                  <span style={{display:"block",fontWeight:"800",fontSize:"16px"}}>{k.label}</span>
+                  <span className="text-small" style={{fontSize:"12px"}}>{k.sub}</span>
+                </span>
+                <span style={{color:"var(--text-secondary)",fontSize:"18px"}}>→</span>
+              </button>
+            ))}
+            <button className="button-secondary" style={{marginTop:"6px"}} onClick={onClose}>Cancel</button>
+          </TapModal>
+        );
+      }
+      const active=KINDS.find(k=>k.id===kind)||KINDS[0];
       return (
         <TapModal isOpen onClose={onClose}>
-          <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Create Split</h2>
-          <p className="text-small" style={{marginBottom:"14px"}}>Group up your existing exercises (e.g. "Upper" from Arms + Push + Pull) or pick from the library.</p>
+          <button onClick={()=>{setStep(0);setPicked({});}} style={{fontSize:"13px",fontWeight:"800",color:"var(--text-secondary)",marginBottom:"8px"}}>← Type</button>
+          <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px",display:"flex",alignItems:"center",gap:"8px"}}><span style={{color:active.color,display:"flex"}}><active.Icon/></span>{active.label} Split</h2>
+          <p className="text-small" style={{marginBottom:"14px"}}>{kind==="hypertrophy"?"Group your existing exercises or pick from the library.":kind==="tendon"?"Pick tendon isometrics, HSR and reactive work from the library.":"Pick mobility drills and stretches from the library."}</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 80px",gap:"10px"}}>
-            <div><label className="field-label">Split name</label><input className="field" placeholder="e.g. Upper" value={name} onChange={e=>setName(e.target.value)}/></div>
+            <div><label className="field-label">Split name</label><input className="field" placeholder={defName} value={name} onChange={e=>setName(e.target.value)}/></div>
             <div><label className="field-label">Phases</label><input className="field" type="number" min="1" max="8" value={phaseCount} onChange={e=>setPhaseCount(e.target.value)}/></div>
           </div>
-          <ExercisePickList sections={sections} picked={picked} setPicked={setPicked} query={query} setQuery={setQuery}/>
-          <button className="button-primary" style={{marginTop:"14px"}} onClick={save}>{count>0?`Create "${name.trim()||"New Split"}" — ${count} exercise${count>1?"s":""}`:"Create blank split"}</button>
+          <ExercisePickList sections={kind==="hypertrophy"?sections:null} db={db} allowCreate={kind==="hypertrophy"} picked={picked} setPicked={setPicked} query={query} setQuery={setQuery}/>
+          <button className="button-primary" style={{marginTop:"14px"}} onClick={save}>{count>0?`Create "${name.trim()||defName}" — ${count} item${count>1?"s":""}`:"Create blank split"}</button>
           <button className="button-secondary" style={{marginTop:"10px"}} onClick={onClose}>Cancel</button>
         </TapModal>
       );
@@ -3060,9 +3193,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               <TapModal isOpen onClose={()=>{setPickerOpen(false);setPicked({});setPickQuery("");}}>
                 <h2 className="font-bold" style={{fontSize:"20px",marginBottom:"4px"}}>Add Exercises</h2>
                 <p className="text-small" style={{marginBottom:"14px"}}>Pick from your sections or the library — settings (weight, reps, L/R) are copied across.</p>
-                <ExercisePickList sections={allSections} picked={picked} setPicked={setPicked} query={pickQuery} setQuery={setPickQuery}/>
+                <ExercisePickList sections={split.kind&&split.kind!=="hypertrophy"?null:allSections} db={split.kind==="tendon"?TENDON_DB:split.kind==="stretch"?STRETCH_DB:null} allowCreate={!split.kind||split.kind==="hypertrophy"} picked={picked} setPicked={setPicked} query={pickQuery} setQuery={setPickQuery}/>
                 <button className="button-primary" style={{marginTop:"14px"}} disabled={!Object.keys(picked).length} onClick={()=>{
-                  saveSplit({exercises:[...split.exercises,...pickedToExercises(picked)]});
+                  saveSplit({exercises:[...split.exercises,...pickedToExercises(picked,split.kind)]});
                   setPickerOpen(false);setPicked({});setPickQuery("");
                 }}>Add {Object.keys(picked).length||""} to {split.section}</button>
                 <button className="button-secondary" style={{marginTop:"10px"}} onClick={()=>{setPickerOpen(false);setPicked({});setPickQuery("");}}>Cancel</button>
@@ -3113,7 +3246,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           <label className="field-label">What should we call you?</label>
           <input className="field" autoFocus placeholder="Your name" value={name} maxLength={20} onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&name.trim())onDone({name:name.trim(),weeklyTarget:target,accent,created:todayStr()});}}/>
           <label className="field-label" style={{marginTop:"14px"}}>Weekly workout target</label>
-          <div style={{display:"flex",gap:"8px",marginBottom:"22px"}}>
+          <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
             {[2,3,4,5,6].map(n=>(
               <button key={n} onClick={()=>setTarget(n)} style={{flex:1,padding:"13px 0",borderRadius:"12px",fontSize:"16px",fontWeight:"800",
                 border:`1.5px solid ${target===n?accent:"var(--card-border)"}`,
@@ -3121,6 +3254,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 background:target===n?`${accent}26`:"var(--input-bg)"}}>{n}</button>
             ))}
           </div>
+          <input className="field" type="number" min="1" max="14" placeholder="Or type a custom number" value={target} onChange={e=>setTarget(Math.max(1,Math.min(14,parseInt(e.target.value)||1)))} style={{marginBottom:"22px"}}/>
           <label className="field-label">Accent colour</label>
           <div style={{display:"flex",flexWrap:"wrap",gap:"12px",marginBottom:"30px"}}>
             {ACCENT_PALETTES.map(p=>(
@@ -3286,7 +3420,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           !hiddenTabs.includes("workouts")&&{id:"workouts",label:"Workouts",Icon:Icons.Dumbbell,color:"var(--success)"},
           !hiddenTabs.includes("tendons")&&{id:"tendons",label:"Tendon",Icon:Icons.Tendon,color:"var(--danger)"},
           !hiddenTabs.includes("stretches")&&{id:"stretches",label:"Stretch",Icon:Icons.Stretch,color:"#0a84ff"},
-          ...workouts.filter(s=>s.description!==undefined||s.phases).map(s=>({id:s.id||s.section,label:s.section,Icon:Icons.Dumbbell,color:"var(--accent)",custom:true})),
+          ...workouts.filter(s=>s.description!==undefined||s.phases).map(s=>({id:s.id||s.section,label:s.section,Icon:s.kind==="tendon"?Icons.Tendon:s.kind==="stretch"?Icons.Stretch:Icons.Dumbbell,color:s.kind==="tendon"?"var(--danger)":s.kind==="stretch"?"#0a84ff":"var(--success)",custom:true})),
         ].filter(Boolean);
         return (
           <div>
@@ -3442,6 +3576,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 <AccentPicker value={appAccent} onPick={chooseAccent} theme={theme}/>
                 <SoundConfigCard/>
                 <TimerConfigCard/>
+                <div className="card">
+                  <p className="font-bold" style={{marginBottom:"3px"}}>Weekly workout target</p>
+                  <p className="text-small" style={{marginBottom:"10px"}}>How many sessions you aim for each week.</p>
+                  <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                    <input className="field" type="number" min="1" max="14" style={{marginBottom:0,width:"90px"}} value={(profile&&profile.weeklyTarget)||3} onChange={e=>{const v=Math.max(1,Math.min(14,parseInt(e.target.value)||1));const u={...(profile||{}),weeklyTarget:v};setProfile(u);store.set("user_profile",u);}}/>
+                    <span className="text-small">per week</span>
+                  </div>
+                </div>
                 <DataBackupCard/>
                 <WakeLockToggle/>
                 <button className="button-secondary" style={{marginBottom:"10px",padding:"10px",fontSize:"13px"}} onClick={()=>{setSettingsOpen(false);setImportModal(true);}}>Import Split from JSON</button>
@@ -3562,7 +3704,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           )}
 
           <div className="tab-bar">
-            {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:tileLabelFor("workouts","Workouts"),Icon:Icons.Dumbbell,tile:"workouts"},{id:"tendons",label:tileLabelFor("tendons","Tendons"),Icon:Icons.Tendon,tile:"tendons"},{id:"stretches",label:tileLabelFor("stretches","Stretch"),Icon:Icons.Stretch,tile:"stretches"},{id:"progression",label:"Progress",Icon:Icons.Chart},...customSplits.map(s=>({id:`split-${s.id||s.section}`,label:tileLabelFor(s.id||s.section,s.section),Icon:Icons.Dumbbell,tile:s.id||s.section}))].filter(t=>t.id==="home"||t.id==="progression"||t.id.startsWith("split-")||!hiddenTabs.includes(t.id)).map(({id,label,Icon,tile})=>{
+            {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:tileLabelFor("workouts","Workouts"),Icon:Icons.Dumbbell,tile:"workouts"},{id:"tendons",label:tileLabelFor("tendons","Tendons"),Icon:Icons.Tendon,tile:"tendons"},{id:"stretches",label:tileLabelFor("stretches","Stretch"),Icon:Icons.Stretch,tile:"stretches"},{id:"progression",label:"Progress",Icon:Icons.Chart},...customSplits.map(s=>({id:`split-${s.id||s.section}`,label:tileLabelFor(s.id||s.section,s.section),Icon:s.kind==="tendon"?Icons.Tendon:s.kind==="stretch"?Icons.Stretch:Icons.Dumbbell,tile:s.id||s.section}))].filter(t=>t.id==="home"||t.id==="progression"||t.id.startsWith("split-")||!hiddenTabs.includes(t.id)).map(({id,label,Icon,tile})=>{
               // Inactive tabs stay grey; the active tab shows its real tile colour
               // (custom if set, else the Home default). Home & Progress have no tile,
               // so they fall back to the theme accent when active.
