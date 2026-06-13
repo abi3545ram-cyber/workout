@@ -3354,12 +3354,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
           <div className="tab-bar">
             {[{id:"home",label:"Home",Icon:Icons.Home},{id:"workouts",label:tileLabelFor("workouts","Workouts"),Icon:Icons.Dumbbell,tile:"workouts"},{id:"tendons",label:tileLabelFor("tendons","Tendons"),Icon:Icons.Tendon,tile:"tendons"},{id:"stretches",label:tileLabelFor("stretches","Stretch"),Icon:Icons.Stretch,tile:"stretches"},{id:"progression",label:"Progress",Icon:Icons.Chart},...customSplits.map(s=>({id:`split-${s.id||s.section}`,label:tileLabelFor(s.id||s.section,s.section),Icon:Icons.Dumbbell,tile:s.id||s.section}))].filter(t=>t.id==="home"||t.id==="progression"||t.id.startsWith("split-")||!hiddenTabs.includes(t.id)).map(({id,label,Icon,tile})=>{
-              // Match the Home tile colour at all times. Home & Progress have no tile, so they
-              // use the active accent only when selected.
-              const tc = tile ? tileDisplayColor(tile) : null;
+              // Inactive tabs stay grey; the active tab shows its real tile colour
+              // (custom if set, else the Home default). Home & Progress have no tile,
+              // so they fall back to the theme accent when active.
               const active = activeTab===id;
+              const tc = active ? (tile ? tileDisplayColor(tile) : null) : null;
               return (
-                <button key={id} className={`tab-btn ${active?"active":""}`} style={{width:"auto",flex:"1 1 0",minWidth:"48px",...(tc?{color:tc,opacity:active?1:0.6}:{})}} onClick={()=>setActiveTab(id)}>
+                <button key={id} className={`tab-btn ${active?"active":""}`} style={{width:"auto",flex:"1 1 0",minWidth:"48px",...(tc?{color:tc}:{})}} onClick={()=>setActiveTab(id)}>
                   <Icon/><span>{label}</span>
                 </button>
               );
