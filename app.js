@@ -115,6 +115,24 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     };
     const calc1RM = (w, r) => { const wt = parseWeight(w); const rp = parseReps(r); if (!wt || !rp) return 0; return Math.round(wt * (1 + rp / 30) * 10) / 10; };
     const fmtWeight = w => { const n = parseWeight(w); return n ? `${n}kg` : 'BW'; };
+    // ── Exercise type predicates ──────────────────────────────────────────────
+    // Not every exercise is weight × reps. Classify by fields so the UI can hide
+    // weight / reps / RIR / "Set Weight" where they make no sense.
+    const isDistanceExercise = ex => !!(ex && ex.metric === 'distance');          // sprints, bounds, jumps → distance + effort
+    const isHoldExercise     = ex => !!(ex && (ex.hold || ex.totalSec));          // isometrics / timed holds → seconds
+    // Duration work (warm-ups, "~3 min", "8-10 min", "30 sec"). Distance & holds
+    // are handled above, so they're excluded here.
+    const isTimedExercise = ex => {
+      if (!ex || isDistanceExercise(ex) || isHoldExercise(ex)) return false;
+      if (ex.equip && /warm[\s-]?up/i.test(ex.equip)) return true;
+      const r = ex.reps != null ? String(ex.reps) : '';
+      return /min|sec|hour|hr\b/i.test(r);
+    };
+    // Bodyweight: no external load is expected (and none has been set).
+    const isBodyweightExercise = ex => !!(ex && parseWeight(ex.weight) === 0 && ex.equip && /bodyweight|(^|\s)bw(\s|$)/i.test(ex.equip));
+    // Whether weight / numeric reps are meaningful to log for this exercise.
+    const usesWeight = ex => !isDistanceExercise(ex) && !isTimedExercise(ex) && !isBodyweightExercise(ex);
+    const usesReps   = ex => !isDistanceExercise(ex) && !isTimedExercise(ex) && !isHoldExercise(ex);
     const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
     // ── Performance Utilities ─────────────────────────────────────────────────
@@ -1355,9 +1373,18 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const last = getLastPerformance(exerciseId, exerciseName);
       const best = getBestPerformance(exerciseId, exerciseName);
       if (!last) return null;
+      const hasLoad = parseWeight(last.weight) > 0;
+      const lastIsDist = last.metric === 'distance' || (last.dist && !hasLoad);
+      const lastIsHold = !lastIsDist && last.hold && last.hold !== '0' && !last.reps;
+      const lastIsTimed = !lastIsDist && !lastIsHold && typeof last.reps === 'string' && /min|sec|hour|hr\b/i.test(last.reps);
+      let lastLabel;
+      if (lastIsDist) lastLabel = `${last.dist || 'distance'}${last.effort ? ` @ ${last.effort}` : ''}`;
+      else if (lastIsHold) lastLabel = `${hasLoad ? fmtWeight(last.weight) + ' · ' : ''}${last.hold} hold`;
+      else if (lastIsTimed) lastLabel = last.reps;
+      else lastLabel = `${fmtWeight(last.weight)} × ${last.reps || '—'}`;
       return (
         <div className="prev-perf">
-          <span className="perf-tag">Last: {fmtWeight(last.weight)} × {last.reps || '—'}</span>
+          <span className="perf-tag">Last: {lastLabel}</span>
           {best?.bestWeight && parseWeight(best.bestWeight.weight) > 0 && (
             <span className="perf-tag best">Best: {fmtWeight(best.bestWeight.weight)} × {best.bestWeight.reps || '—'}</span>
           )}
@@ -2192,7 +2219,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             ):(
               mode==="work"&&<div style={{margin:"22px auto",textAlign:"center"}}>
                 <div className="stat-num" style={{fontSize:isDistanceEx(activeEx)&&!activeEx.dist?"42px":"68px",fontWeight:"900",lineHeight:"1"}}>{isDistanceEx(activeEx)?(activeEx.dist||"Distance"):(displayTargetReps||activeEx.reps)}</div>
-                <div className="timer-label" style={{fontSize:"13px",marginTop:"6px"}}>{isDistanceEx(activeEx)?(activeEx.effort?`Target effort ${activeEx.effort}`:"Log your distance"):`Target Reps${hasSides?" — each side":""}`}</div>
+                <div className="timer-label" style={{fontSize:"13px",marginTop:"6px"}}>{isDistanceEx(activeEx)?(activeEx.effort?`Target effort ${activeEx.effort}`:"Log your distance"):isTimedExercise(activeEx)?"Target Time":`Target Reps${hasSides?" — each side":""}`}</div>
               </div>
             )}
 
@@ -2211,7 +2238,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                   <thead>
                     <tr>
                       <th style={{width:"40px"}}>Set</th>
-                      {isDistanceEx(activeEx) ? (<><th>Distance</th><th>Effort</th></>) : (<>
+                      {isDistanceEx(activeEx) ? (<><th>Distance</th><th>Effort</th></>) : isTimedExercise(activeEx) ? (<th>Time</th>) : (<>
                         {!(activeEx.hold||activeEx.totalSec) && <th>Weight</th>}
                         {!(activeEx.hold||activeEx.totalSec) ? <th>Reps</th> : <th>Seconds</th>}
                         {!(activeEx.hold||activeEx.totalSec) && <th style={{width:"44px"}}>RIR</th>}
@@ -2227,7 +2254,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                       const isDone = !!log.logged;
                       const isHold = !!(activeEx.hold||activeEx.totalSec);
                       const isDist = isDistanceEx(activeEx);
-                      const isBW = !!(activeEx.equip&&/bodyweight|bw/i.test(activeEx.equip));
+                      const isTimed = isTimedExercise(activeEx);
+                      const isBW = isBodyweightExercise(activeEx);
                       const sw = log.weight !== undefined ? log.weight : getSetWeight(si);
                       const sr = log.reps !== undefined ? log.reps : getSetReps(si);
                       const ss = log.seconds !== undefined ? log.seconds : actualSeconds;
@@ -2255,11 +2283,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                                 <input className="set-input" value={se} onChange={e => updateSetLog(si, {effort: e.target.value})} placeholder="effort" style={{width:"64px"}}/>}
                               {!isDone && prevSets[si+1] && prevSets[si+1].effort && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].effort}</div>}
                             </td>
-                          </>) : (<>
+                          </>) : isTimed ? (
+                            <td><span className="font-bold">{activeEx.reps||displayTargetReps||"—"}</span></td>
+                          ) : (<>
                           {!isHold && (
                             <td>
                               {isDone ? <span className="font-bold">{sw}</span> :
-                                <input className="set-input" inputMode="decimal" value={sw} onChange={e => updateSetLog(si, {weight: decOnly(e.target.value)})} placeholder="kg"/>}
+                                <input className="set-input" inputMode="decimal" value={sw} onChange={e => updateSetLog(si, {weight: decOnly(e.target.value)})} placeholder={isBW?"BW":"kg"}/>}
                               {!isDone && prevSets[si+1] && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].weight&&prevSets[si+1].weight!=="0"?fmtWeight(prevSets[si+1].weight):"BW"}{prevSets[si+1].reps?` × ${prevSets[si+1].reps}`:""}</div>}
                             </td>
                           )}
@@ -2555,8 +2585,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                             </div>
                             <div style={{display:"flex",gap:"4px",alignItems:"center",flexShrink:0,marginTop:"2px"}}>
                               <ExerciseNoteButton exerciseId={exKey} notes={notes} onSave={saveNote}/>
-                              <WeightChip exKey={exKey} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
-                              <RepsChip exKey={exKey} defaultReps={ex.reps} color="var(--accent)" reps={customReps} onSave={saveReps}/>
+                              {isDistanceExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.dist||'dist'}{ex.effort?` · ${ex.effort}`:''}</span>
+                               : isTimedExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.reps||'time'}</span>
+                               : <>
+                                  {usesWeight(ex)&&<WeightChip exKey={exKey} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>}
+                                  {usesReps(ex)&&<RepsChip exKey={exKey} defaultReps={ex.reps} color="var(--accent)" reps={customReps} onSave={saveReps}/>}
+                                 </>}
                             </div>
                           </div>
                         )}
@@ -2738,9 +2772,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:"4px",alignItems:"center",flexShrink:0}}>
                           <ExerciseNoteButton exerciseId={exKey} notes={notes} onSave={saveNote}/>
-                          {ex.metric==='distance'?
+                          {isDistanceExercise(ex)?
                             <span className="badge" style={{fontSize:"10px"}}>{ex.dist||'dist'}</span>
-                            :<WeightChip exKey={exKey} defaultWeight={ex.weight} color={pdColor} weights={weights} onSave={saveWeight}/>}
+                            :isTimedExercise(ex)?
+                            <span className="badge" style={{fontSize:"10px"}}>{ex.reps||'time'}</span>
+                            :usesWeight(ex)?
+                            <WeightChip exKey={exKey} defaultWeight={ex.weight} color={pdColor} weights={weights} onSave={saveWeight}/>
+                            :null}
                         </div>
                       </>
                     )}
@@ -3329,7 +3367,10 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 {editMode?<button onClick={()=>deleteExercise(i)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:(
                   <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
                     <ExerciseNoteButton exerciseId={exKey} notes={notes} onSave={saveNote}/>
-                    <WeightChip exKey={exKey} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
+                    {isDistanceExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.dist||'dist'}</span>
+                     : isTimedExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.reps||'time'}</span>
+                     : usesWeight(ex) ? <WeightChip exKey={exKey} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
+                     : null}
                   </div>
                 )}
               </div>
