@@ -751,7 +751,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             {id:"dB-snapdowns",name:"Snap Downs",equip:"Bodyweight",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Fast drop into an athletic stick position. Absorb and freeze. Teaches the landing mechanics before adding height."},
             {id:"dB-stick",name:"Stick Landings (drop ~30cm, freeze 3s)",equip:"Box ~30cm",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Drop from a ~30cm box, land, absorb, and freeze for 3 seconds. Build the landing before you add the rebound."},
             {id:"dB-depth",name:"Depth Jumps (~30cm box)",equip:"Box ~30cm",sets:4,reps:"4",weight:"Bodyweight",rest:"2 min",cue:"Step off (don't jump), land, instantly rebound up. Minimal ground contact. Progress box height, never reps."},
-            {id:"dB-broad",name:"Broad Jumps",equip:"Bodyweight",sets:4,metric:"distance",dist:"",effort:"max",reps:"3",weight:"",rest:"90s",cue:"Maximal horizontal distance — log your best reach each set. Big arm drive, land soft. Walk back between reps."},
+            {id:"dB-broad",name:"Broad Jumps",equip:"Bodyweight",sets:4,metric:"distance",dist:"best reach",effort:"max",reps:"",weight:"",rest:"90s",cue:"Maximal horizontal distance — log your best reach each set. Big arm drive, land soft. Walk back between reps."},
             {id:"dB-spanish",name:"Spanish Squat Iso",equip:"Band + plate",sets:4,reps:"1",hold:"40s",weight:"+20kg plate",rest:"60s",cue:"Band behind the knees, sit back against it, hold at ~90°. Patellar stiffness driver. Add load to progress."},
             {id:"dB-patellar-hsr",name:"Leg Extension HSR (optional patellar)",equip:"Machine",sets:3,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",unilateral:false,cue:"Optional patellar HSR — the preferred option. 3s down, 1s pause, 3s up at a true 6-8RM. Option B if a leg-ext machine isn't free: Split Squat HSR, 3×6-8 per leg, same tempo. Pick one, not both."},
             {id:"dB-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
@@ -759,8 +759,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           {label:"Day C",day:"Reactive / Unilateral + HSR",exercises:[
             {id:"dC-warmup",name:"Warm-up (see Warm-Up tab)",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",unilateral:false,cue:"Run the shared Warm-Up first. Day C ramp: carioca + lateral lunges + lateral pogos, 20-30s single-leg balance per leg, 2-3 submax bounds/skater hops."},
             {id:"dC-linehops",name:"Single-Leg Line Hops",equip:"Bodyweight",sets:3,reps:"10 / direction",weight:"Bodyweight",rest:"60s",single:true,cue:"Fast hops over a line, stiff ankle. 10 each direction. Quick ground contacts — think hot floor."},
-            {id:"dC-skater",name:"Lateral / Skater Bounds",equip:"Bodyweight",sets:3,reps:"8 (4/side)",weight:"Bodyweight",rest:"75s",cue:"Explosive push off one leg, land on the other, stick it. 4 per side. Reactive lateral power for combat."},
-            {id:"dC-slbounds",name:"Single-Leg Bounds",equip:"Bodyweight",sets:3,reps:"6 / leg",weight:"Bodyweight",rest:"90s",single:true,cue:"Max distance per bound, controlled landing. 6 per leg."},
+            {id:"dC-skater",name:"Lateral / Skater Bounds",equip:"Bodyweight",sets:3,metric:"distance",dist:"lateral distance",effort:"max",reps:"",weight:"",rest:"75s",cue:"Explosive push off one leg, land on the other, stick it. 4 per side. Reactive lateral power for combat."},
+            {id:"dC-slbounds",name:"Single-Leg Bounds",equip:"Bodyweight",sets:3,metric:"distance",dist:"distance per bound",effort:"max",reps:"",weight:"",rest:"90s",single:true,cue:"Max distance per bound, controlled landing. 6 per leg."},
             {id:"dC-altbound",name:"Alternate-Leg Bounding (20m)",equip:"Bodyweight",sets:2,metric:"distance",dist:"20m",effort:"max",reps:"20m",weight:"",rest:"2 min",cue:"Explosive bounding over 20m, alternating legs. Walk back between reps."},
             {id:"dC-hsr-calf",name:"Heavy-Slow Calf Raise (HSR — only HSR input)",equip:"Machine/DB",sets:4,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",unilateral:false,cue:"Your ONLY HSR input — keep it genuinely heavy and strict. 3s down to stretch, 1s pause, 3s up. Drop tempo before you ever drop load."},
             {id:"dC-splitsquat-iso",name:"Split Squat Iso (patellar, 2nd angle)",equip:"Load",sets:3,reps:"1",hold:"30s",weight:"+15kg",rest:"60s",single:true,cue:"Hold the bottom of a split squat, 30s per side. Loads the patellar tendon at a second joint angle. Add load to progress."},
@@ -1453,7 +1453,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         pts.forEach((p,i)=>{const x=gx(i),y=gy(p.weight);ctx.fillStyle=sc;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle=isAR?'#ffd700':'#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillText(p.label,x,y-8);ctx.fillStyle=tc;ctx.font='8px sans-serif';ctx.fillText(`${p.date.getMonth()+1}/${p.date.getDate()}`,x,h-pad+14);});
       },[data,selectedExercise,mode]);
       if(!data||data.length<2) return <div className="chart-container" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-secondary)",fontSize:"14px"}}>Complete this exercise twice to start tracking progression</div>;
-      return <div className="chart-container"><canvas ref={canvasRef} className="chart-svg" style={{width:"100%",height:"100%"}}/></div>;
+      return (<div style={{overflowX:"auto",minWidth: `${data.length * 50}px`}}><div className="chart-container"><canvas ref={canvasRef} className="chart-svg" style={{width:"100%",height:"100%"}} /></div></div>);
     }
 
     function EditModal({ex,onSave,onDelete,onClose}) {
@@ -2698,10 +2698,49 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                           <button onClick={()=>moveEx(sess.label,ei,1)} disabled={ei===sess.exercises.length-1} style={{opacity:ei===sess.exercises.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
                         </div>
                         <div style={{flex:1,display:"flex",flexDirection:"column",gap:"5px"}}>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 44px 60px",gap:"5px",alignItems:"center"}}>
-                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateEx(sess.label,ei,{name:e.target.value})}/>
-                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
-                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
+                          <>
+                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateEx(sess.label,ei,{name:e.target.value})}/>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
+                          </div>
+                          {ex.metric === 'distance' ? (
+                          <>
+                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="dist" value={ex.dist||""]} onChange={e=>updateEx(sess.label,ei,{dist:e.target.value})}/>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="effort" value={ex.effort||""]} onChange={e=>updateEx(sess.label,ei,{effort:e.target.value})}/>
+                          </div>
+                          </>
+                          ) : (
+                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""]} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
+                          </div>
+                          )}
+                          </>
+                          {ex.metric === 'distance' ? (
+                          <>
+                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="dist" value={ex.dist||""]} onChange={e=>updateEx(sess.label,ei,{dist:e.target.value})}/>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="effort" value={ex.effort||""]} onChange={e=>updateEx(sess.label,ei,{effort:e.target.value})}/>
+                          </div>
+                          </>
+                          ) : (
+                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""]} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
+                          </div>
+                          )}
+                          </div>
+                            {ex.metric === 'distance' ? (
+                              <>
+                                <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                                  <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="dist" value={ex.dist||""]} onChange={e=>updateEx(sess.label,ei,{dist:e.target.value})}/>
+                                  <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="effort" value={ex.effort||""]} onChange={e=>updateEx(sess.label,ei,{effort:e.target.value})}/>
+                                </div>
+                              </>
+                            ) : (
+                              <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
+                                <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""]} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
+                              </div>
+                            )}
                           </div>
                           <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
                             <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
