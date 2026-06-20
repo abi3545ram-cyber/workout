@@ -740,8 +740,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           ]},
           {label:"Day A",day:"Sprint / Achilles",exercises:[
             {id:"dA-warmup",name:"Warm-up (see Warm-Up tab)",equip:"Warm-up",sets:1,reps:"8-10 min",weight:"",rest:"0s",unilateral:false,cue:"Run the shared Warm-Up first. Day A ramp: 2-3 build-up runs (60→80→95%) + 1-2 near-max efforts before the working accelerations."},
-            {id:"dA-accel",name:"Accelerations (20m)",equip:"Sprint",sets:6,reps:"20m",weight:"~95% effort",rest:"2 min",cue:"~95% effort over 20m. Walk back between reps to fully recover. Progress sprint speed, never rep count — set ends the moment speed drops."},
-            {id:"dA-flying",name:"Flying Sprints (15m run-in + 20m)",equip:"Sprint",sets:4,reps:"20m",weight:"max",rest:"3 min",cue:"15m run-in to build speed, then 20m at max velocity. Full 3 min rest — this is quality, not conditioning."},
+            {id:"dA-accel",name:"Accelerations (20m)",equip:"Sprint",sets:6,metric:"distance",dist:"20m",effort:"~95%",reps:"20m",weight:"",rest:"2 min",cue:"~95% effort over 20m. Walk back between reps to fully recover. Progress sprint speed, never rep count — set ends the moment speed drops."},
+            {id:"dA-flying",name:"Flying Sprints (15m run-in + 20m)",equip:"Sprint",sets:4,metric:"distance",dist:"20m",effort:"max",reps:"20m",weight:"",rest:"3 min",cue:"15m run-in to build speed, then 20m at max velocity. Full 3 min rest — this is quality, not conditioning."},
             {id:"dA-calf-iso",name:"Single-Leg Calf Raise Iso — Straight Knee",equip:"Single leg + load",sets:4,reps:"1",hold:"35s",weight:"+40kg",rest:"60s",single:true,cue:"Straight knee (gastrocnemius), mid-calf position, one leg, hold completely still under load. 35s per leg. Primary Achilles stiffness driver — progress by adding load, not time."},
             {id:"dA-soleus-iso",name:"Single-Leg Soleus Iso — Bent Knee",equip:"Single leg + load",sets:3,reps:"1",hold:"30s",weight:"+30kg",rest:"60s",single:true,cue:"Knee bent ~20-30° to bias the soleus. Hold mid-range under load, 30s per leg. Loads the deeper portion of the Achilles the straight-knee hold misses."},
             {id:"dA-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
@@ -751,7 +751,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             {id:"dB-snapdowns",name:"Snap Downs",equip:"Bodyweight",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Fast drop into an athletic stick position. Absorb and freeze. Teaches the landing mechanics before adding height."},
             {id:"dB-stick",name:"Stick Landings (drop ~30cm, freeze 3s)",equip:"Box ~30cm",sets:3,reps:"5",weight:"Bodyweight",rest:"60s",cue:"Drop from a ~30cm box, land, absorb, and freeze for 3 seconds. Build the landing before you add the rebound."},
             {id:"dB-depth",name:"Depth Jumps (~30cm box)",equip:"Box ~30cm",sets:4,reps:"4",weight:"Bodyweight",rest:"2 min",cue:"Step off (don't jump), land, instantly rebound up. Minimal ground contact. Progress box height, never reps."},
-            {id:"dB-broad",name:"Broad Jumps",equip:"Bodyweight",sets:4,reps:"3",weight:"Bodyweight",rest:"90s",cue:"Maximal horizontal distance. Big arm drive, land soft. Walk back between reps."},
+            {id:"dB-broad",name:"Broad Jumps",equip:"Bodyweight",sets:4,metric:"distance",dist:"",effort:"max",reps:"3",weight:"",rest:"90s",cue:"Maximal horizontal distance — log your best reach each set. Big arm drive, land soft. Walk back between reps."},
             {id:"dB-spanish",name:"Spanish Squat Iso",equip:"Band + plate",sets:4,reps:"1",hold:"40s",weight:"+20kg plate",rest:"60s",cue:"Band behind the knees, sit back against it, hold at ~90°. Patellar stiffness driver. Add load to progress."},
             {id:"dB-patellar-hsr",name:"Leg Extension HSR (optional patellar)",equip:"Machine",sets:3,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",unilateral:false,cue:"Optional patellar HSR — the preferred option. 3s down, 1s pause, 3s up at a true 6-8RM. Option B if a leg-ext machine isn't free: Split Squat HSR, 3×6-8 per leg, same tempo. Pick one, not both."},
             {id:"dB-lift",name:"→ then full-body lift",equip:"Note",sets:1,reps:"—",weight:"",rest:"0s",cue:"Now do your normal full-body lift session (in the Full Body section)."},
@@ -761,7 +761,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             {id:"dC-linehops",name:"Single-Leg Line Hops",equip:"Bodyweight",sets:3,reps:"10 / direction",weight:"Bodyweight",rest:"60s",single:true,cue:"Fast hops over a line, stiff ankle. 10 each direction. Quick ground contacts — think hot floor."},
             {id:"dC-skater",name:"Lateral / Skater Bounds",equip:"Bodyweight",sets:3,reps:"8 (4/side)",weight:"Bodyweight",rest:"75s",cue:"Explosive push off one leg, land on the other, stick it. 4 per side. Reactive lateral power for combat."},
             {id:"dC-slbounds",name:"Single-Leg Bounds",equip:"Bodyweight",sets:3,reps:"6 / leg",weight:"Bodyweight",rest:"90s",single:true,cue:"Max distance per bound, controlled landing. 6 per leg."},
-            {id:"dC-altbound",name:"Alternate-Leg Bounding (20m)",equip:"Bodyweight",sets:2,reps:"20m",weight:"Bodyweight",rest:"2 min",cue:"Explosive bounding over 20m, alternating legs. Walk back between reps."},
+            {id:"dC-altbound",name:"Alternate-Leg Bounding (20m)",equip:"Bodyweight",sets:2,metric:"distance",dist:"20m",effort:"max",reps:"20m",weight:"",rest:"2 min",cue:"Explosive bounding over 20m, alternating legs. Walk back between reps."},
             {id:"dC-hsr-calf",name:"Heavy-Slow Calf Raise (HSR — only HSR input)",equip:"Machine/DB",sets:4,reps:"6-8",tempo:"3-1-3",weight:"6-8RM",rest:"2 min",unilateral:false,cue:"Your ONLY HSR input — keep it genuinely heavy and strict. 3s down to stretch, 1s pause, 3s up. Drop tempo before you ever drop load."},
             {id:"dC-splitsquat-iso",name:"Split Squat Iso (patellar, 2nd angle)",equip:"Load",sets:3,reps:"1",hold:"30s",weight:"+15kg",rest:"60s",single:true,cue:"Hold the bottom of a split squat, 30s per side. Loads the patellar tendon at a second joint angle. Add load to progress."},
             {id:"dC-wallsit-iso",name:"Wall Sit Iso (patellar, 3rd angle)",equip:"Load",sets:3,reps:"1",hold:"45s",weight:"+20kg",rest:"60s",unilateral:false,cue:"Back flat on the wall, thighs parallel, plate held on the lap. Hold 45s. Third patellar angle for quad-tendon stiffness — keep it loaded, not bodyweight."},
@@ -1487,21 +1487,23 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     }
 
     // ── SessionPlayer ──────────────────────────────────────────────────────────
-    function SessionPlayer({routineName,routineColor,exercises,onFinish,onCancel,allWeights,allNotes,minimized,onMinimize}) {
-      const [exIdx,setExIdx]=useState(0);
-      const [mode,setMode]=useState("work");
-      const [sessionPRs,setSessionPRs]=useState([]);
-      const startTimeRef=useRef(Date.now());
+    function SessionPlayer({routineName,routineColor,exercises,onFinish,onCancel,allWeights,allNotes,minimized,onMinimize,resume,onPersist,theme}) {
+      const R = resume || {};
+      const [exIdx,setExIdx]=useState(R.exIdx||0);
+      const [mode,setMode]=useState(R.mode||"work");
+      const [sessionPRs,setSessionPRs]=useState(R.sessionPRs||[]);
+      const startTimeRef=useRef(R.startTime||Date.now());
       const [reorderMode,setReorderMode]=useState(false);
-      const [exerciseOrder,setExerciseOrder]=useState(exercises.map((_,i)=>i));
-      const [exOverrides,setExOverrides]=useState({});
+      const [showList,setShowList]=useState(R.showList!==undefined?R.showList:true);
+      const [exerciseOrder,setExerciseOrder]=useState(R.exerciseOrder||exercises.map((_,i)=>i));
+      const [exOverrides,setExOverrides]=useState(R.exOverrides||{});
       const orderedExercises = exerciseOrder.map(i => exOverrides[i] || exercises[i]);
       // Superset chains: exercises flagged supersetWithNext link to the one below
       const chainStart=i=>{let x=i;while(x>0&&orderedExercises[x-1]&&orderedExercises[x-1].supersetWithNext)x--;return x;};
       const chainEnd=i=>{let x=i;while(orderedExercises[x]&&orderedExercises[x].supersetWithNext&&x+1<orderedExercises.length)x++;return x;};
 
       // Set-by-set logging state
-      const [setLogs,setSetLogs]=useState({}); // { "exIdx-setIdx": { weight, reps, seconds, logged, logId, prs } }
+      const [setLogs,setSetLogs]=useState(R.setLogs||{}); // { "exIdx-setIdx": { weight, reps, seconds, logged, logId, prs } }
       const activeExRaw = orderedExercises[exIdx];
       const activeEx = activeExRaw || orderedExercises[0];
       const nextEx = exIdx+1<orderedExercises.length ? orderedExercises[exIdx+1] : null;
@@ -1510,12 +1512,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const isStretchRoutine = routineName.startsWith("Stretching");
 
       // Current set tracking
-      const [currentSetIdx, setCurrentSetIdx] = useState(0);
+      const [currentSetIdx, setCurrentSetIdx] = useState(R.currentSetIdx||0);
 
       // Side tracking for bilateral exercises
       const sideLabels = activeEx?.sideLabels || [];
       const hasSides = sideLabels.length > 0;
-      const [currentSideIdx, setCurrentSideIdx] = useState(0);
+      const [currentSideIdx, setCurrentSideIdx] = useState(R.currentSideIdx||0);
 
       // Timer state
       const [targetSeconds,setTargetSeconds]=useState(90);
@@ -1525,9 +1527,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const accRef=useRef(0);
       const rafRef=useRef(null);
       const [pendingAutoStart,setPendingAutoStart]=useState(null);
-      const [isFinishedScreen,setIsFinishedScreen]=useState(false);
+      const [isFinishedScreen,setIsFinishedScreen]=useState(R.isFinishedScreen||false);
       // History of forward transitions — enables the ← Back button (with un-logging)
-      const [historyStack,setHistoryStack]=useState([]);
+      const [historyStack,setHistoryStack]=useState(R.historyStack||[]);
       const pushHistory=()=>{
         setHistoryStack(p=>[...p,{exIdx,setIdx:currentSetIdx,mode,sideIdx:currentSideIdx}]);
       };
@@ -1537,11 +1539,33 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [swapPicked,setSwapPicked]=useState({});
       const [swapQuery,setSwapQuery]=useState("");
       // Live workout duration in the header (minutes:seconds)
-      const [elapsedSec,setElapsedSec]=useState(0);
+      const [elapsedSec,setElapsedSec]=useState(R.elapsedSec||0);
+      const lastTickRef=useRef(Date.now());
+      // Clock runs only while the session is open. Minimising = pausing, so a session
+      // resumed hours later doesn't balloon its duration.
       useEffect(()=>{
-        const t=setInterval(()=>setElapsedSec(Math.floor((Date.now()-startTimeRef.current)/1000)),1000);
+        if(minimized) return;
+        lastTickRef.current=Date.now();
+        const t=setInterval(()=>{
+          const now=Date.now();
+          const d=Math.round((now-lastTickRef.current)/1000);
+          if(d>0){ lastTickRef.current=now; setElapsedSec(s=>s+d); }
+        },1000);
         return ()=>clearInterval(t);
-      },[]);
+      },[minimized]);
+      // Pause the active countdown the moment the session is minimised/paused.
+      useEffect(()=>{
+        if(minimized && isRunningRef.current){ accRef.current+=Date.now()-timerStartRef.current; setIsRunning(false); }
+      },[minimized]);
+      // Persist a full snapshot so a paused session survives an app close / reload.
+      useEffect(()=>{
+        if(!onPersist) return;
+        onPersist({
+          exIdx,currentSetIdx,currentSideIdx,mode,setLogs,exerciseOrder,exOverrides,
+          sessionPRs,startTime:startTimeRef.current,elapsedSec,historyStack,
+          showList,isFinishedScreen
+        });
+      },[exIdx,currentSetIdx,currentSideIdx,mode,setLogs,exerciseOrder,exOverrides,sessionPRs,elapsedSec,historyStack,showList,isFinishedScreen]);
       // Last set of the last exercise → no point resting afterwards (chain-aware)
       const isFinalStep = si => {
         const s = si!==undefined?si:currentSetIdx;
@@ -1589,6 +1613,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
       const modeRef=useRef(mode);
       useEffect(()=>{modeRef.current=mode;},[mode]);
+      const isRunningRef=useRef(false);
+      useEffect(()=>{isRunningRef.current=isRunning;},[isRunning]);
       const targetRef=useRef(targetSeconds);
       useEffect(()=>{targetRef.current=targetSeconds;},[targetSeconds]);
 
@@ -1629,6 +1655,23 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         if (lastPerf?.reps) return lastPerf.reps;
         return activeEx.reps || "";
       };
+      // Distance-metric exercises (sprints, bounds, broad jumps) log distance + effort
+      // instead of weight + reps. Not timed — no hold.
+      const isDistanceEx = ex => !!(ex && ex.metric==='distance');
+      const getSetDist = (si) => {
+        const sk = `${exIdx}-${si}`;
+        if (setLogs[sk]?.dist !== undefined) return setLogs[sk].dist;
+        const lastPerf = getLastPerformance(activeEx.id, activeEx.name);
+        if (lastPerf?.dist) return lastPerf.dist;
+        return activeEx.dist || "";
+      };
+      const getSetEffort = (si) => {
+        const sk = `${exIdx}-${si}`;
+        if (setLogs[sk]?.effort !== undefined) return setLogs[sk].effort;
+        const lastPerf = getLastPerformance(activeEx.id, activeEx.name);
+        if (lastPerf?.effort) return lastPerf.effort;
+        return activeEx.effort || "";
+      };
       const actualWeight = currentLog.weight !== undefined ? currentLog.weight : getSetWeight(currentSetIdx);
       const actualReps = currentLog.reps !== undefined ? currentLog.reps : getSetReps(currentSetIdx);
       const actualSeconds = currentLog.seconds !== undefined ? currentLog.seconds : (activeEx.hold ? String(parseInt(activeEx.hold.replace(/[^\d]/g,''))||30) : (activeEx.totalSec ? String(activeEx.totalSec) : ""));
@@ -1636,8 +1679,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       // Stats
       const totalSets = orderedExercises.reduce((a,e)=>a+(parseInt(e.sets)||1),0);
       const loggedSets = Object.values(setLogs).filter(l=>l.logged).length;
-      const totalVolume = Object.values(setLogs).filter(l=>l.logged&&l.setType!=='warmup').reduce((acc, l) => acc + parseWeight(l.weight) * parseReps(l.reps), 0);
-      const duration = Math.round((Date.now() - startTimeRef.current) / 60000);
+      const totalVolume = Object.values(setLogs).filter(l=>l.logged&&l.setType!=='warmup'&&l.metric!=='distance').reduce((acc, l) => acc + parseWeight(l.weight) * parseReps(l.reps), 0);
+      const duration = Math.max(1, Math.round(elapsedSec / 60));
 
       const updateSetLog = (si, patch) => {
         const sk = `${exIdx}-${si}`;
@@ -1721,6 +1764,16 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const sk = `${exIdx}-${si}`;
         if (setLogs[sk]?.logged) return;
         const logId = uid();
+        // Distance-metric exercises: log distance + effort, no PR / volume.
+        if (isDistanceEx(activeEx)) {
+          const dist = setLogs[sk]?.dist !== undefined ? setLogs[sk].dist : getSetDist(si);
+          const effort = setLogs[sk]?.effort !== undefined ? setLogs[sk].effort : getSetEffort(si);
+          setSetLogs(p => ({...p, [sk]: { ...(p[sk]||{}), dist, effort, metric:'distance', reps: dist, weight: '', logged: true, logId }}));
+          const progD = store.get("workout_progression", []);
+          progD.push({ id: logId, date: todayStr(), exercise: activeEx.name, exerciseId: activeEx.id, metric:'distance', dist, effort, reps: dist, weight: '', hold: '0', setNumber: si + 1, setType: 'normal' });
+          store.set("workout_progression", progD);
+          return;
+        }
         const w = setLogs[sk]?.weight !== undefined ? setLogs[sk].weight : getSetWeight(si);
         const r = setLogs[sk]?.reps !== undefined ? setLogs[sk].reps : getSetReps(si);
         const s = setLogs[sk]?.seconds !== undefined ? setLogs[sk].seconds : actualSeconds;
@@ -2009,6 +2062,77 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
         );
       }
 
+      // ── Exercise Overview / List (shown at session start & on demand) ──
+      const exSummary = (ex) => {
+        const sets = ex?.sets || 1;
+        if (isDistanceEx(ex)) return `${sets} × ${ex.dist || 'distance'}${ex.effort ? ` · ${ex.effort}` : ''}`;
+        if (ex?.hold) return `${sets} × ${ex.hold} hold`;
+        if (ex?.totalSec) return `${ex.totalSec}s`;
+        return `${sets} × ${ex?.reps || '—'}${ex?.weight ? ` · ${ex.weight}` : ''}`;
+      };
+      const exStatusOf = (i) => {
+        const ex = orderedExercises[i];
+        const sets = ex?.sets || 1;
+        let done = 0;
+        for (let s = 0; s < sets; s++) if (setLogs[`${i}-${s}`]?.logged) done++;
+        if (sets > 0 && done >= sets) return 'done';
+        if (done > 0) return 'inprogress';
+        if (i === exIdx) return 'current';
+        return 'todo';
+      };
+      const doneCount = orderedExercises.filter((_, i) => exStatusOf(i) === 'done').length;
+      if (showList && !reorderMode && !isFinishedScreen) {
+        const begun = loggedSets > 0;
+        return (
+          <div className="timer-overlay" style={{...accentVars(routineColor),...(minimized?{display:"none"}:{})}}>
+            <div className="flex-between" style={{marginBottom:"6px"}}>
+              <span className="badge" style={{marginLeft:0}}>{routineName}</span>
+              <button onClick={onMinimize} title="Pause — keep session for later" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 12px",fontSize:"13px",fontWeight:"800",display:"inline-flex",alignItems:"center",gap:"6px"}}><Icons.Pause size={14}/> Pause</button>
+            </div>
+            <h2 className="font-bold" style={{fontSize:"26px",letterSpacing:"-0.02em",marginBottom:"2px"}}>{begun ? "Session in progress" : "Today's exercises"}</h2>
+            <p className="text-small" style={{marginBottom:"4px"}}>{doneCount} of {orderedExercises.length} done · {loggedSets} of {totalSets} sets logged</p>
+            <div style={{height:"6px",borderRadius:"3px",background:"var(--input-bg)",overflow:"hidden",margin:"10px 0 18px"}}>
+              <div style={{height:"100%",width:`${totalSets?Math.round(loggedSets/totalSets*100):0}%`,background:"var(--accent)",borderRadius:"3px",transition:"width 0.3s ease"}}/>
+            </div>
+            <div style={{flex:1,overflowY:"auto",margin:"0 -4px"}}>
+              <div className="list-group">
+                {orderedExercises.map((ex, i) => {
+                  const st = exStatusOf(i);
+                  const isCur = i === exIdx;
+                  return (
+                    <button key={i} className="list-row" onClick={()=>{ setIsRunning(false); setExIdx(i); setCurrentSetIdx(0); setCurrentSideIdx(0); setMode("work"); setShowList(false); }}>
+                      <span className="lr-icon" style={{
+                        background: st==='done'?"var(--accent)":st==='todo'?"var(--input-bg)":"var(--accent-muted)",
+                        color: st==='done'?"var(--btn-text)":"var(--accent)",
+                        border: isCur&&st!=='done'?"1.5px solid var(--accent)":"none"}}>
+                        {st==='done' ? <svg width="15" height="15" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>
+                          : <span style={{fontSize:"13px",fontWeight:"800"}}>{i+1}</span>}
+                      </span>
+                      <span className="lr-body">
+                        <span className="lr-title" style={{textDecoration:st==='done'?"none":"none",opacity:st==='done'?0.65:1}}>{ex.name}</span>
+                        <span className="lr-sub">{exSummary(ex)}{tendonExHasSides(ex)?" · L+R":""}</span>
+                      </span>
+                      <span className="lr-trail">
+                        {st==='done' && <span style={{fontSize:"11px",fontWeight:"800",color:"var(--accent)"}}>DONE</span>}
+                        {st==='inprogress' && <span style={{fontSize:"11px",fontWeight:"800",color:"var(--text-secondary)"}}>PART</span>}
+                        {isCur && st!=='done' && <span style={{fontSize:"11px",fontWeight:"800",color:"var(--accent)"}}>NOW</span>}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"10px",paddingTop:"14px"}}>
+              <button className="button-primary" style={{padding:"16px",fontSize:"17px",borderRadius:"14px"}} onClick={()=>setShowList(false)}>{begun ? "Resume session" : "Begin session"}</button>
+              <button className="button-secondary" style={{color:"var(--danger)",borderColor:"var(--danger)",background:"transparent",padding:"12px"}} onClick={()=>{
+                if(!begun){ onCancel(); return; }
+                if(confirm("End this session? Logged sets are kept.")) setIsFinishedScreen(true);
+              }}>{begun ? "End session" : "Cancel"}</button>
+            </div>
+          </div>
+        );
+      }
+
       // ── Active Workout ──
       return (
         <div className="timer-overlay" style={{...accentVars(routineColor),...(minimized?{display:"none"}:{})}}>
@@ -2020,11 +2144,12 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               </div>
             </div>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"flex-end"}}>
-              <button onClick={onMinimize} title="Minimise — keep session running" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Minimize/></button>
+              <button onClick={()=>setShowList(true)} title="Exercise list" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><line x1="3.5" y1="6" x2="3.51" y2="6"/><line x1="3.5" y1="12" x2="3.51" y2="12"/><line x1="3.5" y1="18" x2="3.51" y2="18"/></svg></button>
+              <button onClick={onMinimize} title="Pause — keep session for later" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 12px",fontSize:"13px",fontWeight:"800",display:"inline-flex",alignItems:"center",gap:"6px"}}><Icons.Pause size={13}/> Pause</button>
               {historyStack.length>0&&<button onClick={goBack} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 12px",fontSize:"13px",fontWeight:"800"}}>← Back</button>}
-              {!(activeEx.hold||activeEx.totalSec)&&<button onClick={()=>setPlateCalc(true)} title="Plate calculator" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Plate/></button>}
+              {!(activeEx.hold||activeEx.totalSec||isDistanceEx(activeEx))&&<button onClick={()=>setPlateCalc(true)} title="Plate calculator" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Plate/></button>}
               <button onClick={()=>setSwapOpen(true)} title="Swap exercise" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"7px 10px",display:"inline-flex",alignItems:"center"}}><Icons.Swap/></button>
-              <button onClick={() => setReorderMode(true)} style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>⇅</button>
+              <button onClick={() => setReorderMode(true)} title="Reorder" style={{border:"1.5px solid var(--card-border)",borderRadius:"10px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}}>⇅</button>
               <button style={{border:"1.5px solid var(--danger)",color:"var(--danger)",background:"transparent",borderRadius:"10px",padding:"6px 14px",fontSize:"13px",fontWeight:"800",textTransform:"uppercase"}} onClick={()=>setIsFinishedScreen(true)}>Finish</button>
             </div>
           </div>
@@ -2066,8 +2191,8 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               </div>
             ):(
               mode==="work"&&<div style={{margin:"22px auto",textAlign:"center"}}>
-                <div className="stat-num" style={{fontSize:"68px",fontWeight:"900",lineHeight:"1"}}>{displayTargetReps||activeEx.reps}</div>
-                <div className="timer-label" style={{fontSize:"13px",marginTop:"6px"}}>Target Reps{hasSides?" — each side":""}</div>
+                <div className="stat-num" style={{fontSize:isDistanceEx(activeEx)&&!activeEx.dist?"42px":"68px",fontWeight:"900",lineHeight:"1"}}>{isDistanceEx(activeEx)?(activeEx.dist||"Distance"):(displayTargetReps||activeEx.reps)}</div>
+                <div className="timer-label" style={{fontSize:"13px",marginTop:"6px"}}>{isDistanceEx(activeEx)?(activeEx.effort?`Target effort ${activeEx.effort}`:"Log your distance"):`Target Reps${hasSides?" — each side":""}`}</div>
               </div>
             )}
 
@@ -2086,9 +2211,11 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                   <thead>
                     <tr>
                       <th style={{width:"40px"}}>Set</th>
-                      {!(activeEx.hold||activeEx.totalSec) && <th>Weight</th>}
-                      {!(activeEx.hold||activeEx.totalSec) ? <th>Reps</th> : <th>Seconds</th>}
-                      {!(activeEx.hold||activeEx.totalSec) && <th style={{width:"44px"}}>RIR</th>}
+                      {isDistanceEx(activeEx) ? (<><th>Distance</th><th>Effort</th></>) : (<>
+                        {!(activeEx.hold||activeEx.totalSec) && <th>Weight</th>}
+                        {!(activeEx.hold||activeEx.totalSec) ? <th>Reps</th> : <th>Seconds</th>}
+                        {!(activeEx.hold||activeEx.totalSec) && <th style={{width:"44px"}}>RIR</th>}
+                      </>)}
                       <th style={{width:"50px"}}>Done</th>
                     </tr>
                   </thead>
@@ -2099,10 +2226,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                       const isActive = si === currentSetIdx && !log.logged;
                       const isDone = !!log.logged;
                       const isHold = !!(activeEx.hold||activeEx.totalSec);
+                      const isDist = isDistanceEx(activeEx);
                       const isBW = !!(activeEx.equip&&/bodyweight|bw/i.test(activeEx.equip));
                       const sw = log.weight !== undefined ? log.weight : getSetWeight(si);
                       const sr = log.reps !== undefined ? log.reps : getSetReps(si);
                       const ss = log.seconds !== undefined ? log.seconds : actualSeconds;
+                      const sd = log.dist !== undefined ? log.dist : getSetDist(si);
+                      const se = log.effort !== undefined ? log.effort : getSetEffort(si);
                       return (
                         <tr key={si} className={isActive ? "active-set" : isDone ? "completed-set" : ""}>
                           <td>
@@ -2114,6 +2244,18 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                               {log.setType==='warmup'?'W':log.setType==='drop'?'D':log.setType==='failure'?'F':si+1}
                             </button>
                           </td>
+                          {isDist ? (<>
+                            <td>
+                              {isDone ? <span className="font-bold">{sd||"—"}</span> :
+                                <input className="set-input" value={sd} onChange={e => updateSetLog(si, {dist: e.target.value})} placeholder="e.g. 20m" style={{width:"68px"}}/>}
+                              {!isDone && prevSets[si+1] && prevSets[si+1].dist && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].dist}</div>}
+                            </td>
+                            <td>
+                              {isDone ? <span className="font-bold">{se||"—"}</span> :
+                                <input className="set-input" value={se} onChange={e => updateSetLog(si, {effort: e.target.value})} placeholder="effort" style={{width:"64px"}}/>}
+                              {!isDone && prevSets[si+1] && prevSets[si+1].effort && <div style={{fontSize:"9px",color:"var(--text-secondary)",opacity:0.75,marginTop:"2px"}}>prev {prevSets[si+1].effort}</div>}
+                            </td>
+                          </>) : (<>
                           {!isHold && (
                             <td>
                               {isDone ? <span className="font-bold">{sw}</span> :
@@ -2142,6 +2284,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                                 </select>}
                             </td>
                           )}
+                          </>)}
                           <td>
                             <button className={`set-done-btn ${isDone ? 'done' : 'pending'}`} onClick={() => { if (!isDone) { setCurrentSetIdx(si); handleCompleteSet(si); } }}>
                               {isDone ? '✓' : '○'}
@@ -2161,7 +2304,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
               <div className="card" style={{width:"100%",background:"var(--input-bg)"}}>
                 <p className="text-small font-bold" style={{textTransform:"uppercase",color:"var(--accent)"}}>Up Next</p>
                 <p className="font-bold" style={{fontSize:"16px",marginTop:"2px"}}>{nextEx.name}</p>
-                <p className="text-small" style={{fontSize:"12px"}}>{nextEx.equip} — {nextEx.sets} set{nextEx.sets>1?"s":""} — {nextEx.reps||nextEx.hold}</p>
+                <p className="text-small" style={{fontSize:"12px"}}>{nextEx.equip} — {nextEx.sets} set{nextEx.sets>1?"s":""} — {nextEx.dist||nextEx.reps||nextEx.hold}</p>
               </div>
             )}
           </div>
@@ -2578,7 +2721,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                         <button className={`custom-tick ${checked[exKey]?"checked":""}`} onClick={()=>setChecked(p=>({...p,[exKey]:!p[exKey]}))} style={{marginTop:"4px"}}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>
                         <div style={{flex:1,minWidth:0}}>
                           <Editable as="p" className="font-bold" style={{fontSize:"14px"}} value={ex.name} onSave={t=>updateEx(sess.label,ei,{name:t})} singleAction={()=>setHistoryModal({id:exKey,name:ex.name})}/>
-                          <p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — Hold {ex.hold}
+                          <p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — {ex.metric==='distance'?`${ex.dist||'distance'}${ex.effort?` @ ${ex.effort}`:''}`:(ex.hold?`Hold ${ex.hold}`:(ex.reps?`${ex.reps} reps`:''))}
                             {tendonExHasSides(ex)&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
                           </p>
                           <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
@@ -2586,7 +2729,9 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:"4px",alignItems:"center",flexShrink:0}}>
                           <ExerciseNoteButton exerciseId={exKey} notes={notes} onSave={saveNote}/>
-                          <WeightChip exKey={exKey} defaultWeight={ex.weight} color={pdColor} weights={weights} onSave={saveWeight}/>
+                          {ex.metric==='distance'?
+                            <span className="badge" style={{fontSize:"10px"}}>{ex.dist||'dist'}</span>
+                            :<WeightChip exKey={exKey} defaultWeight={ex.weight} color={pdColor} weights={weights} onSave={saveWeight}/>}
                         </div>
                       </>
                     )}
@@ -3331,10 +3476,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const saveNote=(k,v)=>{const u={...notes,[k]:v};if(!v)delete u[k];setNotes(u);store.set("workout_notes",u);};
       const [logs,setLogs]=useState(()=>store.get("workout_logs",[]));
       const [counts,setCounts]=useState(()=>store.get("workout_completed_counts",{workouts:0,tendons:0,stretches:0}));
-      const [activeRoutine,setActiveRoutine]=useState(null);
-      const [sessionMinimized,setSessionMinimized]=useState(false);
-      // Any time a new routine starts, ensure the player is expanded.
-      const startRoutine=r=>{setSessionMinimized(false);setActiveRoutine(r);};
+      const [activeRoutine,setActiveRoutine]=useState(()=>{const s=store.get('active_session',null);return s&&s.routine&&s.routine.exercises&&s.routine.exercises.length?s.routine:null;});
+      const [resumeState,setResumeState]=useState(()=>{const s=store.get('active_session',null);return s&&s.routine&&s.routine.exercises&&s.routine.exercises.length?(s.state||null):null;});
+      const [sessionMinimized,setSessionMinimized]=useState(()=>{const s=store.get('active_session',null);return !!(s&&s.routine&&s.routine.exercises&&s.routine.exercises.length);});
+      // Any time a new routine starts, ensure the player is expanded & fresh.
+      const startRoutine=r=>{setResumeState(null);setSessionMinimized(false);store.set('active_session',{routine:r,state:null});setActiveRoutine(r);};
+      const persistSession=(state)=>{ if(activeRoutine) store.set('active_session',{routine:activeRoutine,state}); };
+      const endSession=()=>{ store.set('active_session',null); setActiveRoutine(null); setResumeState(null); setSessionMinimized(false); };
       const [modalContent,setModalContent]=useState(null);
       const [importModal,setImportModal]=useState(false);
       const [importJson,setImportJson]=useState('');
@@ -3657,24 +3805,27 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
           </header>
 
           {activeRoutine&&(
-            <SessionPlayer routineName={activeRoutine.name} routineColor={activeRoutine.color} exercises={activeRoutine.exercises}
+            <SessionPlayer routineName={activeRoutine.name} routineColor={theme==='anti-red'?null:activeRoutine.color} exercises={activeRoutine.exercises}
               minimized={sessionMinimized}
+              resume={resumeState}
+              onPersist={persistSession}
+              theme={theme}
               onMinimize={()=>setSessionMinimized(true)}
-              onFinish={()=>{setActiveRoutine(null);setSessionMinimized(false);reloadLogs();}}
-              onCancel={()=>{setActiveRoutine(null);setSessionMinimized(false);}}
+              onFinish={()=>{endSession();reloadLogs();}}
+              onCancel={()=>{endSession();}}
               allWeights={weights}
               allNotes={notes}/>
           )}
           {activeRoutine&&sessionMinimized&&(
             <button onClick={()=>setSessionMinimized(false)}
               style={{position:"fixed",left:"50%",transform:"translateX(-50%)",bottom:"calc(80px + env(safe-area-inset-bottom))",width:"calc(100% - 32px)",maxWidth:"448px",zIndex:95,
-                background:activeRoutine.color&&!String(activeRoutine.color).startsWith("var(")?activeRoutine.color:"var(--accent)",color:"var(--btn-text)",
+                background:theme!=='anti-red'&&activeRoutine.color&&!String(activeRoutine.color).startsWith("var(")?activeRoutine.color:"var(--accent)",color:"var(--btn-text)",
                 borderRadius:"14px",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",boxShadow:"0 6px 20px rgba(0,0,0,0.35)"}}>
               <span style={{display:"flex",alignItems:"center",gap:"10px",minWidth:0}}>
                 <span style={{display:"flex",width:"26px",height:"26px",borderRadius:"50%",background:"rgba(255,255,255,0.25)",alignItems:"center",justifyContent:"center",flexShrink:0}}><Icons.Play size={13}/></span>
                 <span style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0}}>
                   <span style={{fontWeight:"800",fontSize:"14px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"200px"}}>{activeRoutine.name}</span>
-                  <span style={{fontSize:"11px",opacity:0.85,fontWeight:"600"}}>Session in progress — tap to resume</span>
+                  <span style={{fontSize:"11px",opacity:0.85,fontWeight:"600"}}>Session paused — tap to resume</span>
                 </span>
               </span>
               <span style={{fontWeight:"800",fontSize:"13px",flexShrink:0}}>Resume</span>

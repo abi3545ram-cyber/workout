@@ -167,3 +167,25 @@
     .empty-state .es-icon{width:52px;height:52px;border-radius:14px;background:var(--accent-muted);color:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
     .empty-state .es-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:5px}
     .empty-state .es-sub{font-size:13px;line-height:1.45;max-width:240px;margin:0 auto 16px}
+
+    /* ── Anti-red hardening: guarantee no button renders red/green/blue ── */
+    :root[data-theme="anti-red"] .button-primary{background:var(--accent)!important;border-color:var(--accent)!important;color:#000!important}
+    :root[data-theme="anti-red"] .suggestion-badge{background:var(--accent-muted)!important;color:var(--accent)!important;border-color:var(--accent)!important}
+    :root[data-theme="anti-red"] .skip-btn-large{background:rgba(255,215,0,0.12)!important;border-color:var(--accent)!important;color:var(--accent)!important}
+    :root[data-theme="anti-red"] .set-table .set-done-btn.done{background:var(--accent)!important;border-color:var(--accent)!important;color:#000!important}
+    :root[data-theme="anti-red"] .set-done-btn.pending{border-color:var(--card-border)!important;color:var(--text-secondary)!important}
+    :root[data-theme="anti-red"] .text-success,
+    :root[data-theme="anti-red"] .text-warning,
+    :root[data-theme="anti-red"] .text-danger{color:var(--accent)!important}
+    :root[data-theme="anti-red"] .pr-badge{background:rgba(255,215,0,0.15)!important;color:var(--accent)!important;border-color:var(--accent)!important}
+
+    /* ── Session player polish ── */
+    .timer-overlay{padding-top:calc(18px + env(safe-area-inset-top))}
+    .set-table .set-input{transition:border-color 0.15s,background 0.15s}
+    .set-table .set-input::placeholder{color:var(--text-secondary);opacity:0.5}
+    .set-table tr.active-set .set-input{border-color:var(--accent)}
+    /* Tap feedback on grouped list rows */
+    .list-row{transition:background 0.12s}
+    .list-row:active{background:var(--input-bg)}
+    /* Numeric clarity */
+    .lr-sub{font-variant-numeric:tabular-nums}
