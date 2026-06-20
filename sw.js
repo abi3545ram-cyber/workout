@@ -1,4 +1,4 @@
-const CACHE = 'wf-v2';
+const CACHE = 'wf-v3';
 const CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
