@@ -2690,70 +2690,71 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 {sess.exercises.map((ex,ei)=>{
                   const exKey = ex.id || ex.name;
                   return (
-                  <div key={exKey} className="flex-between" style={{padding:"8px 0",borderBottom:ei+1<sess.exercises.length?"0.5px solid var(--card-border)":"none",gap:"8px",alignItems:"flex-start"}}>
-                    {editMode?(
-                      <>
-                        <div style={{display:"flex",flexDirection:"column",gap:"2px",flexShrink:0}}>
-                          <button onClick={()=>moveEx(sess.label,ei,-1)} disabled={ei===0} style={{opacity:ei===0?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▲</button>
-                          <button onClick={()=>moveEx(sess.label,ei,1)} disabled={ei===sess.exercises.length-1} style={{opacity:ei===sess.exercises.length-1?0.3:1,padding:"1px 5px",fontSize:"11px"}}>▼</button>
-                        </div>
-                        <div style={{flex:1,display:"flex",flexDirection:"column",gap:"5px"}}>
-                          <>
-                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.name} onChange={e=>updateEx(sess.label,ei,{name:e.target.value})}/>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} type="number" min="1" value={ex.sets} onChange={e=>updateEx(sess.label,ei,{sets:parseInt(e.target.value)||1})}/>
+                  <><div key={exKey} className="flex-between" style={{ padding: "8px 0", borderBottom: ei + 1 < sess.exercises.length ? "0.5px solid var(--card-border)" : "none", gap: "8px", alignItems: "flex-start" }}>
+                      {editMode ? (
+                        <>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px", flexShrink: 0 }}>
+                            <button onClick={() => moveEx(sess.label, ei, -1)} disabled={ei === 0} style={{ opacity: ei === 0 ? 0.3 : 1, padding: "1px 5px", fontSize: "11px" }}>▲</button>
+                            <button onClick={() => moveEx(sess.label, ei, 1)} disabled={ei === sess.exercises.length - 1} style={{ opacity: ei === sess.exercises.length - 1 ? 0.3 : 1, padding: "1px 5px", fontSize: "11px" }}>▼</button>
                           </div>
-                          {ex.metric === 'distance' ? (
-                          <>
-                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="dist" value={ex.dist||""]} onChange={e=>updateEx(sess.label,ei,{dist:e.target.value})}/>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="effort" value={ex.effort||""]} onChange={e=>updateEx(sess.label,ei,{effort:e.target.value})}/>
-                          </div>
-                          </>
-                          ) : (
-                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""]} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
-                          </div>
-                          )}
-                          </>
-                          {ex.metric === 'distance' ? (
-                          <>
-                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="dist" value={ex.dist||""]} onChange={e=>updateEx(sess.label,ei,{dist:e.target.value})}/>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="effort" value={ex.effort||""]} onChange={e=>updateEx(sess.label,ei,{effort:e.target.value})}/>
-                          </div>
-                          </>
-                          ) : (
-                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                          <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""]} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
-                          </div>
-                          )}
-                          </div>
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
+                            <>
+                              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.name} onChange={e => updateEx(sess.label, ei, { name: e.target.value })} />
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} type="number" min="1" value={ex.sets} onChange={e => updateEx(sess.label, ei, { sets: parseInt(e.target.value) || 1 })} />
+                              </div>
+                              {ex.metric === 'distance' ? (
+                                <>
+                                  <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                    <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="dist" value={ex.dist || ""} />]} onChange={e => updateEx(sess.label, ei, { dist: e.target.value })}/>
+                                    <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="effort" value={ex.effort || ""} />]} onChange={e => updateEx(sess.label, ei, { effort: e.target.value })}/>
+                                  </div>
+                                </>
+                              ) : (
+                                <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                  <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.hold || ex.reps || ""} />]} onChange={e => updateEx(sess.label, ei, { hold: e.target.value, reps: e.target.value })}/>
+                                </div>
+                              )}
+                            </>
                             {ex.metric === 'distance' ? (
                               <>
-                                <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                                  <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="dist" value={ex.dist||""]} onChange={e=>updateEx(sess.label,ei,{dist:e.target.value})}/>
-                                  <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"100px"}} placeholder="effort" value={ex.effort||""]} onChange={e=>updateEx(sess.label,ei,{effort:e.target.value})}/>
+                                <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                  <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="dist" value={ex.dist || ""} />]} onChange={e => updateEx(sess.label, ei, { dist: e.target.value })}/>
+                                  <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="effort" value={ex.effort || ""} />]} onChange={e => updateEx(sess.label, ei, { effort: e.target.value })}/>
                                 </div>
                               </>
                             ) : (
-                              <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                                <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px"}} value={ex.hold||ex.reps||""]} onChange={e=>updateEx(sess.label,ei,{hold:e.target.value,reps:e.target.value})}/>
+                              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.hold || ex.reps || ""} />]} onChange={e => updateEx(sess.label, ei, { hold: e.target.value, reps: e.target.value })}/>
                               </div>
                             )}
                           </div>
-                          <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
-                            <span className="text-small" style={{fontSize:"10px",textTransform:"uppercase",fontWeight:"700"}}>Rest</span>
-                            <input className="field" style={{marginBottom:0,fontSize:"13px",padding:"6px",width:"72px"}} value={ex.rest||""} placeholder="90s" onChange={e=>updateEx(sess.label,ei,{rest:e.target.value})}/>
-                            <SideToggle ex={ex} detector={withTendonSides} onChange={v=>updateEx(sess.label,ei,{unilateral:v})}/>
-                            {ei<sess.exercises.length-1&&<button onClick={()=>updateEx(sess.label,ei,{supersetWithNext:!ex.supersetWithNext})} title="Superset with the next exercise"
-                              style={{padding:"6px 9px",borderRadius:"8px",fontSize:"11px",fontWeight:"800",flexShrink:0,
-                                border:`1.5px solid ${ex.supersetWithNext?"var(--accent)":"var(--card-border)"}`,
-                                color:ex.supersetWithNext?"var(--accent)":"var(--text-secondary)",
-                                background:ex.supersetWithNext?"var(--accent-muted)":"var(--input-bg)",display:"inline-flex",alignItems:"center",gap:"4px"}}><Icons.Link/>SS</button>}
-                          </div>
-                        </div>
-                        <button onClick={()=>deleteEx(sess.label,exKey)} style={{width:"30px",height:"30px",flexShrink:0,borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"16px",fontWeight:"900"}}>×</button>
+                          {ex.metric === 'distance' ? (
+                            <>
+                              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="dist" value={ex.dist || ""} />]} onChange={e => updateEx(sess.label, ei, { dist: e.target.value })}/>
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="effort" value={ex.effort || ""} />]} onChange={e => updateEx(sess.label, ei, { effort: e.target.value })}/>
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                              <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.hold || ex.reps || ""} />]} onChange={e => updateEx(sess.label, ei, { hold: e.target.value, reps: e.target.value })}/>
+                            </div>
+                          )}
+                        </>) : }div>
+                      <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                        <span className="text-small" style={{ fontSize: "10px", textTransform: "uppercase", fontWeight: "700" }}>Rest</span>
+                        <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "72px" }} value={ex.rest || ""} placeholder="90s" onChange={e => updateEx(sess.label, ei, { rest: e.target.value })} />
+                        <SideToggle ex={ex} detector={withTendonSides} onChange={v => updateEx(sess.label, ei, { unilateral: v })} />
+                        {ei < sess.exercises.length - 1 && <button onClick={() => updateEx(sess.label, ei, { supersetWithNext: !ex.supersetWithNext })} title="Superset with the next exercise"
+                          style={{
+                            padding: "6px 9px", borderRadius: "8px", fontSize: "11px", fontWeight: "800", flexShrink: 0,
+                            border: `1.5px solid ${ex.supersetWithNext ? "var(--accent)" : "var(--card-border)"}`,
+                            color: ex.supersetWithNext ? "var(--accent)" : "var(--text-secondary)",
+                            background: ex.supersetWithNext ? "var(--accent-muted)" : "var(--input-bg)", display: "inline-flex", alignItems: "center", gap: "4px"
+                          }}><Icons.Link />SS</button>}
+                      </div>
+                    </div><button onClick={() => deleteEx(sess.label, exKey)} style={{ width: "30px", height: "30px", flexShrink: 0, borderRadius: "50%", background: "var(--danger-muted)", color: "var(--danger)", fontSize: "16px", fontWeight: "900" }}>×</button></>
                       </>
                     ):(
                       <>
