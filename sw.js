@@ -1,10 +1,10 @@
-const CACHE = 'wf-v1';
+const CACHE = 'wf-v2';
 const CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js'
 ];
-const SHELL = ['./', './index.html', './app.js', './styles.css', './manifest.json', './icon-192.png', './icon-512.png'];
+const SHELL = ['./', './index.html', './app.js', './styles.css', './manifest.json', './icon192.png', './icon512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.allSettled([...SHELL, ...CDN].map(u => c.add(u)))).then(() => self.skipWaiting()));
 });

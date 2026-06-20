@@ -2690,7 +2690,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                 {sess.exercises.map((ex,ei)=>{
                   const exKey = ex.id || ex.name;
                   return (
-                  <><div key={exKey} className="flex-between" style={{ padding: "8px 0", borderBottom: ei + 1 < sess.exercises.length ? "0.5px solid var(--card-border)" : "none", gap: "8px", alignItems: "flex-start" }}>
+                  <div key={exKey} className="flex-between" style={{ padding: "8px 0", borderBottom: ei + 1 < sess.exercises.length ? "0.5px solid var(--card-border)" : "none", gap: "8px", alignItems: "flex-start" }}>
                       {editMode ? (
                         <>
                           <div style={{ display: "flex", flexDirection: "column", gap: "2px", flexShrink: 0 }}>
@@ -2698,50 +2698,20 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                             <button onClick={() => moveEx(sess.label, ei, 1)} disabled={ei === sess.exercises.length - 1} style={{ opacity: ei === sess.exercises.length - 1 ? 0.3 : 1, padding: "1px 5px", fontSize: "11px" }}>▼</button>
                           </div>
                           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
-                            <>
-                              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.name} onChange={e => updateEx(sess.label, ei, { name: e.target.value })} />
-                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} type="number" min="1" value={ex.sets} onChange={e => updateEx(sess.label, ei, { sets: parseInt(e.target.value) || 1 })} />
-                              </div>
-                              {ex.metric === 'distance' ? (
-                                <>
-                                  <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                    <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="dist" value={ex.dist || ""} />]} onChange={e => updateEx(sess.label, ei, { dist: e.target.value })}/>
-                                    <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="effort" value={ex.effort || ""} />]} onChange={e => updateEx(sess.label, ei, { effort: e.target.value })}/>
-                                  </div>
-                                </>
-                              ) : (
-                                <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                  <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.hold || ex.reps || ""} />]} onChange={e => updateEx(sess.label, ei, { hold: e.target.value, reps: e.target.value })}/>
-                                </div>
-                              )}
-                            </>
+                            <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                              <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.name} onChange={e => updateEx(sess.label, ei, { name: e.target.value })} />
+                              <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} type="number" min="1" value={ex.sets} onChange={e => updateEx(sess.label, ei, { sets: parseInt(e.target.value) || 1 })} />
+                            </div>
                             {ex.metric === 'distance' ? (
-                              <>
-                                <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                  <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="dist" value={ex.dist || ""} />]} onChange={e => updateEx(sess.label, ei, { dist: e.target.value })}/>
-                                  <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="effort" value={ex.effort || ""} />]} onChange={e => updateEx(sess.label, ei, { effort: e.target.value })}/>
-                                </div>
-                              </>
+                              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="dist" value={ex.dist || ""} onChange={e => updateEx(sess.label, ei, { dist: e.target.value })} />
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="effort" value={ex.effort || ""} onChange={e => updateEx(sess.label, ei, { effort: e.target.value })} />
+                              </div>
                             ) : (
                               <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.hold || ex.reps || ""} />]} onChange={e => updateEx(sess.label, ei, { hold: e.target.value, reps: e.target.value })}/>
+                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.hold || ex.reps || ""} onChange={e => updateEx(sess.label, ei, { hold: e.target.value, reps: e.target.value })} />
                               </div>
                             )}
-                          </div>
-                          {ex.metric === 'distance' ? (
-                            <>
-                              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="dist" value={ex.dist || ""} />]} onChange={e => updateEx(sess.label, ei, { dist: e.target.value })}/>
-                                <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "100px" }} placeholder="effort" value={ex.effort || ""} />]} onChange={e => updateEx(sess.label, ei, { effort: e.target.value })}/>
-                              </div>
-                            </>
-                          ) : (
-                            <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                              <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px" }} value={ex.hold || ex.reps || ""} />]} onChange={e => updateEx(sess.label, ei, { hold: e.target.value, reps: e.target.value })}/>
-                            </div>
-                          )}
-                        </>) : }div>
                       <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
                         <span className="text-small" style={{ fontSize: "10px", textTransform: "uppercase", fontWeight: "700" }}>Rest</span>
                         <input className="field" style={{ marginBottom: 0, fontSize: "13px", padding: "6px", width: "72px" }} value={ex.rest || ""} placeholder="90s" onChange={e => updateEx(sess.label, ei, { rest: e.target.value })} />
@@ -2755,7 +2725,6 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                           }}><Icons.Link />SS</button>}
                       </div>
                     </div><button onClick={() => deleteEx(sess.label, exKey)} style={{ width: "30px", height: "30px", flexShrink: 0, borderRadius: "50%", background: "var(--danger-muted)", color: "var(--danger)", fontSize: "16px", fontWeight: "900" }}>×</button></>
-                      </>
                     ):(
                       <>
                         <button className={`custom-tick ${checked[exKey]?"checked":""}`} onClick={()=>setChecked(p=>({...p,[exKey]:!p[exKey]}))} style={{marginTop:"4px"}}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>
