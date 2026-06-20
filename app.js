@@ -118,7 +118,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     // ── Exercise type predicates ──────────────────────────────────────────────
     // Not every exercise is weight × reps. Classify by fields so the UI can hide
     // weight / reps / RIR / "Set Weight" where they make no sense.
-    const isDistanceExercise = ex => !!(ex && ex.metric === 'distance');          // sprints, bounds, jumps → distance + effort
+    const looksLikeMeters = v => typeof v === 'string' && /^\s*~?\d+(\.\d+)?\s*m\s*$/i.test(v); // "20m", "30 m" — not "min"
+    const isDistanceExercise = ex => {
+      if (!ex) return false;
+      if (ex.metric === 'distance') return true;       // explicit flag
+      if (ex.dist || ex.effort) return true;           // distance/effort fields present
+      if (ex.equip && /sprint/i.test(ex.equip)) return true;
+      return looksLikeMeters(ex.reps);                 // legacy: distance stored in reps ("20m")
+    };
     const isHoldExercise     = ex => !!(ex && (ex.hold || ex.totalSec));          // isometrics / timed holds → seconds
     // Duration work (warm-ups, "~3 min", "8-10 min", "30 sec"). Distance & holds
     // are handled above, so they're excluded here.
@@ -133,6 +140,16 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
     // Whether weight / numeric reps are meaningful to log for this exercise.
     const usesWeight = ex => !isDistanceExercise(ex) && !isTimedExercise(ex) && !isBodyweightExercise(ex);
     const usesReps   = ex => !isDistanceExercise(ex) && !isTimedExercise(ex) && !isHoldExercise(ex);
+    // Repair exercises saved before the distance/effort model existed: a sprint's
+    // distance ended up in `reps` and its effort in `weight`. Backfill the proper
+    // fields so the UI logs distance + effort (not weight/reps/RIR/1RM).
+    const normalizeExercise = ex => {
+      if (!ex || ex.metric === 'distance' || !isDistanceExercise(ex)) return ex;
+      const dist = ex.dist || (looksLikeMeters(ex.reps) ? String(ex.reps).trim() : (ex.reps || ''));
+      const w = ex.weight != null ? String(ex.weight) : '';
+      const effort = ex.effort || (/[%]|effort|max|rpe/i.test(w) ? w.replace(/effort/ig, '').trim() : '');
+      return { ...ex, metric: 'distance', dist, effort, weight: '' };
+    };
     const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
     // ── Performance Utilities ─────────────────────────────────────────────────
@@ -1369,26 +1386,32 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       );
     }
 
-    function PreviousPerformanceBanner({exerciseId, exerciseName, compact}) {
+    function PreviousPerformanceBanner({exerciseId, exerciseName, compact, ex}) {
       const last = getLastPerformance(exerciseId, exerciseName);
       const best = getBestPerformance(exerciseId, exerciseName);
       if (!last) return null;
       const hasLoad = parseWeight(last.weight) > 0;
-      const lastIsDist = last.metric === 'distance' || (last.dist && !hasLoad);
-      const lastIsHold = !lastIsDist && last.hold && last.hold !== '0' && !last.reps;
-      const lastIsTimed = !lastIsDist && !lastIsHold && typeof last.reps === 'string' && /min|sec|hour|hr\b/i.test(last.reps);
+      // When we know the exercise, trust its type over the (possibly legacy) log.
+      const exDist = ex && isDistanceExercise(ex);
+      const exTimed = ex && isTimedExercise(ex);
+      const exHold = ex && isHoldExercise(ex);
+      const noLoadType = exDist || exTimed || exHold || (ex && isBodyweightExercise(ex));
+      const lastIsDist = exDist || last.metric === 'distance' || (last.dist && !hasLoad);
+      const lastIsHold = !lastIsDist && (exHold || (last.hold && last.hold !== '0' && !last.reps));
+      const lastIsTimed = !lastIsDist && !lastIsHold && (exTimed || (typeof last.reps === 'string' && /min|sec|hour|hr\b/i.test(last.reps)));
       let lastLabel;
-      if (lastIsDist) lastLabel = `${last.dist || 'distance'}${last.effort ? ` @ ${last.effort}` : ''}`;
-      else if (lastIsHold) lastLabel = `${hasLoad ? fmtWeight(last.weight) + ' · ' : ''}${last.hold} hold`;
-      else if (lastIsTimed) lastLabel = last.reps;
+      if (lastIsDist) { const d = last.dist || (ex && ex.dist) || '—'; const ef = last.effort || (ex && ex.effort) || ''; lastLabel = `${d}${ef ? ` @ ${ef}` : ''}`; }
+      else if (lastIsHold) lastLabel = `${hasLoad ? fmtWeight(last.weight) + ' · ' : ''}${last.hold || (ex && ex.hold) || ''} hold`;
+      else if (lastIsTimed) lastLabel = last.reps || (ex && ex.reps) || '—';
       else lastLabel = `${fmtWeight(last.weight)} × ${last.reps || '—'}`;
+      const showWeightStats = !noLoadType;
       return (
         <div className="prev-perf">
           <span className="perf-tag">Last: {lastLabel}</span>
-          {best?.bestWeight && parseWeight(best.bestWeight.weight) > 0 && (
+          {showWeightStats && best?.bestWeight && parseWeight(best.bestWeight.weight) > 0 && (
             <span className="perf-tag best">Best: {fmtWeight(best.bestWeight.weight)} × {best.bestWeight.reps || '—'}</span>
           )}
-          {!compact && best?.best1RM && calc1RM(best.best1RM.weight, best.best1RM.reps) > 0 && (
+          {showWeightStats && !compact && best?.best1RM && calc1RM(best.best1RM.weight, best.best1RM.reps) > 0 && (
             <span className="perf-tag" style={{fontSize:"11px"}}>Est 1RM: {calc1RM(best.best1RM.weight, best.best1RM.reps)}kg</span>
           )}
         </div>
@@ -1524,7 +1547,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
       const [showList,setShowList]=useState(R.showList!==undefined?R.showList:true);
       const [exerciseOrder,setExerciseOrder]=useState(R.exerciseOrder||exercises.map((_,i)=>i));
       const [exOverrides,setExOverrides]=useState(R.exOverrides||{});
-      const orderedExercises = exerciseOrder.map(i => exOverrides[i] || exercises[i]);
+      const orderedExercises = exerciseOrder.map(i => normalizeExercise(exOverrides[i] || exercises[i]));
       // Superset chains: exercises flagged supersetWithNext link to the one below
       const chainStart=i=>{let x=i;while(x>0&&orderedExercises[x-1]&&orderedExercises[x-1].supersetWithNext)x--;return x;};
       const chainEnd=i=>{let x=i;while(orderedExercises[x]&&orderedExercises[x].supersetWithNext&&x+1<orderedExercises.length)x++;return x;};
@@ -1989,7 +2012,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
       const progressPercent=targetSeconds>0?((targetSeconds-remaining)/targetSeconds)*100:0;
       const strokeDashoffset=628-(628*progressPercent)/100;
-      const suggestion = getProgressionSuggestion(activeEx?.id, activeEx?.name, activeEx?.reps);
+      const suggestion = (usesWeight(activeEx) && usesReps(activeEx)) ? getProgressionSuggestion(activeEx?.id, activeEx?.name, activeEx?.reps) : null;
       const exNote = allNotes?.[activeEx?.id];
 
       // ── Reorder Mode ──
@@ -2191,7 +2214,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
             </p>
 
             {/* Previous Performance Banner */}
-            {mode === "work" && <PreviousPerformanceBanner exerciseId={activeEx.id} exerciseName={activeEx.name}/>}
+            {mode === "work" && <PreviousPerformanceBanner exerciseId={activeEx.id} exerciseName={activeEx.name} ex={activeEx}/>}
 
             {/* Progression Suggestion */}
             {mode === "work" && suggestion && (
@@ -2537,7 +2560,7 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                     {!editMode&&<button className="button-primary" style={{marginBottom:"16px",padding:"10px 14px",fontSize:"14px",background:accent,borderColor:accent}} onClick={()=>launchSectionSession(sec)}>Start Session</button>}
                     {sec.exercises.map((ex,ei)=>{
                       const exKey = ex.id || ex.name;
-                      const suggestion = getProgressionSuggestion(exKey, ex.name, ex.reps);
+                      const suggestion = (usesWeight(ex) && usesReps(ex)) ? getProgressionSuggestion(exKey, ex.name, ex.reps) : null;
                       return (
                       <div key={exKey} className="flex-between" style={{padding:"10px 0",borderBottom:ei+1<sec.exercises.length?"0.5px solid var(--card-border)":"none",gap:"8px",alignItems:"flex-start"}}>
                         {!editMode&&<button className={`custom-tick ${checkedExercises[exKey]?"checked":""}`} onClick={()=>setCheckedExercises(prev=>({...prev,[exKey]:!prev[exKey]}))} style={{marginTop:"4px"}}>  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="var(--btn-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></button>}
@@ -2579,13 +2602,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                                 {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>SS</span>}
                                 <span className="badge" style={{fontSize:"9px",marginLeft:"4px",opacity:0.75}}>{muscleGroupOf(ex.name)}</span>
                               </p>
-                              <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
+                              <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} ex={ex} compact/>
                               {suggestion && <span className={`suggestion-badge ${suggestion.type}`}>{suggestion.msg}</span>}
                               <Editable as="p" multiline className="text-small" style={{fontSize:"12px",marginTop:"4px",fontStyle:"italic",opacity:0.85,lineHeight:"1.35"}} value={ex.cue||""} placeholder="Double-tap to add cue…" onSave={t=>updateExercise(sec.section,ei,{cue:t})}/>
                             </div>
                             <div style={{display:"flex",gap:"4px",alignItems:"center",flexShrink:0,marginTop:"2px"}}>
                               <ExerciseNoteButton exerciseId={exKey} notes={notes} onSave={saveNote}/>
-                              {isDistanceExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.dist||'dist'}{ex.effort?` · ${ex.effort}`:''}</span>
+                              {isDistanceExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.dist||ex.reps||'dist'}{ex.effort?` · ${ex.effort}`:''}</span>
                                : isTimedExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.reps||'time'}</span>
                                : <>
                                   {usesWeight(ex)&&<WeightChip exKey={exKey} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>}
@@ -2767,13 +2790,13 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                           <p className="text-small" style={{fontSize:"11px"}}>{ex.equip} — {ex.sets} sets — {ex.metric==='distance'?`${ex.dist||'distance'}${ex.effort?` @ ${ex.effort}`:''}`:(ex.hold?`Hold ${ex.hold}`:(ex.reps?`${ex.reps} reps`:''))}
                             {tendonExHasSides(ex)&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>L+R</span>}
                           </p>
-                          <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
+                          <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} ex={ex} compact/>
                           <Editable as="p" multiline className="text-small" style={{fontSize:"12px",marginTop:"4px",fontStyle:"italic",opacity:0.85,lineHeight:"1.35"}} value={ex.cue||""} placeholder="Double-tap to add cue…" onSave={t=>updateEx(sess.label,ei,{cue:t})}/>
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:"4px",alignItems:"center",flexShrink:0}}>
                           <ExerciseNoteButton exerciseId={exKey} notes={notes} onSave={saveNote}/>
                           {isDistanceExercise(ex)?
-                            <span className="badge" style={{fontSize:"10px"}}>{ex.dist||'dist'}</span>
+                            <span className="badge" style={{fontSize:"10px"}}>{ex.dist||ex.reps||'dist'}</span>
                             :isTimedExercise(ex)?
                             <span className="badge" style={{fontSize:"10px"}}>{ex.reps||'time'}</span>
                             :usesWeight(ex)?
@@ -3360,14 +3383,14 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
                       {ex.supersetWithNext&&<span className="badge" style={{fontSize:"9px",marginLeft:"4px"}}>SS</span>}
                       <span className="badge" style={{fontSize:"9px",marginLeft:"4px",opacity:0.75}}>{muscleGroupOf(ex.name)}</span>
                     </p>
-                    <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} compact/>
+                    <PreviousPerformanceBanner exerciseId={exKey} exerciseName={ex.name} ex={ex} compact/>
                     <Editable as="p" multiline className="text-small" style={{fontSize:"12px",marginTop:"3px",fontStyle:"italic",opacity:0.8,lineHeight:"1.35"}} value={ex.cue||""} placeholder="Double-tap to add cue…" onSave={t=>updateExercise(i,{cue:t})}/>
                   </div>
                 )}
                 {editMode?<button onClick={()=>deleteExercise(i)} style={{width:"34px",height:"34px",borderRadius:"50%",background:"var(--danger-muted)",color:"var(--danger)",fontSize:"20px",fontWeight:"900"}}>×</button>:(
                   <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
                     <ExerciseNoteButton exerciseId={exKey} notes={notes} onSave={saveNote}/>
-                    {isDistanceExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.dist||'dist'}</span>
+                    {isDistanceExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.dist||ex.reps||'dist'}</span>
                      : isTimedExercise(ex) ? <span className="badge" style={{fontSize:"10px"}}>{ex.reps||'time'}</span>
                      : usesWeight(ex) ? <WeightChip exKey={exKey} defaultWeight={ex.weight} color="var(--accent)" weights={weights} onSave={saveWeight}/>
                      : null}
